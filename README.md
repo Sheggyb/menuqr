@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MenuQR
 
-## Getting Started
+Digital menu & table ordering system. Guests scan a QR code at their table and can browse the menu, order items, ask for the waiter, request the bill, and more — all without an app.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** + TypeScript + Tailwind v4
+- **Supabase** — Auth, Postgres, Realtime
+- **Vercel** — deployment
+
+## Project location
+
+`C:\Users\sargo\Documents\Project\menuqr\`
+
+## Setup
+
+### 1. Supabase
+
+1. Go to [supabase.com](https://supabase.com) → New project
+2. Once created, go to **SQL Editor** → paste and run `supabase-schema.sql`
+3. Go to **Project Settings → API** and copy:
+   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
+   - anon key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - service_role key → `SUPABASE_SERVICE_ROLE_KEY`
+4. Go to **Authentication → URL Configuration**:
+   - Site URL: `https://your-app.vercel.app`
+   - Redirect URLs: `https://your-app.vercel.app/**` and `http://localhost:3000/**`
+
+### 2. Local dev
+
+Fill in `.env.local`, then:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. Deploy to Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+gh repo create Sheggyb/menuqr --public --source=. --push
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then connect repo on vercel.com and add the 3 env vars before deploying.
 
-## Learn More
+## How it works
 
-To learn more about Next.js, take a look at the following resources:
+1. Owner signs up → creates restaurant → adds menu categories + items
+2. Owner adds tables → each gets a unique QR code (download PNG)
+3. Guest scans QR → sees live menu → taps to request waiter, bill, refill, or a specific item
+4. Owner dashboard shows live requests via Supabase Realtime — mark seen / done
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## File structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/app/
+  page.tsx               # Landing page
+  login/                 # Auth
+  signup/
+  auth/callback/
+  auth/signout/
+  app/
+    page.tsx             # Server: load restaurant
+    AppShell.tsx         # Tab shell (orders/menu/tables)
+    SetupRestaurant.tsx  # First-time setup
+    LiveOrders.tsx       # Real-time orders dashboard
+    MenuBuilder.tsx      # Add/edit menu categories + items
+    TableManager.tsx     # Add tables, generate QR codes
+  menu/[token]/
+    page.tsx             # Server: load table + menu data
+    GuestMenuClient.tsx  # Guest mobile UI
+```

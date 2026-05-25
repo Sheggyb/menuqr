@@ -1,0 +1,127 @@
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { Restaurant, TableRequest } from "@/lib/types";
+
+interface Props { restaurant: Restaurant }
+
+const REQUEST_LABELS: Record<string, string> = {
+  waiter: "🙋 Waiter needed",
+  bill: "💳 Bill please",
+  refill: "🔄 Refill",
+  item_request: "🍽️ Item request",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: "#fef3c7",
+  seen: "#dbeafe",
+  done: "#dcfce7",
+};
+
+const STATUS_TEXT: Record<string, string> = {
+  pending: "🟡 Pending",
+  seen: "🔵 Seen",
+  done: "✅ Done",
+};
+
+export default function LiveOrders({ restaurant }: Props) {
+  const supabase = createClient();
+  const [requests, setRequests] = useState<TableRequest[]>([]);
+  const [filter, setFilter] = useState<"all" | "pending" | "seen" | "done">("pending");
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from("table_requests")
+      .select("*, table:restaurant_tables(name)")
+      .eq("restaurant_id", restaurant.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    setRequests((data as TableRequest[]) ?? []);
+    setLoading(false);
+  }, [restaurant.id]);
+
+  useEffect(() => {
+    load();
+    // Realtime subscription
+    const channel = supabase.channel(`requests:${restaurant.id}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "table_requests",
+        filter: `restaurant_id=eq.${restaurant.id}`,
+      }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurant.id, load]);
+
+  async function updateStatus(id: string, status: TableRequest["status"]) {
+    await supabase.from("table_requests").update({ status }).eq("id", id);
+    setRequests(reqs => reqs.map(r => r.id === id ? { ...r, status } : r));
+  }
+
+  async function clearDone() {
+    await supabase.from("table_requests").delete().eq("restaurant_id", restaurant.id).eq("status", "done");
+    setRequests(r => r.filter(x => x.status !== "done"));
+  }
+
+  const filtered = filter === "all" ? requests : requests.filter(r => r.status === filter);
+  const pendingCount = requests.filter(r => r.status === "pending").length;
+
+  if (loading) return <p style={{ color: "var(--text-muted)" }}>Loading orders...</p>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <h2 style={{ fontWeight: 700, fontSize: 20 }}>
+          ⚡ Live Orders {pendingCount > 0 && <span style={{ marginLeft: 8, background: "#E85D2F", color: "white", fontSize: 13, padding: "2px 8px", borderRadius: 99 }}>{pendingCount}</span>}
+        </h2>
+        <button className="btn-secondary" onClick={clearDone} style={{ fontSize: 13 }}>🗑️ Clear done</button>
+      </div>
+
+      {/* FILTER TABS */}
+      <div style={{ display: "flex", gap: 4 }}>
+        {(["all", "pending", "seen", "done"] as const).map(f => (
+          <button key={f} onClick={() => setFilter(f)}
+            style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: filter === f ? "var(--accent)" : "var(--surface)", color: filter === f ? "white" : "var(--text-muted)", cursor: "pointer", fontSize: 13, fontWeight: filter === f ? 700 : 400 }}>
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: "var(--text-muted)" }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>🟢</div>
+          <p>No {filter === "all" ? "" : filter} requests right now.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map(req => (
+            <div key={req.id} style={{ background: STATUS_COLORS[req.status], border: "1px solid var(--border)", borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 700, fontSize: 15 }}>{REQUEST_LABELS[req.type] ?? req.type}</span>
+                  {req.item_name && <span style={{ fontSize: 13, color: "var(--text-muted)" }}>— {req.item_name}</span>}
+                </div>
+                <div style={{ fontSize: 13, color: "var(--text)" }}>
+                  🪑 {(req.table as { name: string } | undefined)?.name ?? "Unknown table"}
+                </div>
+                {req.note && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>📝 {req.note}</div>}
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{new Date(req.created_at).toLocaleTimeString()}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{STATUS_TEXT[req.status]}</span>
+                {req.status === "pending" && (
+                  <button onClick={() => updateStatus(req.id, "seen")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", cursor: "pointer", fontWeight: 600 }}>Mark seen</button>
+                )}
+                {(req.status === "pending" || req.status === "seen") && (
+                  <button onClick={() => updateStatus(req.id, "done")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", cursor: "pointer", fontWeight: 600 }}>✅ Done</button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
