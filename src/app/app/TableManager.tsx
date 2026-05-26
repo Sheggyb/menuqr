@@ -144,17 +144,21 @@ export default function TableManager({ restaurant }: Props) {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
               <h3 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>Table Status</h3>
               <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--text-muted)", flexWrap: "wrap" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />Open</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#E85D2F", display: "inline-block" }} />Needs attention</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />Idle</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />Has requests</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626", display: "inline-block" }} />Urgent (3+)</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#9ca3af", display: "inline-block" }} />Closed</span>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(80px, 1fr))", gap: 8 }}>
               {tables.map(table => {
                 const pending = pendingByTable[table.id] ?? 0;
-                const bgColor = !table.is_active ? "#f3f4f6" : pending > 0 ? "#fff7ed" : "#f0fdf4";
-                const borderColor = !table.is_active ? "#e5e7eb" : pending > 0 ? "#E85D2F" : "#22c55e";
-                const textColor = !table.is_active ? "#9ca3af" : pending > 0 ? "#E85D2F" : "#166534";
+                const isUrgent = pending >= 3;
+                const hasPending = pending > 0 && !isUrgent;
+                const bgColor = !table.is_active ? "#f3f4f6" : isUrgent ? "#fef2f2" : hasPending ? "#fffbeb" : "#f0fdf4";
+                const borderColor = !table.is_active ? "#e5e7eb" : isUrgent ? "#dc2626" : hasPending ? "#f59e0b" : "#22c55e";
+                const dotColor = !table.is_active ? "#9ca3af" : isUrgent ? "#dc2626" : hasPending ? "#f59e0b" : "#22c55e";
+                const textColor = !table.is_active ? "#9ca3af" : isUrgent ? "#dc2626" : hasPending ? "#92400e" : "#166534";
                 return (
                   <div
                     key={table.id}
@@ -162,6 +166,7 @@ export default function TableManager({ restaurant }: Props) {
                     title={`${table.name} — ${!table.is_active ? "Closed" : pending > 0 ? `${pending} pending` : "Open"} (click to toggle)`}
                     onClick={() => toggleTable(table)}
                   >
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, display: "inline-block", marginBottom: 4 }} />
                     <div style={{ fontSize: 18, marginBottom: 2 }}>🪑</div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: textColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{table.name}</div>
                     {pending > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: "#E85D2F", marginTop: 2 }}>{pending} !</div>}
