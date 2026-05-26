@@ -38,6 +38,23 @@ export default function TableManager({ restaurant }: Props) {
   }, [tables, restaurant.id]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (tables.length === 0) return;
+    const fetchPending = () =>
+      supabase.from("table_requests").select("table_id").eq("restaurant_id", restaurant.id).eq("status", "pending").then(({ data }) => {
+        if (!data) return;
+        const counts: Record<string, number> = {};
+        for (const r of data) counts[r.table_id] = (counts[r.table_id] ?? 0) + 1;
+        setPendingByTable(counts);
+      });
+    fetchPending();
+    const channel = supabase.channel("tablemanager-pending")
+      .on("postgres_changes", { event: "*", schema: "public", table: "table_requests", filter: `restaurant_id=eq.${restaurant.id}` }, fetchPending)
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tables.length, restaurant.id]);
 
   function copyLink(table: TableRow) {
     const url = `${window.location.origin}/menu/${table.token}`;
@@ -123,7 +140,12 @@ export default function TableManager({ restaurant }: Props) {
             <div key={table.id} className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px" }}>
               <div>
                 <span style={{ fontWeight: 700 }}>{table.name}</span>
-                <span style={{ marginLeft: 10, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: table.is_active ? "#dcfce7" : "#fee2e2", color: table.is_active ? "#166534" : "#991b1b", fontWeight: 600 }}>
+                {pendingByTable[table.id] > 0 && (
+                  <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: "#E85D2F", color: "white", fontWeight: 700, animation: "pulse 1.5s ease-in-out infinite" }}>
+                    {pendingByTable[table.id]} waiting
+                  </span>
+                )}
+                <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: table.is_active ? "#dcfce7" : "#fee2e2", color: table.is_active ? "#166534" : "#991b1b", fontWeight: 600 }}>
                   {table.is_active ? "Open" : "Closed"}
                 </span>
                 {lastRequests[table.id] && (
