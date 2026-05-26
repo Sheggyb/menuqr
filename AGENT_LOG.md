@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 12 — 2026-05-26
+- Staff dashboard: added timeAgo() helper function in LiveOrders.tsx
+- Each request card now shows e.g. "2 min ago" next to the timestamp
+- TypeScript: PASS
+- Commit: ce54f7c
+
 ## Cycle 11 — 2026-05-26
 - Staff dashboard: added "✅ Mark all done" button (only shows when pendingCount > 0) in LiveOrders.tsx
 - markAllDone() updates all pending requests to done in Supabase and locally

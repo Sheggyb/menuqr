@@ -102,7 +102,7 @@ export default function MenuBuilder({ restaurant }: Props) {
       {categories.map(cat => (
         <div key={cat.id} className="card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h3 style={{ fontWeight: 700 }}>{cat.icon} {cat.name}</h3>
+            <h3 style={{ fontWeight: 700 }}>{cat.icon} {cat.name} <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 13 }}>({items.filter(i => i.category_id === cat.id).length} items)</span></h3>
             <button onClick={() => deleteCategory(cat.id)} style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 13 }}>Delete category</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
