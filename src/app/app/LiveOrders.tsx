@@ -12,6 +12,20 @@ const REQUEST_LABELS: Record<string, string> = {
   item_request: "🍽️ Item request",
 };
 
+const REQUEST_COLORS: Record<string, string> = {
+  waiter: "#fef9c3",
+  bill: "#fee2e2",
+  refill: "#dbeafe",
+  item_request: "#dcfce7",
+};
+
+const REQUEST_BORDER: Record<string, string> = {
+  waiter: "#fde047",
+  bill: "#fca5a5",
+  refill: "#93c5fd",
+  item_request: "#86efac",
+};
+
 const STATUS_COLORS: Record<string, string> = {
   pending: "#fef3c7",
   seen: "#dbeafe",
@@ -148,7 +162,7 @@ export default function LiveOrders({ restaurant }: Props) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {filtered.map(req => (
-            <div key={req.id} style={{ background: STATUS_COLORS[req.status], border: "1px solid var(--border)", borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <div key={req.id} style={{ background: STATUS_COLORS[req.status], border: "1px solid var(--border)", borderLeft: `4px solid ${REQUEST_BORDER[req.type] ?? "#e5e7eb"}`, borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <span style={{ fontWeight: 700, fontSize: 15 }}>{REQUEST_LABELS[req.type] ?? req.type}</span>
