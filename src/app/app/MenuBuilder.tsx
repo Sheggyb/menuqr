@@ -108,6 +108,7 @@ export default function MenuBuilder({ restaurant }: Props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {items.filter(i => i.category_id === cat.id).map(item => (
               <div key={item.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", background: item.is_available ? "#f9fafb" : "#fef2f2", borderRadius: 8, gap: 8 }}>
+                <span style={{ color: "#9ca3af", fontSize: 16, cursor: "grab", userSelect: "none", lineHeight: 1, flexShrink: 0 }} title="Drag to reorder">↕</span>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontWeight: 600, fontSize: 14 }}>{item.name}</span>
                   {item.price && <span style={{ marginLeft: 8, color: "var(--text-muted)", fontSize: 13 }}>{item.price} kr</span>}
