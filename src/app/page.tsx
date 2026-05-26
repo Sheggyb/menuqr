@@ -46,6 +46,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* BENEFITS */}
+      <section style={{ maxWidth: 800, margin: "0 auto 40px", padding: "0 32px" }}>
+        <h2 style={{ textAlign: "center", fontWeight: 700, fontSize: 28, marginBottom: 32 }}>Why restaurants love MenuQR</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
+          {[
+            { icon: "📵", title: "No app needed", text: "Guests just scan the QR code — no download, no account, no friction." },
+            { icon: "📱", title: "Works on any phone", text: "Any modern smartphone with a camera can access your menu instantly." },
+            { icon: "⚡", title: "Real-time updates", text: "Orders and requests appear on your dashboard the moment guests tap." },
+          ].map((b) => (
+            <div key={b.title} className="card" style={{ textAlign: "center", borderTop: "3px solid var(--accent)" }}>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>{b.icon}</div>
+              <h3 style={{ fontWeight: 700, marginBottom: 8, color: "var(--accent)" }}>{b.title}</h3>
+              <p style={{ color: "var(--text-muted)", fontSize: 14 }}>{b.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* FOOTER */}
       <footer style={{ textAlign: "center", padding: "40px 32px", color: "var(--text-muted)", fontSize: 13 }}>
         MenuQR — Built for restaurants of all sizes. Free to start.
