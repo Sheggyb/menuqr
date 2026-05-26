@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 15 — 2026-05-26
+- Table manager: added "🔗 Copy link" button per table that copies guest menu URL to clipboard
+- Shows "✅ Copied!" feedback for 2 seconds in TableManager.tsx
+- TypeScript: PASS
+- Commit: 864862b
+
 ## Cycle 14 — 2026-05-26
 - Table manager: added toggleAll() function and "🔒 Close all" / "🔓 Open all" button in header
 - Button only shows when tables exist; label toggles based on whether any are active
