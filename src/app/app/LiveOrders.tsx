@@ -38,6 +38,14 @@ const STATUS_TEXT: Record<string, string> = {
   done: "✅ Done",
 };
 
+function timeAgo(dateStr: string): string {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
 export default function LiveOrders({ restaurant }: Props) {
   const supabase = createClient();
   const [requests, setRequests] = useState<TableRequest[]>([]);
@@ -196,7 +204,7 @@ export default function LiveOrders({ restaurant }: Props) {
                   🪑 {(req.table as { name: string } | undefined)?.name ?? "Unknown table"}
                 </div>
                 {req.note && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>📝 {req.note}</div>}
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{new Date(req.created_at).toLocaleTimeString()}</div>
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{new Date(req.created_at).toLocaleTimeString()} · {timeAgo(req.created_at)}</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
                 <span style={{ fontSize: 12, fontWeight: 600 }}>{STATUS_TEXT[req.status]}</span>

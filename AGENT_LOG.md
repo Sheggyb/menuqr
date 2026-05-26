@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 11 — 2026-05-26
+- Staff dashboard: added "✅ Mark all done" button (only shows when pendingCount > 0) in LiveOrders.tsx
+- markAllDone() updates all pending requests to done in Supabase and locally
+- TypeScript: PASS
+- Commit: 269d6b0
+
 ## Cycle 10 — 2026-05-26
 - Created public/favicon.svg — orange QR-code-style SVG icon (3 finder patterns + data dots)
 - Added <link rel="icon" href="/favicon.svg"> to src/app/layout.tsx head
