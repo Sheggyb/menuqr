@@ -74,7 +74,23 @@ export default function LiveOrders({ restaurant }: Props) {
     return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
   }, [pendingCount]);
 
-  if (loading) return <p style={{ color: "var(--text-muted)" }}>Loading orders...</p>;
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {[1, 2, 3].map(i => (
+        <div key={i} style={{ background: "#f3f4f6", borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, animation: "pulse 1.5s ease-in-out infinite" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ height: 16, background: "#e5e7eb", borderRadius: 6, width: "50%", marginBottom: 8 }} />
+            <div style={{ height: 13, background: "#e5e7eb", borderRadius: 6, width: "30%" }} />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+            <div style={{ height: 13, background: "#e5e7eb", borderRadius: 6, width: 60 }} />
+            <div style={{ height: 28, background: "#e5e7eb", borderRadius: 6, width: 80 }} />
+          </div>
+        </div>
+      ))}
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+    </div>
+  );
 
   const filtered = filter === "all" ? requests : requests.filter(r => r.status === filter);
 
