@@ -57,6 +57,28 @@ export default function Analytics({ restaurant }: Props) {
     </div>
   );
 
+  if (!loading && requests.length === 0) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Analytics</h2>
+        <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+          {(["7d", "30d"] as const).map(r => (
+            <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+              {r === "7d" ? "7 days" : "30 days"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16 }}>
+        <div style={{ fontSize: 64, marginBottom: 16 }}>📊</div>
+        <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text)", marginBottom: 8 }}>No data yet</h3>
+        <p style={{ color: "var(--text-muted)", fontSize: 14, maxWidth: 300, margin: "0 auto" }}>
+          Analytics will appear here once guests start making requests. Share your QR codes to get started!
+        </p>
+      </div>
+    </div>
+  );
+
   // Summary stats
   const total = requests.length;
   const done = requests.filter(r => r.status === "done").length;

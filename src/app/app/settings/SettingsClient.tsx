@@ -3,16 +3,33 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Props { restaurant: Restaurant }
 
 export default function SettingsClient({ restaurant }: Props) {
   const supabase = createClient();
+  const router = useRouter();
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || "#E85D2F");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    if (deleteInput !== restaurant.name) return;
+    setDeleting(true);
+    await supabase.from("restaurant_tables").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("menu_items").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("menu_categories").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("table_requests").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("restaurants").delete().eq("id", restaurant.id);
+    setDeleting(false);
+    router.push("/app");
+  }
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("menuqr_sound") !== "off";
@@ -106,6 +123,49 @@ export default function SettingsClient({ restaurant }: Props) {
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
             Sound setting is stored in your browser. Each device needs to enable it separately.
           </p>
+        </div>
+
+        {/* Danger zone */}
+        <div className="card" style={{ border: "1px solid #fecaca" }}>
+          <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, color: "#dc2626" }}>⚠️ Danger Zone</h3>
+          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+            Permanently delete this restaurant and all its data. This cannot be undone.
+          </p>
+          {!deleteConfirm ? (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              style={{ padding: "9px 20px", borderRadius: 8, border: "1px solid #dc2626", background: "white", color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+            >
+              🗑️ Delete restaurant
+            </button>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <p style={{ fontSize: 13, color: "#dc2626", fontWeight: 600, margin: 0 }}>
+                Type <strong>{restaurant.name}</strong> to confirm deletion:
+              </p>
+              <input
+                value={deleteInput}
+                onChange={e => setDeleteInput(e.target.value)}
+                placeholder={restaurant.name}
+                style={{ padding: "10px 12px", borderRadius: 8, border: "1.5px solid #dc2626", fontSize: 14 }}
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteInput !== restaurant.name || deleting}
+                  style={{ flex: 1, padding: "10px", borderRadius: 8, border: "none", background: deleteInput === restaurant.name ? "#dc2626" : "#f3f4f6", color: deleteInput === restaurant.name ? "white" : "#9ca3af", fontWeight: 700, fontSize: 13, cursor: deleteInput === restaurant.name ? "pointer" : "default" }}
+                >
+                  {deleting ? "Deleting..." : "Yes, delete permanently"}
+                </button>
+                <button
+                  onClick={() => { setDeleteConfirm(false); setDeleteInput(""); }}
+                  style={{ padding: "10px 16px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

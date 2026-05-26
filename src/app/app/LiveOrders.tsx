@@ -260,6 +260,26 @@ export default function LiveOrders({ restaurant }: Props) {
 
   const pendingCount = requests.filter(r => r.status === "pending").length;
 
+  // Keyboard shortcuts: P = pick up first pending, D = mark first in-progress done
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
+      if (e.key === "p" || e.key === "P") {
+        const first = requests.find(r => r.status === "pending");
+        if (first) move(first.id, "seen");
+      } else if (e.key === "d" || e.key === "D") {
+        const first = requests.find(r => r.status === "seen");
+        if (first) move(first.id, "done");
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests]);
+
+  // Estimated wait time: assume ~3 min per pending request
+  const estWaitMin = pendingCount * 3;
+
   useEffect(() => {
     document.title = pendingCount > 0 ? `(${pendingCount}) Live Orders — MenuQR` : "Live Orders — MenuQR";
     return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
@@ -304,11 +324,12 @@ export default function LiveOrders({ restaurant }: Props) {
         {[
           { label: "Today total", value: todayStats.total, color: "#6366f1" },
           { label: "Completed", value: todayStats.done, color: "#22c55e" },
-          { label: "Waiting now", value: pendingCount, color: "#E85D2F" },
+          { label: "Waiting now", value: pendingCount, color: "#E85D2F", extra: estWaitMin > 0 ? `~${estWaitMin} min wait` : undefined },
         ].map(s => (
           <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
+            {"extra" in s && s.extra && <div style={{ fontSize: 10, color: s.color, marginTop: 2, fontWeight: 600 }}>{s.extra}</div>}
           </div>
         ))}
       </div>
@@ -347,6 +368,12 @@ export default function LiveOrders({ restaurant }: Props) {
             ✅ Mark all done
           </button>
         )}
+      </div>
+
+      {/* Keyboard shortcuts hint */}
+      <div style={{ fontSize: 11, color: "var(--text-muted)", display: "flex", gap: 12 }}>
+        <span><kbd style={{ background: "var(--border)", borderRadius: 4, padding: "1px 5px", fontFamily: "monospace" }}>P</kbd> Pick up first new</span>
+        <span><kbd style={{ background: "var(--border)", borderRadius: 4, padding: "1px 5px", fontFamily: "monospace" }}>D</kbd> Mark first in-progress done</span>
       </div>
 
       {/* Kanban */}

@@ -137,6 +137,26 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
   }
 
+  // Back-to-top
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  useEffect(() => {
+    function onScroll() { setShowBackToTop(window.scrollY > 300); }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // --- CLOSED CHECK ---
+  if ((table as { status?: string }).status === "closed") {
+    return (
+      <div style={{ minHeight: "100vh", background: "#FAFAF8", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
+        <div style={{ fontSize: 72, marginBottom: 20 }}>🔒</div>
+        <h1 style={{ fontWeight: 900, fontSize: 26, color: "#111827", marginBottom: 12 }}>We&apos;re closed</h1>
+        <p style={{ color: "#6b7280", fontSize: 15, maxWidth: 280 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
+        <div style={{ marginTop: 24, background: accentColor, color: "white", borderRadius: 99, padding: "10px 24px", fontWeight: 700, fontSize: 14 }}>{restaurant.name}</div>
+      </div>
+    );
+  }
+
   // --- CONFIRMATION SCREEN ---
   if (showConfirmation) {
     return (
@@ -353,6 +373,15 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             </div>
           )}
         </div>
+      )}
+
+      {/* BACK TO TOP */}
+      {showBackToTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 80 : 80, right: 16, zIndex: 35, width: 44, height: 44, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${accentColor}66`, animation: "fadeIn 0.2s ease" }}
+          aria-label="Back to top"
+        >↑</button>
       )}
 
       {/* TOAST */}

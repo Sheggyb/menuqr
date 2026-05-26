@@ -7,6 +7,7 @@ import Link from "next/link";
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -22,6 +23,11 @@ function LoginForm() {
       setError(error.message);
       setLoading(false);
     } else {
+      if (rememberMe) {
+        try { localStorage.setItem("menuqr_remember_email", email); } catch { /* ignore */ }
+      } else {
+        try { localStorage.removeItem("menuqr_remember_email"); } catch { /* ignore */ }
+      }
       router.push(searchParams.get("redirectTo") || "/app");
     }
   }
@@ -76,6 +82,11 @@ function LoginForm() {
               ⚠️ {error}
             </div>
           )}
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#374151", cursor: "pointer" }}>
+            <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+              style={{ width: 16, height: 16, accentColor: "#E85D2F", cursor: "pointer" }} />
+            Remember me
+          </label>
           <button
             type="submit"
             disabled={loading}
