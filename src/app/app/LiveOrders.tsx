@@ -55,6 +55,19 @@ export default function LiveOrders({ restaurant }: Props) {
     setLoading(false);
   }, [restaurant.id]);
 
+  function playPing() {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = "sine"; osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc.start(); osc.stop(ctx.currentTime + 0.4);
+    } catch { /* audio not available */ }
+  }
+
   useEffect(() => {
     load();
     // Realtime subscription
@@ -64,7 +77,10 @@ export default function LiveOrders({ restaurant }: Props) {
         schema: "public",
         table: "table_requests",
         filter: `restaurant_id=eq.${restaurant.id}`,
-      }, () => load())
+      }, (payload) => {
+        if (payload.eventType === "INSERT") playPing();
+        load();
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [restaurant.id, load]);
