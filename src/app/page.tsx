@@ -64,6 +64,24 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* SOCIAL PROOF */}
+      <section style={{ maxWidth: 800, margin: "0 auto 40px", padding: "0 32px" }}>
+        <h2 style={{ textAlign: "center", fontWeight: 700, fontSize: 22, marginBottom: 20, color: "var(--text-muted)" }}>Trusted by restaurants</h2>
+        <div style={{ display: "flex", justifyContent: "center", gap: 32, flexWrap: "wrap", alignItems: "center" }}>
+          {[
+            { name: "Café Bella", emoji: "☕" },
+            { name: "Pizzeria Roma", emoji: "🍕" },
+            { name: "The Terrace Bar", emoji: "🍹" },
+          ].map(r => (
+            <div key={r.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 20px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", minWidth: 160, justifyContent: "center" }}>
+              <span style={{ fontSize: 22 }}>{r.emoji}</span>
+              <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{r.name}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>Join hundreds of restaurants already using MenuQR.</p>
+      </section>
+
       {/* FOOTER */}
       <footer style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "32px", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12, flexWrap: "wrap" }}>

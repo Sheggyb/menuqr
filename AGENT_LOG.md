@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 17 — 2026-05-26
+- SetupRestaurant: added slug state + slugify() helper; slug auto-fills from name unless user edits it manually
+- Shows "Preview: menuqr.app/slug" text below the slug field
+- TypeScript: PASS
+- Commit: 7a84c90
+
 ## Cycle 16 — 2026-05-26
 - Guest page: replaced notFound() with a friendly error page for invalid/missing tokens in menu/[token]/page.tsx
 - Shows 🔍 icon, "Table not found" heading, helpful message, and yellow warning note
