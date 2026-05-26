@@ -37,6 +37,16 @@ export default function TableManager({ restaurant }: Props) {
       });
   }, [tables, restaurant.id]);
 
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function copyLink(table: TableRow) {
+    const url = `${window.location.origin}/menu/${table.token}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(table.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }
+
   async function addTable() {
     if (!newName.trim()) return;
     const token = crypto.randomUUID();
@@ -124,6 +134,9 @@ export default function TableManager({ restaurant }: Props) {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => showQR(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600 }}>📱 QR Code</button>
+                <button onClick={() => copyLink(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: copiedId === table.id ? "#dcfce7" : "var(--surface)", cursor: "pointer", fontWeight: 600, color: copiedId === table.id ? "#166534" : "var(--text)" }}>
+                  {copiedId === table.id ? "✅ Copied!" : "🔗 Copy link"}
+                </button>
                 <button onClick={() => toggleTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer" }}>
                   {table.is_active ? "Close" : "Open"}
                 </button>

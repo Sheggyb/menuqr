@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 14 — 2026-05-26
+- Table manager: added toggleAll() function and "🔒 Close all" / "🔓 Open all" button in header
+- Button only shows when tables exist; label toggles based on whether any are active
+- TypeScript: PASS
+- Commit: ac3017a
+
 ## Cycle 13 — 2026-05-26
 - Menu builder: category header now shows item count "(N items)" next to name in MenuBuilder.tsx
 - TypeScript: PASS
