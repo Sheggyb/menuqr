@@ -48,6 +48,11 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 13 — 2026-05-26
+- Menu builder: category header now shows item count "(N items)" next to name in MenuBuilder.tsx
+- TypeScript: PASS
+- Commit: e8883b0
+
 ## Cycle 12 — 2026-05-26
 - Staff dashboard: added timeAgo() helper function in LiveOrders.tsx
 - Each request card now shows e.g. "2 min ago" next to the timestamp

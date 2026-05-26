@@ -51,6 +51,13 @@ export default function TableManager({ restaurant }: Props) {
     setTables(t => t.filter(x => x.id !== id));
   }
 
+  async function toggleAll() {
+    const anyActive = tables.some(t => t.is_active);
+    const newState = !anyActive;
+    await supabase.from("restaurant_tables").update({ is_active: newState }).eq("restaurant_id", restaurant.id);
+    setTables(tables.map(t => ({ ...t, is_active: newState })));
+  }
+
   async function toggleTable(table: TableRow) {
     await supabase.from("restaurant_tables").update({ is_active: !table.is_active }).eq("id", table.id);
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: !t.is_active } : t));
@@ -77,7 +84,14 @@ export default function TableManager({ restaurant }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h2 style={{ fontWeight: 700, fontSize: 20 }}>🪑 Table Manager</h2>
-        <Link href="/app/print-qr" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none", fontWeight: 600 }}>🖨️ Print all QR codes</Link>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {tables.length > 0 && (
+            <button onClick={toggleAll} style={{ fontSize: 13, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", cursor: "pointer", fontWeight: 600 }}>
+              {tables.some(t => t.is_active) ? "🔒 Close all" : "🔓 Open all"}
+            </button>
+          )}
+          <Link href="/app/print-qr" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none", fontWeight: 600 }}>🖨️ Print all QR codes</Link>
+        </div>
       </div>
 
       <div className="card">
