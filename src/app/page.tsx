@@ -65,8 +65,15 @@ export default function LandingPage() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{ textAlign: "center", padding: "40px 32px", color: "var(--text-muted)", fontSize: 13 }}>
-        MenuQR — Built for restaurants of all sizes. Free to start.
+      <footer style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "32px", textAlign: "center" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12, flexWrap: "wrap" }}>
+          <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Home</Link>
+          <Link href="/login" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Log in</Link>
+          <Link href="/signup" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Sign up</Link>
+          <Link href="#" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Privacy</Link>
+          <Link href="#" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Terms</Link>
+        </div>
+        <p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>© 2025 MenuQR — Built for restaurants of all sizes. Free to start.</p>
       </footer>
     </main>
   );
