@@ -9,8 +9,9 @@ import LiveOrders from "./LiveOrders";
 import SettingsPanel from "./SettingsPanel";
 import OnboardingChecklist from "./OnboardingChecklist";
 import Analytics from "./Analytics";
+import RequestHistory from "./RequestHistory";
 
-type Tab = "orders" | "menu" | "tables" | "analytics" | "settings";
+type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
 
 interface Props {
   user: { id: string; email?: string };
@@ -83,6 +84,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           ["menu", null, "🍽️", "Menu"],
           ["tables", "table", null, "Tables"],
           ["analytics", null, "📊", "Analytics"],
+          ["history", null, "📋", "History"],
           ["settings", null, "⚙️", "Settings"],
         ] as [Tab, string | null, string | null, string][]).map(([id, icon, emoji, label]) => (
           <button
@@ -178,6 +180,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {tab === "menu" && <MenuBuilder restaurant={restaurant} />}
         {tab === "tables" && <TableManager restaurant={restaurant} />}
         {tab === "analytics" && <Analytics restaurant={restaurant} />}
+        {tab === "history" && <RequestHistory restaurant={restaurant} />}
         {tab === "settings" && <SettingsPanel restaurant={restaurant} />}
       </main>
     </div>
