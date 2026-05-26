@@ -66,6 +66,11 @@ export default function LiveOrders({ restaurant }: Props) {
   }
 
   const pendingCount = requests.filter(r => r.status === "pending").length;
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const todayRequests = requests.filter(r => new Date(r.created_at) >= todayStart);
+  const todayTotal = todayRequests.length;
+  const todayDone = todayRequests.filter(r => r.status === "done").length;
+  const todayPending = todayRequests.filter(r => r.status === "pending").length;
 
   useEffect(() => {
     document.title = pendingCount > 0
@@ -96,6 +101,19 @@ export default function LiveOrders({ restaurant }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* TODAY'S STATS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+        {[
+          { label: "Total today", value: todayTotal, color: "#6366f1" },
+          { label: "Done", value: todayDone, color: "#16a34a" },
+          { label: "Pending", value: todayPending, color: "#E85D2F" },
+        ].map(s => (
+          <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <h2 style={{ fontWeight: 700, fontSize: 20 }}>
           ⚡ Live Orders {pendingCount > 0 && <span style={{ marginLeft: 8, background: "#E85D2F", color: "white", fontSize: 13, padding: "2px 8px", borderRadius: 99 }}>{pendingCount}</span>}
