@@ -71,9 +71,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             ["refill", "🔄", "Refill"],
           ] as [RequestType, string, string][]).map(([type, icon, label]) => (
             <button key={type} onClick={() => sendRequest(type)}
-              style={{ padding: "14px 8px", borderRadius: 12, border: "2px solid " + accentColor, background: "white", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <span style={{ fontSize: 24 }}>{icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: accentColor }}>{label}</span>
+              style={{ padding: "18px 8px", borderRadius: 14, border: "2px solid " + accentColor, background: "white", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, transition: "transform 0.1s", WebkitTapHighlightColor: "transparent" }}
+              onMouseDown={e => (e.currentTarget.style.transform = "scale(0.97)")}
+              onMouseUp={e => (e.currentTarget.style.transform = "scale(1)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+              onTouchStart={e => (e.currentTarget.style.transform = "scale(0.97)")}
+              onTouchEnd={e => (e.currentTarget.style.transform = "scale(1)")}>
+              <span style={{ fontSize: 28 }}>{icon}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: accentColor }}>{label}</span>
             </button>
           ))}
         </div>
