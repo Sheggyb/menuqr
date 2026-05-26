@@ -5,8 +5,9 @@ import SetupRestaurant from "./SetupRestaurant";
 import MenuBuilder from "./MenuBuilder";
 import TableManager from "./TableManager";
 import LiveOrders from "./LiveOrders";
+import SettingsPanel from "./SettingsPanel";
 
-type Tab = "orders" | "menu" | "tables";
+type Tab = "orders" | "menu" | "tables" | "settings";
 
 interface Props {
   user: { id: string; email?: string };
@@ -36,7 +37,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
 
       {/* TABS */}
       <nav style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}>
-        {([ ["orders", "⚡ Live Orders"], ["menu", "🍽️ Menu"], ["tables", "🪑 Tables"] ] as [Tab, string][]).map(([id, label]) => (
+        {([ ["orders", "⚡ Live Orders"], ["menu", "🍽️ Menu"], ["tables", "🪑 Tables"], ["settings", "⚙️ Settings"] ] as [Tab, string][]).map(([id, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -61,6 +62,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {tab === "orders" && <LiveOrders restaurant={restaurant} />}
         {tab === "menu" && <MenuBuilder restaurant={restaurant} />}
         {tab === "tables" && <TableManager restaurant={restaurant} />}
+        {tab === "settings" && <SettingsPanel restaurant={restaurant} />}
       </main>
     </div>
   );
