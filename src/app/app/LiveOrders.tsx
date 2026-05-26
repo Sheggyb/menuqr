@@ -192,28 +192,41 @@ export default function LiveOrders({ restaurant }: Props) {
           )}
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {filtered.map(req => (
-            <div key={req.id} style={{ background: STATUS_COLORS[req.status], border: "1px solid var(--border)", borderLeft: `4px solid ${REQUEST_BORDER[req.type] ?? "#e5e7eb"}`, borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>{REQUEST_LABELS[req.type] ?? req.type}</span>
-                  {req.item_name && <span style={{ fontSize: 13, color: "var(--text-muted)" }}>— {req.item_name}</span>}
-                </div>
-                <div style={{ fontSize: 13, color: "var(--text)" }}>
-                  🪑 {(req.table as { name: string } | undefined)?.name ?? "Unknown table"}
-                </div>
-                {req.note && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>📝 {req.note}</div>}
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{new Date(req.created_at).toLocaleTimeString()} · {timeAgo(req.created_at)}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          {Object.entries(
+            filtered.reduce<Record<string, typeof filtered>>((acc, req) => {
+              const tName = (req.table as { name: string } | undefined)?.name ?? "Unknown table";
+              if (!acc[tName]) acc[tName] = [];
+              acc[tName].push(req);
+              return acc;
+            }, {})
+          ).map(([tableName, reqs]) => (
+            <div key={tableName}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid var(--border)" }}>
+                🪑 {tableName} <span style={{ fontWeight: 400, marginLeft: 6 }}>({reqs.length} request{reqs.length !== 1 ? "s" : ""})</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>{STATUS_TEXT[req.status]}</span>
-                {req.status === "pending" && (
-                  <button onClick={() => updateStatus(req.id, "seen")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", cursor: "pointer", fontWeight: 600 }}>Mark seen</button>
-                )}
-                {(req.status === "pending" || req.status === "seen") && (
-                  <button onClick={() => updateStatus(req.id, "done")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", cursor: "pointer", fontWeight: 600 }}>✅ Done</button>
-                )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {reqs.map(req => (
+                  <div key={req.id} style={{ background: STATUS_COLORS[req.status], border: "1px solid var(--border)", borderLeft: `4px solid ${REQUEST_BORDER[req.type] ?? "#e5e7eb"}`, borderRadius: 10, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                    <div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 700, fontSize: 15 }}>{REQUEST_LABELS[req.type] ?? req.type}</span>
+                        {req.item_name && <span style={{ fontSize: 13, color: "var(--text-muted)" }}>— {req.item_name}</span>}
+                      </div>
+                      {req.note && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>📝 {req.note}</div>}
+                      <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{new Date(req.created_at).toLocaleTimeString()} · {timeAgo(req.created_at)}</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>{STATUS_TEXT[req.status]}</span>
+                      {req.status === "pending" && (
+                        <button onClick={() => updateStatus(req.id, "seen")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #93c5fd", background: "#eff6ff", cursor: "pointer", fontWeight: 600 }}>Mark seen</button>
+                      )}
+                      {(req.status === "pending" || req.status === "seen") && (
+                        <button onClick={() => updateStatus(req.id, "done")} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid #86efac", background: "#f0fdf4", cursor: "pointer", fontWeight: 600 }}>✅ Done</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}

@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 19 — 2026-05-26
+- Guest page: added quantity selector (+ / - buttons, default 1) in order modal in GuestMenuClient.tsx
+- Quantity included in item_name as "x3 Burger"; send button shows "(x3)" for quantities > 1
+- TypeScript: PASS
+- Commit: 053f819
+
 ## Cycle 18 — 2026-05-26
 - Landing page: added "Trusted by restaurants" social proof section with 3 fake restaurants (Café Bella, Pizzeria Roma, The Terrace Bar)
 - Each shown as a pill card with emoji and name
