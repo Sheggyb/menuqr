@@ -12,6 +12,10 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -25,8 +29,29 @@ export default function SettingsPanel({ restaurant }: Props) {
     if (err) { setError(err.message); } else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
   }
 
+  async function handleDelete() {
+    if (deleteInput !== restaurant.name) {
+      setDeleteError("Restaurant name does not match.");
+      return;
+    }
+    setDeleting(true);
+    setDeleteError("");
+    // Delete related data first
+    await supabase.from("table_requests").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("menu_items").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("menu_categories").delete().eq("restaurant_id", restaurant.id);
+    await supabase.from("restaurant_tables").delete().eq("restaurant_id", restaurant.id);
+    const { error: err } = await supabase.from("restaurants").delete().eq("id", restaurant.id);
+    if (err) {
+      setDeleteError(err.message);
+      setDeleting(false);
+    } else {
+      window.location.href = "/app";
+    }
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
       <h2 style={{ fontWeight: 700, fontSize: 20 }}>⚙️ Settings</h2>
       <div className="card" style={{ maxWidth: 520 }}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -50,6 +75,55 @@ export default function SettingsPanel({ restaurant }: Props) {
             {loading ? "Saving..." : "Save settings"}
           </button>
         </form>
+      </div>
+
+      {/* Danger Zone */}
+      <div style={{ maxWidth: 520, border: "2px solid #fecaca", borderRadius: 14, overflow: "hidden" }}>
+        <div style={{ background: "#fff1f2", padding: "14px 20px", borderBottom: "1px solid #fecaca", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 16 }}>⚠️</span>
+          <span style={{ fontWeight: 700, fontSize: 15, color: "#dc2626" }}>Danger Zone</span>
+        </div>
+        <div style={{ padding: "16px 20px" }}>
+          <p style={{ fontSize: 14, color: "#374151", marginBottom: 14 }}>
+            Permanently delete <strong>{restaurant.name}</strong> and all its data — tables, menu, requests. This action cannot be undone.
+          </p>
+          {!deleteConfirm ? (
+            <button
+              onClick={() => setDeleteConfirm(true)}
+              style={{ padding: "9px 18px", borderRadius: 8, border: "2px solid #dc2626", background: "white", color: "#dc2626", fontWeight: 700, fontSize: 14, cursor: "pointer" }}
+            >
+              Delete restaurant…
+            </button>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "#dc2626" }}>
+                Type <strong>{restaurant.name}</strong> to confirm:
+              </label>
+              <input
+                value={deleteInput}
+                onChange={e => setDeleteInput(e.target.value)}
+                placeholder={restaurant.name}
+                style={{ padding: "8px 12px", borderRadius: 8, border: "2px solid #fecaca", fontSize: 14 }}
+              />
+              {deleteError && <p style={{ color: "#dc2626", fontSize: 13 }}>{deleteError}</p>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
+                >
+                  {deleting ? "Deleting..." : "Yes, delete everything"}
+                </button>
+                <button
+                  onClick={() => { setDeleteConfirm(false); setDeleteInput(""); setDeleteError(""); }}
+                  style={{ padding: "9px 18px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: 14, cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

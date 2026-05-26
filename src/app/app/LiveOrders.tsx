@@ -20,11 +20,14 @@ const TYPE_COLOR: Record<string, { bg: string; border: string; badge: string }> 
   item_request: { bg: "#f0fdf4", border: "#bbf7d0", badge: "#22c55e" },
 };
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string): { text: string; isLate: boolean } {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  return `${Math.floor(diff / 3600)}h ago`;
+  const isLate = diff >= 300; // 5 minutes
+  let text: string;
+  if (diff < 60) text = `${diff}s ago`;
+  else if (diff < 3600) text = `${Math.floor(diff / 60)}m ago`;
+  else text = `${Math.floor(diff / 3600)}h ago`;
+  return { text, isLate };
 }
 
 function TableIcon() {
@@ -47,10 +50,11 @@ interface CardProps {
 function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
   const colors = TYPE_COLOR[req.type] ?? { bg: "#f9fafb", border: "#e5e7eb", badge: "#6b7280" };
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
+  const { text: timeText, isLate } = timeAgo(req.created_at);
   return (
     <div style={{
-      background: colors.bg,
-      border: `1px solid ${colors.border}`,
+      background: isLate ? "#fff5f5" : colors.bg,
+      border: `1px solid ${isLate ? "#fecaca" : colors.border}`,
       borderRadius: 12,
       padding: "14px 16px",
       display: "flex",
@@ -76,7 +80,9 @@ function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
             <span style={{ fontSize: 12, color: "#6b7280" }}>📝 {req.note}</span>
           )}
         </div>
-        <span style={{ fontSize: 11, color: "#9ca3af", whiteSpace: "nowrap" }}>{timeAgo(req.created_at)}</span>
+        <span style={{ fontSize: 11, color: isLate ? "#dc2626" : "#9ca3af", whiteSpace: "nowrap", fontWeight: isLate ? 700 : 400 }}>
+          {isLate ? "⏱ " : ""}{timeText}
+        </span>
       </div>
 
       {/* Table */}

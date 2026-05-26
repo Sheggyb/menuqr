@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, MenuCategory, TableRow } from "@/lib/types";
 import SetupRestaurant from "./SetupRestaurant";
@@ -27,6 +27,20 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   const [tables, setTables] = useState<TableRow[]>([]);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [clock, setClock] = useState("");
+  const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const fmt = () => {
+      const now = new Date();
+      const date = now.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" });
+      const time = now.toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" });
+      setClock(`${date} · ${time}`);
+    };
+    fmt();
+    clockRef.current = setInterval(fmt, 10000);
+    return () => { if (clockRef.current) clearInterval(clockRef.current); };
+  }, []);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -68,6 +82,8 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           <span style={{ fontWeight: 800, fontSize: 20, color: "var(--accent)" }}>MenuQR</span>
           <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/ {restaurant.name}</span>
         </div>
+        {clock && <span style={{ fontSize: 12, color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
+        <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
         <button
           onClick={async () => {
             await supabase.auth.signOut();
