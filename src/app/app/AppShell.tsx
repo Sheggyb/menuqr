@@ -1,11 +1,13 @@
 "use client";
-import { useState } from "react";
-import type { Restaurant } from "@/lib/types";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { Restaurant, MenuCategory, TableRow } from "@/lib/types";
 import SetupRestaurant from "./SetupRestaurant";
 import MenuBuilder from "./MenuBuilder";
 import TableManager from "./TableManager";
 import LiveOrders from "./LiveOrders";
 import SettingsPanel from "./SettingsPanel";
+import OnboardingChecklist from "./OnboardingChecklist";
 
 type Tab = "orders" | "menu" | "tables" | "settings";
 
@@ -15,8 +17,23 @@ interface Props {
 }
 
 export default function AppShell({ user, restaurant: initialRestaurant }: Props) {
+  const supabase = createClient();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [tab, setTab] = useState<Tab>("orders");
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [tables, setTables] = useState<TableRow[]>([]);
+  const [checklistDismissed, setChecklistDismissed] = useState(false);
+
+  useEffect(() => {
+    if (!restaurant) return;
+    Promise.all([
+      supabase.from("menu_categories").select("id").eq("restaurant_id", restaurant.id),
+      supabase.from("restaurant_tables").select("id").eq("restaurant_id", restaurant.id),
+    ]).then(([{ data: cats }, { data: tbls }]) => {
+      setCategories((cats as MenuCategory[]) ?? []);
+      setTables((tbls as TableRow[]) ?? []);
+    });
+  }, [restaurant?.id]);
 
   if (!restaurant) {
     return <SetupRestaurant userId={user.id} onCreated={setRestaurant} />;
@@ -59,6 +76,14 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
 
       {/* CONTENT */}
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+        {!checklistDismissed && (
+          <OnboardingChecklist
+            restaurant={restaurant}
+            categories={categories}
+            tables={tables}
+            onDismiss={() => setChecklistDismissed(true)}
+          />
+        )}
         {tab === "orders" && <LiveOrders restaurant={restaurant} />}
         {tab === "menu" && <MenuBuilder restaurant={restaurant} />}
         {tab === "tables" && <TableManager restaurant={restaurant} />}
@@ -67,3 +92,4 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
     </div>
   );
 }
+
