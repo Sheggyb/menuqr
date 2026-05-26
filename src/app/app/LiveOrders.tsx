@@ -55,6 +55,7 @@ function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
       display: "flex",
       flexDirection: "column",
       gap: 10,
+      animation: "slideIn 0.2s ease-out",
     }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
@@ -169,10 +170,15 @@ function Column({ title, count, color, dotColor, children }: ColumnProps) {
   );
 }
 
+const ALL_TYPES = ["waiter", "bill", "refill", "item_request"] as const;
+
 export default function LiveOrders({ restaurant }: Props) {
   const supabase = createClient();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [searchTable, setSearchTable] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -187,6 +193,7 @@ export default function LiveOrders({ restaurant }: Props) {
   }, [restaurant.id]);
 
   function playPing() {
+    if (!soundEnabled) return;
     try {
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -211,11 +218,10 @@ export default function LiveOrders({ restaurant }: Props) {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [restaurant.id, load]);
+  }, [restaurant.id, load, soundEnabled]);
 
   async function move(id: string, status: TableRequest["status"]) {
     if (status === "done") {
-      // Remove from view after done
       await supabase.from("table_requests").update({ status }).eq("id", id);
       setRequests(r => r.filter(x => x.id !== id));
     } else {
@@ -224,10 +230,25 @@ export default function LiveOrders({ restaurant }: Props) {
     }
   }
 
-  const pending = requests.filter(r => r.status === "pending");
-  const seen = requests.filter(r => r.status === "seen");
+  async function markAllDone() {
+    const ids = pending.map(r => r.id);
+    await Promise.all(ids.map(id => supabase.from("table_requests").update({ status: "done" }).eq("id", id)));
+    setRequests(r => r.filter(x => !ids.includes(x.id)));
+  }
 
-  const pendingCount = pending.length;
+  function applyFilters(list: TableRequest[]) {
+    return list.filter(r => {
+      const tableName = ((r.table as { name: string } | undefined)?.name ?? "").toLowerCase();
+      const matchTable = !searchTable || tableName.includes(searchTable.toLowerCase());
+      const matchType = filterType === "all" || r.type === filterType;
+      return matchTable && matchType;
+    });
+  }
+
+  const pending = applyFilters(requests.filter(r => r.status === "pending"));
+  const seen = applyFilters(requests.filter(r => r.status === "seen"));
+
+  const pendingCount = requests.filter(r => r.status === "pending").length;
 
   useEffect(() => {
     document.title = pendingCount > 0 ? `(${pendingCount}) Live Orders — MenuQR` : "Live Orders — MenuQR";
@@ -261,6 +282,10 @@ export default function LiveOrders({ restaurant }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <style>{`
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
         {[
@@ -275,6 +300,42 @@ export default function LiveOrders({ restaurant }: Props) {
         ))}
       </div>
 
+      {/* Search + Filter + Sound toolbar */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          type="text"
+          placeholder="🔍 Filter by table..."
+          value={searchTable}
+          onChange={e => setSearchTable(e.target.value)}
+          style={{ flex: "1 1 140px", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+        />
+        <select
+          value={filterType}
+          onChange={e => setFilterType(e.target.value)}
+          style={{ padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, cursor: "pointer" }}
+        >
+          <option value="all">All types</option>
+          {ALL_TYPES.map(t => (
+            <option key={t} value={t}>{TYPE_LABEL[t]}</option>
+          ))}
+        </select>
+        <button
+          onClick={() => setSoundEnabled(s => !s)}
+          title={soundEnabled ? "Sound on — click to mute" : "Sound off — click to enable"}
+          style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", background: soundEnabled ? "#f0fdf4" : "var(--surface)", color: soundEnabled ? "#16a34a" : "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+        >
+          {soundEnabled ? "🔔 Sound on" : "🔕 Muted"}
+        </button>
+        {pendingCount > 0 && (
+          <button
+            onClick={markAllDone}
+            style={{ padding: "7px 12px", borderRadius: 8, border: "none", background: "#22c55e", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+          >
+            ✅ Mark all done
+          </button>
+        )}
+      </div>
+
       {/* Kanban */}
       <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         {/* NEW */}
@@ -282,7 +343,7 @@ export default function LiveOrders({ restaurant }: Props) {
           {pending.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 16px", color: "#9ca3af", fontSize: 13 }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>✅</div>
-              All clear!
+              {searchTable || filterType !== "all" ? "No matching requests" : "All clear!"}
             </div>
           ) : pending.map(req => (
             <RequestCard
@@ -298,7 +359,7 @@ export default function LiveOrders({ restaurant }: Props) {
           {seen.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 16px", color: "#9ca3af", fontSize: 13 }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>👋</div>
-              Nothing picked up
+              {searchTable || filterType !== "all" ? "No matching requests" : "Nothing picked up"}
             </div>
           ) : seen.map(req => (
             <RequestCard
