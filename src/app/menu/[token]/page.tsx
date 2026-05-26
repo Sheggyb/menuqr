@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { notFound } from "next/navigation";
 import GuestMenuClient from "./GuestMenuClient";
 
@@ -8,7 +8,7 @@ interface Props {
 
 export default async function GuestMenuPage({ params }: Props) {
   const { token } = await params;
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Look up table
   const { data: table } = await supabase
