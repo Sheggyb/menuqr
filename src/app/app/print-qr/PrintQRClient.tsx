@@ -50,16 +50,17 @@ export default function PrintQRClient({ tables, restaurantName }: Props) {
       {tables.length === 0 ? (
         <p style={{ color: "#888", textAlign: "center", marginTop: 80 }}>No tables found. Add tables in the dashboard first.</p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 24 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 28 }}>
           {tables.map(table => (
-            <div key={table.id} style={{ border: "1px solid #e5e7eb", borderRadius: 12, padding: 16, textAlign: "center", background: "white", pageBreakInside: "avoid" }}>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 10 }}>{table.name}</div>
+            <div key={table.id} style={{ border: "3px solid #E85D2F", borderRadius: 16, padding: "20px 16px 16px", textAlign: "center", background: "white", pageBreakInside: "avoid", boxShadow: "0 4px 16px rgba(232,93,47,0.12)" }}>
+              <div style={{ fontWeight: 900, fontSize: 22, color: "#111827", marginBottom: 12, letterSpacing: "-0.5px" }}>{table.name}</div>
               {qrMap[table.id] ? (
-                <img src={qrMap[table.id]} alt={`QR for ${table.name}`} style={{ width: 160, height: 160, margin: "0 auto", display: "block", borderRadius: 6 }} />
+                <img src={qrMap[table.id]} alt={`QR for ${table.name}`} style={{ width: 170, height: 170, margin: "0 auto", display: "block", borderRadius: 8, border: "1px solid #f0f0ef" }} />
               ) : (
-                <div style={{ width: 160, height: 160, margin: "0 auto", background: "#f3f4f6", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 13 }}>Generating…</div>
+                <div style={{ width: 170, height: 170, margin: "0 auto", background: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 13 }}>Generating…</div>
               )}
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8 }}>{restaurantName}</div>
+              <div style={{ fontSize: 13, color: "#E85D2F", marginTop: 12, fontWeight: 700 }}>{restaurantName}</div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Scan to order 📱</div>
             </div>
           ))}
         </div>
