@@ -13,11 +13,29 @@ export default function TableManager({ restaurant }: Props) {
   const [loading, setLoading] = useState(true);
   const [qrModal, setQrModal] = useState<TableRow | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
+  const [lastRequests, setLastRequests] = useState<Record<string, string>>({});
 
   useEffect(() => {
     supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id).order("name")
       .then(({ data }) => { setTables(data ?? []); setLoading(false); });
   }, [restaurant.id]);
+
+  useEffect(() => {
+    if (tables.length === 0) return;
+    supabase.from("table_requests")
+      .select("table_id, created_at")
+      .eq("restaurant_id", restaurant.id)
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, string> = {};
+        for (const r of data) {
+          if (!map[r.table_id]) map[r.table_id] = r.created_at;
+        }
+        setLastRequests(map);
+      });
+  }, [tables, restaurant.id]);
 
   async function addTable() {
     if (!newName.trim()) return;
@@ -84,6 +102,11 @@ export default function TableManager({ restaurant }: Props) {
                 <span style={{ marginLeft: 10, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: table.is_active ? "#dcfce7" : "#fee2e2", color: table.is_active ? "#166534" : "#991b1b", fontWeight: 600 }}>
                   {table.is_active ? "Open" : "Closed"}
                 </span>
+                {lastRequests[table.id] && (
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+                    Last request: {new Date(lastRequests[table.id]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => showQR(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600 }}>📱 QR Code</button>
