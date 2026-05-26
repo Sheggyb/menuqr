@@ -177,7 +177,10 @@ export default function LiveOrders({ restaurant }: Props) {
   const supabase = createClient();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("menuqr_sound") !== "off";
+  });
   const [searchTable, setSearchTable] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
 
@@ -324,7 +327,7 @@ export default function LiveOrders({ restaurant }: Props) {
           ))}
         </select>
         <button
-          onClick={() => setSoundEnabled(s => !s)}
+          onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on — click to mute" : "Sound off — click to enable"}
           style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", background: soundEnabled ? "#f0fdf4" : "var(--surface)", color: soundEnabled ? "#16a34a" : "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
         >

@@ -13,6 +13,27 @@ export default function SettingsClient({ restaurant }: Props) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("menuqr_sound") !== "off";
+  });
+
+  function toggleSound() {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("menuqr_sound", next ? "on" : "off");
+    // Play a test beep if turning on
+    if (next) {
+      try {
+        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880; gain.gain.value = 0.15;
+        osc.start(); osc.stop(ctx.currentTime + 0.15);
+      } catch { /* ignore */ }
+    }
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -28,8 +49,8 @@ export default function SettingsClient({ restaurant }: Props) {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", padding: 24 }}>
-      <div style={{ maxWidth: 520, margin: "0 auto" }}>
-        <div style={{ marginBottom: 20 }}>
+      <div style={{ maxWidth: 520, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div>
           <Link href="/app" style={{ fontSize: 13, color: "var(--text-muted)", textDecoration: "none" }}>← Back to dashboard</Link>
         </div>
         <div className="card">
@@ -55,6 +76,36 @@ export default function SettingsClient({ restaurant }: Props) {
               {loading ? "Saving..." : "Save settings"}
             </button>
           </form>
+        </div>
+
+        {/* Notification settings */}
+        <div className="card">
+          <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>🔔 Notifications</h3>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 14 }}>Sound alerts</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Play an audio ping when a new order comes in</div>
+            </div>
+            <button
+              onClick={toggleSound}
+              style={{
+                width: 52, height: 28, borderRadius: 99,
+                background: soundEnabled ? "#E85D2F" : "#d1d5db",
+                border: "none", cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s",
+              }}
+              aria-label={soundEnabled ? "Disable sound" : "Enable sound"}
+              aria-pressed={soundEnabled}
+            >
+              <div style={{
+                width: 22, height: 22, borderRadius: "50%", background: "white",
+                position: "absolute", top: 3, left: soundEnabled ? 27 : 3,
+                transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
+            Sound setting is stored in your browser. Each device needs to enable it separately.
+          </p>
         </div>
       </div>
     </div>
