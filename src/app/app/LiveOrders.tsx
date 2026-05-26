@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
+import { SkeletonList } from "@/components/Skeleton";
 
 interface Props { restaurant: Restaurant }
 
@@ -272,11 +273,14 @@ export default function LiveOrders({ restaurant }: Props) {
   }, [requests.length, restaurant.id]);
 
   if (loading) return (
-    <div style={{ display: "flex", gap: 12 }}>
-      {[1, 2].map(i => (
-        <div key={i} style={{ flex: 1, background: "#f3f4f6", borderRadius: 14, padding: 16, minHeight: 200, animation: "pulse 1.5s ease-in-out infinite" }} />
-      ))}
-      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+        {[1,2,3].map(i => <div key={i} className="card" style={{ padding: "14px 16px", textAlign: "center" }}><div style={{ height: 32, background: "var(--border)", borderRadius: 8, marginBottom: 8 }} /><div style={{ height: 12, background: "var(--bg)", borderRadius: 6, width: "60%", margin: "0 auto" }} /></div>)}
+      </div>
+      <div style={{ display: "flex", gap: 12 }}>
+        <div style={{ flex: 1 }}><SkeletonList count={3} /></div>
+        <div style={{ flex: 1 }}><SkeletonList count={2} /></div>
+      </div>
     </div>
   );
 
