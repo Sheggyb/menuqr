@@ -106,3 +106,10 @@
 - Added <link rel="icon" href="/favicon.svg"> to src/app/layout.tsx head
 - TypeScript: PASS
 - Commit: agent: add orange QR-style favicon.svg and link in layout
+
+## Batch 2 — 2026-05-26 (Agent run 2)
+- Item 15: Live clock in AppShell header (weekday + date + time, updates every 10s, hidden on mobile)
+- Item 12: Danger Zone in SettingsPanel — typed confirmation required before deleting restaurant + all data
+- Item 14: Request cards show waiting time; cards >5 min get red highlight + ⏱ prefix
+- TypeScript: PASS
+- Commit: 58423e9

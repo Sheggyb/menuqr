@@ -126,6 +126,30 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* TESTIMONIALS */}
+      <section style={{ background: "#fff7f4", borderTop: "1px solid #fcd9cc", borderBottom: "1px solid #fcd9cc", padding: "60px 32px" }}>
+        <div style={{ maxWidth: 880, margin: "0 auto" }}>
+          <h2 style={{ textAlign: "center", fontWeight: 800, fontSize: 32, marginBottom: 8, color: "#111827", letterSpacing: "-0.5px" }}>Loved by restaurant owners</h2>
+          <p style={{ textAlign: "center", color: "#6b7280", marginBottom: 40, fontSize: 16 }}>See what our users are saying</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
+            {[
+              { quote: "We set it up in under 10 minutes. Our guests love scanning and ordering without waiting.", name: "Marco R.", role: "Café Owner, Milan" },
+              { quote: "The live orders board is fantastic. Staff know exactly what every table needs, instantly.", name: "Sofia K.", role: "Restaurant Manager, Stockholm" },
+              { quote: "No more 'excuse me!' — guests request refills and the bill right from their phone. Game changer.", name: "James T.", role: "Bar Owner, London" },
+            ].map((t, i) => (
+              <div key={i} style={{ background: "white", borderRadius: 16, padding: "24px", border: "1px solid #fcd9cc", display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontSize: 24, color: "#E85D2F" }}>❝</div>
+                <p style={{ color: "#374151", fontSize: 15, lineHeight: 1.6, margin: 0, flex: 1 }}>{t.quote}</p>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: "#111827" }}>{t.name}</div>
+                  <div style={{ fontSize: 12, color: "#9ca3af" }}>{t.role}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section style={{ background: "#E85D2F", padding: "60px 32px", textAlign: "center" }}>
         <h2 style={{ fontWeight: 900, fontSize: 36, color: "white", marginBottom: 12, letterSpacing: "-0.5px" }}>Ready to modernize your restaurant?</h2>
