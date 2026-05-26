@@ -99,8 +99,17 @@ export default function LiveOrders({ restaurant }: Props) {
 
       {filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: "var(--text-muted)" }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🟢</div>
-          <p>No {filter === "all" ? "" : filter} requests right now.</p>
+          {filter === "pending" ? (
+            <>
+              <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
+              <p style={{ fontWeight: 600, fontSize: 16, color: "#16a34a" }}>All clear! No pending requests.</p>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🟢</div>
+              <p>No {filter === "all" ? "" : filter} requests right now.</p>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
