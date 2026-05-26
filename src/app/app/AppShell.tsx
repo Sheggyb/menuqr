@@ -23,6 +23,24 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [tables, setTables] = useState<TableRow[]>([]);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!restaurant) return;
+    const fetchPending = async () => {
+      const { count } = await supabase
+        .from("table_requests")
+        .select("id", { count: "exact", head: true })
+        .eq("restaurant_id", restaurant.id)
+        .eq("status", "pending");
+      setPendingCount(count ?? 0);
+    };
+    fetchPending();
+    const channel = supabase.channel("appshell-pending")
+      .on("postgres_changes", { event: "*", schema: "public", table: "table_requests", filter: `restaurant_id=eq.${restaurant.id}` }, () => fetchPending())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurant?.id]);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -59,7 +77,12 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
       <nav style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}
         className="desktop-tabs">
-        {([ ["orders", "⚡ Live Orders"], ["menu", "🍽️ Menu"], ["tables", "🪑 Tables"], ["settings", "⚙️ Settings"] ] as [Tab, string][]).map(([id, label]) => (
+        {([
+          ["orders", null, "⚡", "Live Orders"],
+          ["menu", null, "🍽️", "Menu"],
+          ["tables", "table", null, "Tables"],
+          ["settings", null, "⚙️", "Settings"],
+        ] as [Tab, string | null, string | null, string][]).map(([id, icon, emoji, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -72,16 +95,33 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               fontWeight: tab === id ? 700 : 500,
               color: tab === id ? "var(--accent)" : "var(--text-muted)",
               fontSize: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
             }}
           >
-            {label}
+            {icon === "table" ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="6" width="18" height="3" rx="1"/>
+                <line x1="6" y1="9" x2="6" y2="18"/>
+                <line x1="18" y1="9" x2="18" y2="18"/>
+              </svg>
+            ) : emoji}
+            {id === "orders" && pendingCount > 0
+              ? <>{label} <span style={{ background: "#E85D2F", color: "white", fontSize: 11, padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span></>
+              : label}
           </button>
         ))}
       </nav>
 
       {/* MOBILE BOTTOM NAV */}
       <nav className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        {([ ["orders", "⚡", "Orders"], ["menu", "🍽️", "Menu"], ["tables", "🪑", "Tables"], ["settings", "⚙️", "Settings"] ] as [Tab, string, string][]).map(([id, icon, label]) => (
+        {([
+          ["orders", "⚡", "Orders"],
+          ["menu", "🍽️", "Menu"],
+          ["tables", "table-svg", "Tables"],
+          ["settings", "⚙️", "Settings"],
+        ] as [Tab, string, string][]).map(([id, icon, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -98,9 +138,19 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               color: tab === id ? "var(--accent)" : "var(--text-muted)",
               fontSize: 10,
               fontWeight: tab === id ? 700 : 400,
+              position: "relative",
             }}
           >
-            <span style={{ fontSize: 20 }}>{icon}</span>
+            {icon === "table-svg" ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="6" width="18" height="3" rx="1"/>
+                <line x1="6" y1="9" x2="6" y2="18"/>
+                <line x1="18" y1="9" x2="18" y2="18"/>
+              </svg>
+            ) : <span style={{ fontSize: 20 }}>{icon}</span>}
+            {id === "orders" && pendingCount > 0 && (
+              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "#E85D2F", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span>
+            )}
             {label}
           </button>
         ))}

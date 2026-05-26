@@ -202,8 +202,9 @@ export default function LiveOrders({ restaurant }: Props) {
             }, {})
           ).map(([tableName, reqs]) => (
             <div key={tableName}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid var(--border)" }}>
-                🪑 {tableName} <span style={{ fontWeight: 400, marginLeft: 6 }}>({reqs.length} request{reqs.length !== 1 ? "s" : ""})</span>
+              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 6 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="6" width="18" height="3" rx="1"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/></svg>
+                {tableName} <span style={{ fontWeight: 400, marginLeft: 6 }}>({reqs.length} request{reqs.length !== 1 ? "s" : ""})</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {reqs.map(req => (
