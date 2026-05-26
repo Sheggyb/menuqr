@@ -77,7 +77,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       </header>
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
-      <nav style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}
+      <nav aria-label="Main navigation" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}
         className="desktop-tabs">
         {([
           ["orders", null, "⚡", "Live Orders"],
@@ -119,7 +119,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       </nav>
 
       {/* MOBILE BOTTOM NAV */}
-      <nav className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <nav aria-label="Mobile navigation" className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
         {([
           ["orders", "⚡", "Orders"],
           ["menu", "🍽️", "Menu"],

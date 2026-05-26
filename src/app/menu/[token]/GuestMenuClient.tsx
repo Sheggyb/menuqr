@@ -121,7 +121,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {/* QUICK ACTIONS */}
       <div style={{ padding: "16px 16px 0" }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af", marginBottom: 8 }}>Quick actions</p>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div role="group" aria-label="Quick actions" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
           {([
             ["waiter", "🙋", "Call Waiter"],
             ["bill", "💳", "Request Bill"],
@@ -145,9 +145,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {categories.length > 0 && (
         <div style={{ paddingTop: 12 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af", marginBottom: 8, paddingLeft: 16 }}>Menu</p>
-          <div style={{ overflowX: "auto", display: "flex", gap: 0, borderBottom: "2px solid #f0f0ef", paddingLeft: 16 }}>
+          <div role="tablist" aria-label="Menu categories" style={{ overflowX: "auto", display: "flex", gap: 0, borderBottom: "2px solid #f0f0ef", paddingLeft: 16 }}>
             {categories.map(cat => (
-              <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+              <button key={cat.id} role="tab" aria-selected={activeCategory === cat.id} onClick={() => setActiveCategory(cat.id)}
                 style={{ padding: "8px 16px", border: "none", borderBottom: activeCategory === cat.id ? `2px solid ${accentColor}` : "2px solid transparent", marginBottom: "-2px", background: "none", cursor: "pointer", fontWeight: activeCategory === cat.id ? 700 : 500, color: activeCategory === cat.id ? accentColor : "#6b7280", whiteSpace: "nowrap", fontSize: 14 }}>
                 {cat.icon} {cat.name}
               </button>
@@ -157,14 +157,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       )}
 
       {/* MENU ITEMS */}
-      <div style={{ padding: "12px 16px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div role="list" aria-label="Menu items" style={{ padding: "12px 16px 0", display: "flex", flexDirection: "column", gap: 10 }}>
         {visibleItems.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 16px", color: "#9ca3af" }}>
             <div style={{ fontSize: 36, marginBottom: 8 }}>🍽️</div>
             <p style={{ fontSize: 14, fontWeight: 500 }}>No items in this category.</p>
           </div>
         ) : visibleItems.map(item => (
-          <div key={item.id}
+          <div key={item.id} role="listitem"
             style={{ background: "white", borderRadius: 14, border: "1px solid #f0f0ef", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontWeight: 700, fontSize: 15, color: "#111827" }}>{item.name}</div>
@@ -268,7 +268,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* TOAST */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "12px 24px", borderRadius: 99, fontWeight: 600, fontSize: 15, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.35)", animation: "fadeIn 0.2s ease" }}>
+        <div role="status" aria-live="polite" style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "12px 24px", borderRadius: 99, fontWeight: 600, fontSize: 15, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.35)", animation: "fadeIn 0.2s ease" }}>
           {toast}
         </div>
       )}
