@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 18 — 2026-05-26
+- Landing page: added "Trusted by restaurants" social proof section with 3 fake restaurants (Café Bella, Pizzeria Roma, The Terrace Bar)
+- Each shown as a pill card with emoji and name
+- TypeScript: PASS
+- Commit: 60f76a8
+
 ## Cycle 17 — 2026-05-26
 - SetupRestaurant: added slug state + slugify() helper; slug auto-fills from name unless user edits it manually
 - Shows "Preview: menuqr.app/slug" text below the slug field

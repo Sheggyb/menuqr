@@ -19,10 +19,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [sending, setSending] = useState(false);
   const [note, setNote] = useState("");
   const [noteFor, setNoteFor] = useState<{ type: RequestType; item?: MenuItem } | null>(null);
-
+  const [quantity, setQuantity] = useState(1);
   const [requestCount, setRequestCount] = useState(0);
 
-  async function sendRequest(type: RequestType, item?: MenuItem, extraNote?: string) {
+  async function sendRequest(type: RequestType, item?: MenuItem, extraNote?: string, qty?: number) {
     if (sending) return;
     setSending(true);
     const { error } = await supabase.from("table_requests").insert({
@@ -30,22 +30,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       table_id: table.id,
       type,
       item_id: item?.id ?? null,
-      item_name: item?.name ?? null,
+      item_name: item ? `${qty && qty > 1 ? `x${qty} ` : ""}${item.name}` : null,
       note: extraNote ?? null,
       status: "pending",
     });
     setSending(false);
     if (!error) {
-      const msgs: Record<RequestType, string> = {
-        waiter: "✅ Request sent!",
-        bill: "✅ Request sent!",
-        refill: "✅ Request sent!",
-        item_request: `✅ Request sent!`,
-      };
-      showToast(msgs[type]);
+      showToast("✅ Request sent!");
       setRequestCount(c => c + 1);
       setNoteFor(null);
       setNote("");
+      setQuantity(1);
     }
   }
 
@@ -122,7 +117,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               {item.description && <div style={{ color: "#6b7280", fontSize: 13, marginTop: 3, lineHeight: 1.4 }}>{item.description}</div>}
               {item.price && <div style={{ fontWeight: 800, color: accentColor, marginTop: 6, fontSize: 16 }}>{item.price} kr</div>}
             </div>
-            <button onClick={() => setNoteFor({ type: "item_request", item })}
+            <button onClick={() => { setNoteFor({ type: "item_request", item }); setQuantity(1); }}
               style={{ padding: "10px 18px", borderRadius: 10, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", flexShrink: 0 }}>
               + Order
             </button>
@@ -137,6 +132,16 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             <h3 style={{ fontWeight: 700, marginBottom: 8 }}>
               {noteFor.item ? `Order: ${noteFor.item.name}` : "Add a note"}
             </h3>
+            {noteFor.item && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                <span style={{ fontSize: 14, color: "#6b7280", fontWeight: 500 }}>Quantity:</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <button onClick={() => setQuantity(q => Math.max(1, q - 1))} style={{ width: 34, height: 34, borderRadius: "50%", border: "2px solid " + accentColor, background: "white", cursor: "pointer", fontSize: 18, fontWeight: 700, color: accentColor, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>−</button>
+                  <span style={{ fontSize: 18, fontWeight: 700, minWidth: 24, textAlign: "center" }}>{quantity}</span>
+                  <button onClick={() => setQuantity(q => q + 1)} style={{ width: 34, height: 34, borderRadius: "50%", border: "2px solid " + accentColor, background: accentColor, cursor: "pointer", fontSize: 18, fontWeight: 700, color: "white", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>+</button>
+                </div>
+              </div>
+            )}
             <textarea
               value={note}
               onChange={e => setNote(e.target.value)}
@@ -145,9 +150,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               style={{ width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 14, outline: "none", resize: "none" }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-              <button onClick={() => sendRequest(noteFor.type, noteFor.item, note || undefined)}
+              <button onClick={() => sendRequest(noteFor.type, noteFor.item, note || undefined, quantity)}
                 style={{ flex: 1, padding: "12px", borderRadius: 10, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 15 }}>
-                {sending ? "Sending..." : "✅ Send request"}
+                {sending ? "Sending..." : `✅ Send${quantity > 1 ? ` (x${quantity})` : ""}`}
               </button>
               <button onClick={() => setNoteFor(null)} style={{ padding: "12px 16px", borderRadius: 10, border: "1px solid #e5e7eb", background: "white", cursor: "pointer" }}>
                 Cancel
