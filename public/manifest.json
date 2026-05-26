@@ -1,0 +1,8 @@
+{
+  "name": "MenuQR",
+  "short_name": "MenuQR",
+  "theme_color": "#E85D2F",
+  "background_color": "#FAFAF8",
+  "display": "standalone",
+  "start_url": "/"
+}
