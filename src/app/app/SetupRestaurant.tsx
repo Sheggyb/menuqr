@@ -10,18 +10,34 @@ interface Props {
 
 export default function SetupRestaurant({ userId, onCreated }: Props) {
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function slugify(s: string) {
+    return s.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  }
+
+  function handleNameChange(val: string) {
+    setName(val);
+    if (!slugEdited) setSlug(slugify(val));
+  }
+
+  function handleSlugChange(val: string) {
+    setSlugEdited(true);
+    setSlug(slugify(val));
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const finalSlug = slug || slugify(name);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("restaurants")
-      .insert({ owner_id: userId, name, slug, accent_color: "#E85D2F" })
+      .insert({ owner_id: userId, name, slug: finalSlug, accent_color: "#E85D2F" })
       .select()
       .single();
     if (error) {
@@ -47,9 +63,22 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
               type="text"
               required
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={e => handleNameChange(e.target.value)}
               placeholder="e.g. Café Bella"
             />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>URL slug</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type="text"
+                value={slug}
+                onChange={e => handleSlugChange(e.target.value)}
+                placeholder="e.g. cafe-bella"
+                style={{ paddingLeft: 8 }}
+              />
+            </div>
+            {slug && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>Preview: menuqr.app/<strong>{slug}</strong></p>}
           </div>
           {error && <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>}
           <button type="submit" className="btn-primary" disabled={loading}>

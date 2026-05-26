@@ -48,6 +48,12 @@
 - TypeScript: PASS
 - Commit: agent: add benefits section to landing page
 
+## Cycle 16 — 2026-05-26
+- Guest page: replaced notFound() with a friendly error page for invalid/missing tokens in menu/[token]/page.tsx
+- Shows 🔍 icon, "Table not found" heading, helpful message, and yellow warning note
+- TypeScript: PASS
+- Commit: ba4e992
+
 ## Cycle 15 — 2026-05-26
 - Table manager: added "🔗 Copy link" button per table that copies guest menu URL to clipboard
 - Shows "✅ Copied!" feedback for 2 seconds in TableManager.tsx
