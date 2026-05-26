@@ -1,0 +1,149 @@
+"use client";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import type { Restaurant, TableRequest } from "@/lib/types";
+
+interface Props { restaurant: Restaurant }
+
+const TYPE_LABEL: Record<string, string> = {
+  waiter: "🙋 Waiter",
+  bill: "💳 Bill",
+  refill: "🔄 Refill",
+  item_request: "🍽️ Order",
+};
+
+function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
+  return (
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{sub}</div>}
+    </div>
+  );
+}
+
+interface DayBucket { date: string; label: string; total: number; done: number }
+
+export default function Analytics({ restaurant }: Props) {
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  const [requests, setRequests] = useState<TableRequest[]>([]);
+  const [range, setRange] = useState<"7d" | "30d">("7d");
+
+  useEffect(() => {
+    const days = range === "7d" ? 7 : 30;
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+    start.setHours(0, 0, 0, 0);
+    setLoading(true);
+    supabase
+      .from("table_requests")
+      .select("*")
+      .eq("restaurant_id", restaurant.id)
+      .gte("created_at", start.toISOString())
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        setRequests((data as TableRequest[]) ?? []);
+        setLoading(false);
+      });
+  }, [restaurant.id, range]);
+
+  if (loading) return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
+      {[1,2,3,4].map(i => (
+        <div key={i} style={{ background: "#f3f4f6", borderRadius: 12, height: 90, animation: "pulse 1.5s ease-in-out infinite" }} />
+      ))}
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+    </div>
+  );
+
+  // Summary stats
+  const total = requests.length;
+  const done = requests.filter(r => r.status === "done").length;
+  const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
+  const byType: Record<string, number> = {};
+  for (const r of requests) byType[r.type] = (byType[r.type] ?? 0) + 1;
+  const topType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0];
+
+  // Daily buckets
+  const days = range === "7d" ? 7 : 30;
+  const buckets: DayBucket[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    const next = new Date(d); next.setDate(next.getDate() + 1);
+    const dayReqs = requests.filter(r => {
+      const t = new Date(r.created_at).getTime();
+      return t >= d.getTime() && t < next.getTime();
+    });
+    const label = i === 0 ? "Today" : i === 1 ? "Yesterday" : d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" });
+    buckets.push({ date: d.toISOString(), label, total: dayReqs.length, done: dayReqs.filter(r => r.status === "done").length });
+  }
+
+  const maxVal = Math.max(...buckets.map(b => b.total), 1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {/* Range selector */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Analytics</h2>
+        <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+          {(["7d", "30d"] as const).map(r => (
+            <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+              {r === "7d" ? "7 days" : "30 days"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12 }}>
+        <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="#6366f1" />
+        <StatCard label="Completed" value={done} sub={`${completionRate}% rate`} color="#22c55e" />
+        <StatCard label="Completion rate" value={`${completionRate}%`} color="#3b82f6" />
+        <StatCard label="Top request" value={topType ? TYPE_LABEL[topType[0]]?.split(" ")[1] ?? topType[0] : "—"} sub={topType ? `${topType[1]} times` : undefined} color="#E85D2F" />
+      </div>
+
+      {/* Daily bar chart */}
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
+        <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
+        <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 120, overflowX: "auto" }}>
+          {buckets.map(b => (
+            <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>{b.total > 0 ? b.total : ""}</div>
+              <div style={{ width: "100%", background: "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.2 : 1 }} />
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
+          {buckets.map((b, i) => (
+            <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, textAlign: "center", fontSize: 9, color: "var(--text-muted)", overflow: "hidden" }}>
+              {range === "7d" ? b.label.split(",")[0] : (i % 5 === 0 ? new Date(b.date).getDate() : "")}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* By type breakdown */}
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
+        <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 14px", color: "var(--text)" }}>Requests by type</h3>
+        {Object.keys(TYPE_LABEL).map(type => {
+          const count = byType[type] ?? 0;
+          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+          return (
+            <div key={type} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
+                <span>{TYPE_LABEL[type]}</span>
+                <span style={{ color: "var(--text-muted)" }}>{count} ({pct}%)</span>
+              </div>
+              <div style={{ height: 6, background: "var(--border)", borderRadius: 99, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)", borderRadius: 99, transition: "width 0.4s ease" }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

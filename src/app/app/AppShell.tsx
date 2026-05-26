@@ -8,8 +8,9 @@ import TableManager from "./TableManager";
 import LiveOrders from "./LiveOrders";
 import SettingsPanel from "./SettingsPanel";
 import OnboardingChecklist from "./OnboardingChecklist";
+import Analytics from "./Analytics";
 
-type Tab = "orders" | "menu" | "tables" | "settings";
+type Tab = "orders" | "menu" | "tables" | "analytics" | "settings";
 
 interface Props {
   user: { id: string; email?: string };
@@ -81,6 +82,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           ["orders", null, "⚡", "Live Orders"],
           ["menu", null, "🍽️", "Menu"],
           ["tables", "table", null, "Tables"],
+          ["analytics", null, "📊", "Analytics"],
           ["settings", null, "⚙️", "Settings"],
         ] as [Tab, string | null, string | null, string][]).map(([id, icon, emoji, label]) => (
           <button
@@ -120,6 +122,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           ["orders", "⚡", "Orders"],
           ["menu", "🍽️", "Menu"],
           ["tables", "table-svg", "Tables"],
+          ["analytics", "📊", "Stats"],
           ["settings", "⚙️", "Settings"],
         ] as [Tab, string, string][]).map(([id, icon, label]) => (
           <button
@@ -174,6 +177,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {tab === "orders" && <LiveOrders restaurant={restaurant} />}
         {tab === "menu" && <MenuBuilder restaurant={restaurant} />}
         {tab === "tables" && <TableManager restaurant={restaurant} />}
+        {tab === "analytics" && <Analytics restaurant={restaurant} />}
         {tab === "settings" && <SettingsPanel restaurant={restaurant} />}
       </main>
     </div>
