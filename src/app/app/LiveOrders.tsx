@@ -65,10 +65,18 @@ export default function LiveOrders({ restaurant }: Props) {
     setRequests(r => r.filter(x => x.status !== "done"));
   }
 
-  const filtered = filter === "all" ? requests : requests.filter(r => r.status === filter);
   const pendingCount = requests.filter(r => r.status === "pending").length;
 
+  useEffect(() => {
+    document.title = pendingCount > 0
+      ? `(${pendingCount}) Live Orders — MenuQR`
+      : "Live Orders — MenuQR";
+    return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
+  }, [pendingCount]);
+
   if (loading) return <p style={{ color: "var(--text-muted)" }}>Loading orders...</p>;
+
+  const filtered = filter === "all" ? requests : requests.filter(r => r.status === filter);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
