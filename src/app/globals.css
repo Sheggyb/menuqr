@@ -11,6 +11,17 @@
   --radius: 12px;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f0e;
+    --surface: #1a1a18;
+    --text: #f0ede8;
+    --text-muted: #9ca3af;
+    --border: #2d2d2a;
+    --accent-light: #3a1a0e;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
