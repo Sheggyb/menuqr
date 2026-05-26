@@ -95,6 +95,11 @@ export default function LiveOrders({ restaurant }: Props) {
     setRequests(r => r.filter(x => x.status !== "done"));
   }
 
+  async function markAllDone() {
+    await supabase.from("table_requests").update({ status: "done" }).eq("restaurant_id", restaurant.id).eq("status", "pending");
+    setRequests(reqs => reqs.map(r => r.status === "pending" ? { ...r, status: "done" as const } : r));
+  }
+
   const pendingCount = requests.filter(r => r.status === "pending").length;
   const todayStart = new Date(); todayStart.setHours(0,0,0,0);
   const todayRequests = requests.filter(r => new Date(r.created_at) >= todayStart);
@@ -148,7 +153,10 @@ export default function LiveOrders({ restaurant }: Props) {
         <h2 style={{ fontWeight: 700, fontSize: 20 }}>
           ⚡ Live Orders {pendingCount > 0 && <span style={{ marginLeft: 8, background: "#E85D2F", color: "white", fontSize: 13, padding: "2px 8px", borderRadius: 99 }}>{pendingCount}</span>}
         </h2>
-        <button className="btn-secondary" onClick={clearDone} style={{ fontSize: 13 }}>🗑️ Clear done</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {pendingCount > 0 && <button className="btn-primary" onClick={markAllDone} style={{ fontSize: 13 }}>✅ Mark all done</button>}
+          <button className="btn-secondary" onClick={clearDone} style={{ fontSize: 13 }}>🗑️ Clear done</button>
+        </div>
       </div>
 
       {/* FILTER TABS */}
