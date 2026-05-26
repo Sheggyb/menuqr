@@ -10,6 +10,7 @@ import SettingsPanel from "./SettingsPanel";
 import OnboardingChecklist from "./OnboardingChecklist";
 import Analytics from "./Analytics";
 import RequestHistory from "./RequestHistory";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
 
@@ -176,12 +177,12 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
             onDismiss={() => setChecklistDismissed(true)}
           />
         )}
-        {tab === "orders" && <LiveOrders restaurant={restaurant} />}
-        {tab === "menu" && <MenuBuilder restaurant={restaurant} />}
-        {tab === "tables" && <TableManager restaurant={restaurant} />}
-        {tab === "analytics" && <Analytics restaurant={restaurant} />}
-        {tab === "history" && <RequestHistory restaurant={restaurant} />}
-        {tab === "settings" && <SettingsPanel restaurant={restaurant} />}
+        {tab === "orders" && <ErrorBoundary fallbackTitle="Failed to load orders"><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "menu" && <ErrorBoundary fallbackTitle="Failed to load menu"><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "tables" && <ErrorBoundary fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "analytics" && <ErrorBoundary fallbackTitle="Failed to load analytics"><Analytics restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "history" && <ErrorBoundary fallbackTitle="Failed to load history"><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "settings" && <ErrorBoundary fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} /></ErrorBoundary>}
       </main>
     </div>
   );
