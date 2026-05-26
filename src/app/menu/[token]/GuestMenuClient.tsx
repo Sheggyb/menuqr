@@ -20,6 +20,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [note, setNote] = useState("");
   const [noteFor, setNoteFor] = useState<{ type: RequestType; item?: MenuItem } | null>(null);
 
+  const [requestCount, setRequestCount] = useState(0);
+
   async function sendRequest(type: RequestType, item?: MenuItem, extraNote?: string) {
     if (sending) return;
     setSending(true);
@@ -41,6 +43,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         item_request: `✅ Request sent!`,
       };
       showToast(msgs[type]);
+      setRequestCount(c => c + 1);
       setNoteFor(null);
       setNote("");
     }
@@ -83,6 +86,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           ))}
         </div>
       </div>
+
+      {/* ANYTHING ELSE PROMPT */}
+      {requestCount >= 1 && (
+        <div style={{ margin: "12px 16px 0", padding: "10px 14px", background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 10, textAlign: "center", fontSize: 13, color: "#166534", fontWeight: 500 }}>
+          Need anything else? Tap a button above 👆
+        </div>
+      )}
 
       {/* CATEGORY TABS */}
       {categories.length > 0 && (
