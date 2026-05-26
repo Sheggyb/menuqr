@@ -47,9 +47,13 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           <span style={{ fontWeight: 800, fontSize: 20, color: "var(--accent)" }}>MenuQR</span>
           <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/ {restaurant.name}</span>
         </div>
-        <form action="/auth/signout" method="post">
-          <button type="submit" style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}>Sign out</button>
-        </form>
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/";
+          }}
+          style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+        >Sign out</button>
       </header>
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
