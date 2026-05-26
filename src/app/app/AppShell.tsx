@@ -52,8 +52,9 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         </form>
       </header>
 
-      {/* TABS */}
-      <nav style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}>
+      {/* TABS — sticky top on desktop, fixed bottom on mobile */}
+      <nav style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}
+        className="desktop-tabs">
         {([ ["orders", "⚡ Live Orders"], ["menu", "🍽️ Menu"], ["tables", "🪑 Tables"], ["settings", "⚙️ Settings"] ] as [Tab, string][]).map(([id, label]) => (
           <button
             key={id}
@@ -73,6 +74,38 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           </button>
         ))}
       </nav>
+
+      {/* MOBILE BOTTOM NAV */}
+      <nav className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        {([ ["orders", "⚡", "Orders"], ["menu", "🍽️", "Menu"], ["tables", "🪑", "Tables"], ["settings", "⚙️", "Settings"] ] as [Tab, string, string][]).map(([id, icon, label]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            style={{
+              flex: 1,
+              padding: "10px 4px 8px",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+              color: tab === id ? "var(--accent)" : "var(--text-muted)",
+              fontSize: 10,
+              fontWeight: tab === id ? 700 : 400,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>{icon}</span>
+            {label}
+          </button>
+        ))}
+      </nav>
+      <style>{`
+        @media (min-width: 640px) { .mobile-tabs { display: none !important; } }
+        @media (max-width: 639px) { .desktop-tabs { display: none !important; } }
+        @media (max-width: 639px) { main { padding-bottom: 72px !important; } }
+      `}</style>
 
       {/* CONTENT */}
       <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
