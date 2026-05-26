@@ -103,14 +103,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         {visibleItems.length === 0 ? (
           <p style={{ color: "#9ca3af", textAlign: "center", padding: 32 }}>No items in this category right now.</p>
         ) : visibleItems.map(item => (
-          <div key={item.id} style={{ background: "white", borderRadius: 12, border: "1px solid #e5e7eb", padding: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <div key={item.id}
+            style={{ background: "white", borderRadius: 14, border: "1px solid #e5e7eb", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "box-shadow 0.15s, transform 0.15s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = "0 1px 3px rgba(0,0,0,0.04)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 15 }}>{item.name}</div>
-              {item.description && <div style={{ color: "#6b7280", fontSize: 13, marginTop: 2 }}>{item.description}</div>}
-              {item.price && <div style={{ fontWeight: 700, color: accentColor, marginTop: 4, fontSize: 14 }}>{item.price} kr</div>}
+              <div style={{ fontWeight: 700, fontSize: 16 }}>{item.name}</div>
+              {item.description && <div style={{ color: "#6b7280", fontSize: 13, marginTop: 3, lineHeight: 1.4 }}>{item.description}</div>}
+              {item.price && <div style={{ fontWeight: 800, color: accentColor, marginTop: 6, fontSize: 16 }}>{item.price} kr</div>}
             </div>
             <button onClick={() => setNoteFor({ type: "item_request", item })}
-              style={{ padding: "8px 16px", borderRadius: 8, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap" }}>
+              style={{ padding: "10px 18px", borderRadius: 10, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", flexShrink: 0 }}>
               + Order
             </button>
           </div>
