@@ -35,10 +35,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     setSending(false);
     if (!error) {
       const msgs: Record<RequestType, string> = {
-        waiter: "👋 Waiter on the way!",
-        bill: "💳 Bill is coming!",
-        refill: "🔄 Refill requested!",
-        item_request: `✅ ${item?.name ?? "Request"} sent!`,
+        waiter: "✅ Request sent!",
+        bill: "✅ Request sent!",
+        refill: "✅ Request sent!",
+        item_request: `✅ Request sent!`,
       };
       showToast(msgs[type]);
       setNoteFor(null);
@@ -141,7 +141,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* TOAST */}
       {toast && (
-        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "#111", color: "white", padding: "12px 24px", borderRadius: 99, fontWeight: 600, fontSize: 15, zIndex: 100, whiteSpace: "nowrap" }}>
+        <div style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "12px 24px", borderRadius: 99, fontWeight: 600, fontSize: 15, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.35)" }}>
           {toast}
         </div>
       )}
