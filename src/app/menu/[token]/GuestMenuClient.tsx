@@ -185,7 +185,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   // --- MAIN MENU ---
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", paddingBottom: sessionRequests.length > 0 ? 110 : 90 }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(184,138,30,0.05) 0%, transparent 50%)", fontFamily: "Inter, system-ui, sans-serif", paddingBottom: sessionRequests.length > 0 ? 110 : 90 }}>
       <style>{`
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -194,7 +194,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* HEADER */}
       <header style={{ background: accentColor, color: "white", padding: "20px 16px 16px", textAlign: "center", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-        <h1 style={{ fontWeight: 800, fontSize: 20, margin: 0, letterSpacing: "-0.3px" }}>{restaurant.name}</h1>
+        <h1 style={{ fontWeight: 800, fontSize: 20, margin: 0, letterSpacing: "-0.3px", fontFamily: "'Playfair Display', serif" }}>{restaurant.name}</h1>
         <p style={{ margin: "3px 0 0", opacity: 0.88, fontSize: 13 }}>🍽️ {table.name}</p>
       </header>
 
