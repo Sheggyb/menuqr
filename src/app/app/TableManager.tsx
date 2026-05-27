@@ -12,7 +12,6 @@ export default function TableManager({ restaurant }: Props) {
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(true);
   const [qrModal, setQrModal] = useState<TableRow | null>(null);
-  const [closeConfirm, setCloseConfirm] = useState<TableRow | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [lastRequests, setLastRequests] = useState<Record<string, string>>({});
 
@@ -88,10 +87,8 @@ export default function TableManager({ restaurant }: Props) {
 
   async function toggleTable(table: TableRow) {
     if (table.is_active) {
-      // Opening: just show confirm modal
-      setCloseConfirm(table);
+      await clearAndCloseTable(table);
     } else {
-      // Re-opening: just set active
       await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
       setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t));
     }
@@ -107,7 +104,6 @@ export default function TableManager({ restaurant }: Props) {
     // Close the table
     await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t));
-    setCloseConfirm(null);
   }
 
   async function showQR(table: TableRow) {
@@ -222,7 +218,7 @@ export default function TableManager({ restaurant }: Props) {
                     {copiedId === table.id ? "✅ Copied!" : "🔗 Copy link"}
                   </button>
                   <button onClick={() => toggleTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer" }}>
-                    {table.is_active ? "Close & Clear" : "Open"}
+                    {table.is_active ? "Clear" : "Open"}
                   </button>
                   <button onClick={() => deleteTable(table.id)} style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
@@ -253,30 +249,6 @@ export default function TableManager({ restaurant }: Props) {
         </div>
       )}
 
-      {/* CLOSE & CLEAR CONFIRMATION MODAL */}
-      {closeConfirm && (
-        <div onClick={() => setCloseConfirm(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 16, padding: 28, maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.2)" }}>
-            <div style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>🧹</div>
-            <h3 style={{ fontWeight: 800, fontSize: 18, margin: "0 0 8px", textAlign: "center" }}>Close {closeConfirm.name}?</h3>
-            <p style={{ color: "var(--text-muted)", fontSize: 14, textAlign: "center", marginBottom: 24, lineHeight: 1.5 }}>
-              This will mark all pending requests as done and close the table for new orders. Use this when guests have paid and left.
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button
-                onClick={() => clearAndCloseTable(closeConfirm)}
-                style={{ flex: 1, padding: "12px", borderRadius: 10, background: "#dc2626", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>
-                ✅ Clear & Close
-              </button>
-              <button
-                onClick={() => setCloseConfirm(null)}
-                style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text)" }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

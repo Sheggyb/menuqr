@@ -29,6 +29,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const supabase = createClient();
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
   const [toast, setToast] = useState("");
+  const [tableActive, setTableActive] = useState(table.is_active);
   const [sending, setSending] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -147,8 +148,25 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Realtime: update tableActive if staff closes/opens this table
+  useEffect(() => {
+    const channel = supabase
+      .channel("table-status-" + table.id)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "restaurant_tables",
+        filter: `id=eq.${table.id}`,
+      }, (payload) => {
+        setTableActive((payload.new as { is_active: boolean }).is_active);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [table.id]);
+
+
   // --- CLOSED CHECK ---
-  if ((table as { status?: string }).status === "closed") {
+  if (!tableActive) {
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
         <div style={{ fontSize: 72, marginBottom: 20 }}>🔒</div>
