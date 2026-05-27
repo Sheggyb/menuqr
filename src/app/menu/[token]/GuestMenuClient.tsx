@@ -361,7 +361,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             onClick={() => setSessionPanelOpen(o => !o)}
             style={{ width: "100%", background: "var(--surface)", color: "var(--text)", border: "none", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontSize: 14, fontWeight: 700 }}
           >
-            <span>🧾 {sessionRequests.reduce((s, r) => s + r.qty, 0)} items ordered{sessionRequests.some(r => r.price > 0) ? ` · ${sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr` : ""}</span>
+            <span>🧾 <b>{sessionRequests.reduce((s, r) => s + r.qty, 0)}</b> items ordered{sessionRequests.some(r => r.price > 0) ? <span style={{ fontWeight: 800, color: accentColor }}>&nbsp;·&nbsp;{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span> : ""}</span>
             <span style={{ fontSize: 18 }}>{sessionPanelOpen ? "▼" : "▲"}</span>
           </button>
           {sessionPanelOpen && (
@@ -370,7 +370,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                   <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    {r.price > 0 && <span style={{ fontWeight: 700, color: "var(--accent, #E85D2F)" }}>{r.qty * r.price} kr</span>}
+                    {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
                     <span style={{ color: "var(--text-muted)" }}>{r.time}</span>
                   </div>
                 </div>
@@ -378,7 +378,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 2px", fontWeight: 800, fontSize: 14, borderTop: "2px solid var(--border)", marginTop: 4 }}>
                   <span>Total spent</span>
-                  <span style={{ color: "var(--accent, #E85D2F)" }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span>
+                  <span style={{ color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span>
                 </div>
               )}
             </div>
