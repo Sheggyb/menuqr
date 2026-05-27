@@ -114,7 +114,7 @@ export default function SettingsClient({ restaurant }: Props) {
               aria-pressed={soundEnabled}
             >
               <div style={{
-                width: 22, height: 22, borderRadius: "50%", background: "white",
+                width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
                 position: "absolute", top: 3, left: soundEnabled ? 27 : 3,
                 transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
               }} />
@@ -128,13 +128,13 @@ export default function SettingsClient({ restaurant }: Props) {
         {/* Danger zone */}
         <div className="card" style={{ border: "1px solid #fecaca" }}>
           <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, color: "#dc2626" }}>⚠️ Danger Zone</h3>
-          <p style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>
             Permanently delete this restaurant and all its data. This cannot be undone.
           </p>
           {!deleteConfirm ? (
             <button
               onClick={() => setDeleteConfirm(true)}
-              style={{ padding: "9px 20px", borderRadius: 8, border: "1px solid #dc2626", background: "white", color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+              style={{ padding: "9px 20px", borderRadius: 8, border: "1px solid #dc2626", background: "var(--surface)", color: "#dc2626", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
             >
               🗑️ Delete restaurant
             </button>

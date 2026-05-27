@@ -11,6 +11,7 @@ import OnboardingChecklist from "./OnboardingChecklist";
 import Analytics from "./Analytics";
 import RequestHistory from "./RequestHistory";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useTheme } from "@/lib/theme";
 
 type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
 
@@ -21,6 +22,7 @@ interface Props {
 
 export default function AppShell({ user, restaurant: initialRestaurant }: Props) {
   const supabase = createClient();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [tab, setTab] = useState<Tab>("orders");
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -84,13 +86,22 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         </div>
         {clock && <span style={{ fontSize: 12, color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
         <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
-        <button
-          onClick={async () => {
-            await supabase.auth.signOut();
-            window.location.href = "/";
-          }}
-          style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
-        >Sign out</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+            title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            style={{ fontSize: 16, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
+          >
+            {resolvedTheme === "dark" ? "☀️" : "🌙"}
+          </button>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut();
+              window.location.href = "/";
+            }}
+            style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+          >Sign out</button>
+        </div>
       </header>
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
