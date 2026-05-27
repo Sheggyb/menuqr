@@ -21,6 +21,7 @@ interface CartItem {
 interface SessionRequest {
   name: string;
   qty: number;
+  price: number;
   time: string;
 }
 
@@ -47,10 +48,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     } catch { /* ignore */ }
   }, [table.id]);
 
-  function saveSessionRequest(name: string, quantity: number) {
+  function saveSessionRequest(name: string, quantity: number, price: number) {
     const req: SessionRequest = {
       name,
       qty: quantity,
+      price,
       time: new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" }),
     };
     setSessionRequests(prev => {
@@ -94,7 +96,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       })
     ));
     setSending(false);
-    snapshot.forEach(ci => saveSessionRequest(ci.item.name, ci.quantity));
+    snapshot.forEach(ci => saveSessionRequest(ci.item.name, ci.quantity, ci.item.price ?? 0));
     setCart([]);
     setCartOpen(false);
     setShowConfirmation(true);
@@ -231,13 +233,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {categories.length > 0 && items.length > 0 && (
         <div style={{ paddingTop: 12 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 8, paddingLeft: 16 }}>Menu</p>
-          <div role="tablist" aria-label="Menu categories" style={{ overflowX: "auto", display: "flex", gap: 0, borderBottom: "2px solid #f0f0ef", paddingLeft: 16 }}>
+          <div role="tablist" aria-label="Menu categories" style={{ overflowX: "auto", display: "flex", gap: 0, borderBottom: "2px solid var(--border)", paddingLeft: 16 }}>
             {categories.map(cat => (
               <button key={cat.id} role="tab" aria-selected={activeCategory === cat.id} onClick={() => setActiveCategory(cat.id)}
-                style={{ padding: "8px 14px", border: "none", borderBottom: activeCategory === cat.id ? `2px solid ${accentColor}` : "2px solid transparent", marginBottom: "-2px", background: "none", cursor: "pointer", fontWeight: activeCategory === cat.id ? 700 : 500, color: activeCategory === cat.id ? accentColor : "#6b7280", whiteSpace: "nowrap", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                style={{ padding: "8px 14px", border: "none", borderBottom: activeCategory === cat.id ? `2px solid ${accentColor}` : "2px solid transparent", marginBottom: "-2px", background: "none", cursor: "pointer", fontWeight: activeCategory === cat.id ? 700 : 500, color: activeCategory === cat.id ? accentColor : "var(--text-muted)", whiteSpace: "nowrap", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
                 {cat.icon} {cat.name}
                 {(itemCountByCategory[cat.id] ?? 0) > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: activeCategory === cat.id ? accentColor : "#e5e7eb", color: activeCategory === cat.id ? "white" : "#6b7280", borderRadius: 99, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, background: activeCategory === cat.id ? accentColor : "var(--border)", color: activeCategory === cat.id ? "white" : "var(--text-muted)", borderRadius: 99, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>
                     {itemCountByCategory[cat.id]}
                   </span>
                 )}
@@ -359,17 +361,26 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             onClick={() => setSessionPanelOpen(o => !o)}
             style={{ width: "100%", background: "var(--surface)", color: "var(--text)", border: "none", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontSize: 14, fontWeight: 700 }}
           >
-            <span>🧾 Your requests ({sessionRequests.reduce((s, r) => s + r.qty, 0)} items)</span>
+            <span>🧾 {sessionRequests.reduce((s, r) => s + r.qty, 0)} items ordered{sessionRequests.some(r => r.price > 0) ? ` · ${sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr` : ""}</span>
             <span style={{ fontSize: 18 }}>{sessionPanelOpen ? "▼" : "▲"}</span>
           </button>
           {sessionPanelOpen && (
             <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", padding: "12px 16px", maxHeight: 200, overflowY: "auto" }}>
               {sessionRequests.map((r, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #f3f4f6", fontSize: 13 }}>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                   <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
-                  <span style={{ color: "var(--text-muted)" }}>{r.time}</span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    {r.price > 0 && <span style={{ fontWeight: 700, color: "var(--accent, #E85D2F)" }}>{r.qty * r.price} kr</span>}
+                    <span style={{ color: "var(--text-muted)" }}>{r.time}</span>
+                  </div>
                 </div>
               ))}
+              {sessionRequests.some(r => r.price > 0) && (
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 2px", fontWeight: 800, fontSize: 14, borderTop: "2px solid var(--border)", marginTop: 4 }}>
+                  <span>Total spent</span>
+                  <span style={{ color: "var(--accent, #E85D2F)" }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -386,7 +397,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* TOAST */}
       {toast && (
-        <div role="status" aria-live="polite" style={{ position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "12px 24px", borderRadius: 99, fontWeight: 600, fontSize: 15, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.35)", animation: "fadeIn 0.2s ease" }}>
+        <div role="status" aria-live="polite" style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "10px 22px", borderRadius: 99, fontWeight: 600, fontSize: 14, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.4)", animation: "fadeIn 0.2s ease" }}>
           {toast}
         </div>
       )}
