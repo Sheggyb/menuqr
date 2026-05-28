@@ -64,7 +64,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   }
 
   async function sendRequest(type: RequestType, item?: MenuItem, note?: string, quantity?: number) {
-    if (sending) return;
+    if (sending || !tableActive) { if (!tableActive) showToast("🚫 Table is closed"); return; }
     setSending(true);
     const { error } = await supabase.from("table_requests").insert({
       restaurant_id: restaurant.id,
@@ -82,7 +82,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   }
 
   async function submitCart() {
-    if (sending || cart.length === 0) return;
+    if (sending || cart.length === 0 || !tableActive) { if (!tableActive) showToast("🚫 Table is closed"); return; }
     setSending(true);
     const snapshot = [...cart];
     await Promise.all(snapshot.map(ci =>
