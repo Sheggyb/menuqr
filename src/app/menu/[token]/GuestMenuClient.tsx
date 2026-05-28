@@ -161,7 +161,16 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         setTableActive((payload.new as { is_active: boolean }).is_active);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Fallback poll every 5s in case realtime is not enabled for this table
+    const poll = setInterval(async () => {
+      const { data } = await supabase
+        .from("restaurant_tables")
+        .select("is_active")
+        .eq("id", table.id)
+        .single();
+      if (data) setTableActive(data.is_active);
+    }, 5000);
+    return () => { supabase.removeChannel(channel); clearInterval(poll); };
   }, [table.id]);
 
 
