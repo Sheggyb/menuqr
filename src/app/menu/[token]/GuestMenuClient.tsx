@@ -509,39 +509,77 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* STICKY SESSION SUMMARY */}
       {sessionRequests.length > 0 && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30 }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30, boxShadow: "0 -4px 24px rgba(0,0,0,0.3)" }}>
+          {/* Toggle bar */}
           <button
             onClick={() => setSessionPanelOpen(o => !o)}
-            style={{ width: "100%", background: "var(--surface)", color: "var(--text)", border: "none", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", fontSize: 14, fontWeight: 700 }}
+            style={{ width: "100%", background: "var(--surface)", color: "var(--text)", border: "none", borderTop: "1px solid var(--border)", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
           >
-            <span>🧾 <b>{sessionRequests.reduce((s, r) => s + r.qty, 0)}</b> items ordered{sessionRequests.some(r => r.price > 0) ? <span style={{ fontWeight: 800, color: accentColor }}>&nbsp;·&nbsp;{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span> : ""}</span>
-            <span style={{ fontSize: 18 }}>{sessionPanelOpen ? "▼" : "▲"}</span>
-          </button>
-          {sessionPanelOpen && (
-            <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", padding: "12px 16px", maxHeight: 200, overflowY: "auto" }}>
-              {sessionRequests.map((r, i) => {
-                const statusPill = r.status === "done"
-                  ? { label: "✅ Delivered", bg: "#22c55e22", color: "#22c55e" }
-                  : r.status === "seen"
-                  ? { label: "👀 Preparing", bg: "#f59e0b22", color: "#f59e0b" }
-                  : { label: "🕐 Pending", bg: "var(--surface2)", color: "var(--text-muted)" };
-                return (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
-                    <div>
-                      <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
-                      <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
-                    </div>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
-                      <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statusPill.bg, color: statusPill.color }}>{statusPill.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
+            <span style={{ fontWeight: 700, fontSize: 14 }}>
+              🧾 My Bill
               {sessionRequests.some(r => r.price > 0) && (
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 2px", fontWeight: 800, fontSize: 14, borderTop: "2px solid var(--border)", marginTop: 4 }}>
-                  <span>Total spent</span>
-                  <span style={{ color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span>
+                <span style={{ marginLeft: 10, color: accentColor, fontWeight: 800 }}>
+                  {sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr
+                </span>
+              )}
+            </span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+              {sessionRequests.filter(r => r.status !== "done").length > 0 && (
+                <span style={{ background: accentColor, color: "#fff", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
+                  {sessionRequests.filter(r => r.status !== "done").length} on the way
+                </span>
+              )}
+              {sessionPanelOpen ? "▼" : "▲"}
+            </span>
+          </button>
+
+          {sessionPanelOpen && (
+            <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", maxHeight: 320, overflowY: "auto" }}>
+              {/* On the way */}
+              {sessionRequests.filter(r => r.status !== "done").length > 0 && (
+                <div style={{ padding: "10px 16px 0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>On the way</div>
+                  {sessionRequests.filter(r => r.status !== "done").map((r, i) => {
+                    const pill = r.status === "seen"
+                      ? { label: "👀 Preparing", bg: "#f59e0b22", color: "#f59e0b" }
+                      : { label: "🕐 Pending", bg: "var(--surface2)", color: "var(--text-muted)" };
+                    return (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                        <div>
+                          <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
+                          <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: pill.bg, color: pill.color }}>{pill.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Delivered */}
+              {sessionRequests.filter(r => r.status === "done").length > 0 && (
+                <div style={{ padding: "10px 16px 0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Delivered</div>
+                  {sessionRequests.filter(r => r.status === "done").map((r, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13, opacity: 0.7 }}>
+                      <div>
+                        <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
+                      </div>
+                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Total */}
+              {sessionRequests.some(r => r.price > 0) && (
+                <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, fontSize: 14 }}>My Total</span>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} kr</span>
                 </div>
               )}
             </div>
