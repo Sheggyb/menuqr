@@ -86,6 +86,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       if (data.session_id) {
         sessionStorage.setItem(`menuqr_sid_${table.id}`, data.session_id);
         setSessionId(data.session_id);
+        // If table already had active guests, new guest is auto-approved instantly
         setSessionStatus("pending");
       } else if (data.error === "table_closed") {
         setSessionStatus("idle");
