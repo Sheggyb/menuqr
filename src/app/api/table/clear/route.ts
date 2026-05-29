@@ -16,5 +16,13 @@ export async function POST(req: Request) {
     .in("status", ["pending", "seen"]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Also close all sessions so new guests must request access again (table stays open)
+  await supabase
+    .from("table_sessions")
+    .update({ status: "closed" })
+    .eq("table_id", table_id)
+    .in("status", ["pending", "active"]);
+
   return NextResponse.json({ ok: true });
 }
