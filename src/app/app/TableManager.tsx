@@ -106,9 +106,8 @@ export default function TableManager({ restaurant }: Props) {
       .update({ status: "done" })
       .eq("table_id", table.id)
       .in("status", ["pending", "seen"]);
-    // Close the table
-    await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
-    setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t));
+    // Refresh requests only, table stays open
+    setTables(tables.map(t => t));
   }
 
   async function showQR(table: TableRow) {
