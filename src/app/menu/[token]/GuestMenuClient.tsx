@@ -161,16 +161,20 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         setTableActive((payload.new as { is_active: boolean }).is_active);
       })
       .subscribe();
-    // Fallback poll every 5s in case realtime is not enabled for this table
-    const poll = setInterval(async () => {
+    // Poll every 3s — mobile browsers throttle realtime websockets
+    const checkActive = async () => {
       const { data } = await supabase
         .from("restaurant_tables")
         .select("is_active")
         .eq("id", table.id)
         .single();
       if (data) setTableActive(data.is_active);
-    }, 5000);
-    return () => { supabase.removeChannel(channel); clearInterval(poll); };
+    };
+    const poll = setInterval(checkActive, 3000);
+    // Also check immediately when user comes back to tab/app (mobile)
+    const onVisible = () => { if (document.visibilityState === "visible") checkActive(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { supabase.removeChannel(channel); clearInterval(poll); document.removeEventListener("visibilitychange", onVisible); };
   }, [table.id]);
 
 
