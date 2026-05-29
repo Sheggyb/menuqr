@@ -38,6 +38,8 @@ export default function TableManager({ restaurant }: Props) {
   }, [tables, restaurant.id]);
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState<string | null>(null);
+  const [confirmClose, setConfirmClose] = useState<string | null>(null);
   const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
   const [pendingSessions, setPendingSessions] = useState<Array<{ id: string; session_id: string; table: { name: string }; created_at: string }>>([]);
 
@@ -283,8 +285,24 @@ export default function TableManager({ restaurant }: Props) {
                   </button>
                   {table.is_active ? (
                     <>
-                      <button onClick={() => clearAndCloseTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#f59e0b", background: "none", cursor: "pointer", fontWeight: 600 }}>🧹 Clear</button>
-                      <button onClick={() => closeTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text)" }}>🔒 Close</button>
+                      {confirmClear === table.id ? (
+                        <>
+                          <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Clear all orders?</span>
+                          <button onClick={async () => { await clearAndCloseTable(table); setConfirmClear(null); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#fff", background: "#f59e0b", cursor: "pointer", fontWeight: 700 }}>Yes, clear</button>
+                          <button onClick={() => setConfirmClear(null)} style={{ fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>Cancel</button>
+                        </>
+                      ) : confirmClose === table.id ? (
+                        <>
+                          <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Close table?</span>
+                          <button onClick={async () => { await closeTable(table); setConfirmClose(null); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #dc2626", color: "#fff", background: "#dc2626", cursor: "pointer", fontWeight: 700 }}>Yes, close</button>
+                          <button onClick={() => setConfirmClose(null)} style={{ fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>Cancel</button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => setConfirmClear(table.id)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#f59e0b", background: "none", cursor: "pointer", fontWeight: 600 }}>🧹 Clear</button>
+                          <button onClick={() => setConfirmClose(table.id)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text)" }}>🔒 Close</button>
+                        </>
+                      )}
                     </>
                   ) : (
                     <button onClick={() => openTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #22c55e", color: "#22c55e", background: "none", cursor: "pointer", fontWeight: 600 }}>🔓 Open</button>

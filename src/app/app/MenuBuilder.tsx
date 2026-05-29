@@ -165,7 +165,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                   {item.description && <p style={{ color: "var(--text-muted)", fontSize: 12, margin: "2px 0 0" }}>{item.description}</p>}
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => toggleItem(item)} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: item.is_available ? "#dcfce7" : "#fee2e2", cursor: "pointer", fontWeight: 600 }}>
+                  <button onClick={() => toggleItem(item)} style={{ fontSize: 12, padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: item.is_available ? "var(--card-order-bg)" : "var(--card-bill-bg)", color: item.is_available ? "#22c55e" : "#f43f5e", cursor: "pointer", fontWeight: 600 }}>
                     {item.is_available ? "✅ Available" : "❌ Hidden"}
                   </button>
                   <button
