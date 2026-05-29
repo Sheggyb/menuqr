@@ -163,12 +163,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       .subscribe();
     // Poll every 3s — mobile browsers throttle realtime websockets
     const checkActive = async () => {
-      const { data } = await supabase
-        .from("restaurant_tables")
-        .select("is_active")
-        .eq("id", table.id)
-        .single();
-      if (data) setTableActive(data.is_active);
+      try {
+        const res = await fetch(`/api/table-status/${table.token}`);
+        const data = await res.json();
+        setTableActive(data.is_active);
+      } catch {}
     };
     const poll = setInterval(checkActive, 3000);
     // Also check immediately when user comes back to tab/app (mobile)
