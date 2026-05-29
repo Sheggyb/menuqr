@@ -86,9 +86,17 @@ export default function TableManager({ restaurant }: Props) {
   }
 
   async function toggleTable(table: TableRow) {
-    const newActive = !table.is_active;
-    await supabase.from("restaurant_tables").update({ is_active: newActive }).eq("id", table.id);
-    setTables(tables.map(t => t.id === table.id ? { ...t, is_active: newActive } : t));
+    if (table.is_active) await closeTable(table); else await openTable(table);
+  }
+
+  async function openTable(table: TableRow) {
+    await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
+    setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t));
+  }
+
+  async function closeTable(table: TableRow) {
+    await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
+    setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t));
   }
 
   async function clearAndCloseTable(table: TableRow) {
@@ -216,17 +224,11 @@ export default function TableManager({ restaurant }: Props) {
                   </button>
                   {table.is_active ? (
                     <>
-                      <button onClick={() => clearAndCloseTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#f59e0b", background: "none", cursor: "pointer", fontWeight: 600 }}>
-                        🧹 Clear
-                      </button>
-                      <button onClick={() => { supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id); setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t)); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text)" }}>
-                        🔒 Close
-                      </button>
+                      <button onClick={() => clearAndCloseTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#f59e0b", background: "none", cursor: "pointer", fontWeight: 600 }}>🧹 Clear</button>
+                      <button onClick={() => closeTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text)" }}>🔒 Close</button>
                     </>
                   ) : (
-                    <button onClick={() => { supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id); setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t)); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #22c55e", color: "#22c55e", background: "none", cursor: "pointer", fontWeight: 600 }}>
-                      🔓 Open
-                    </button>
+                    <button onClick={() => openTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #22c55e", color: "#22c55e", background: "none", cursor: "pointer", fontWeight: 600 }}>🔓 Open</button>
                   )}
                   <button onClick={() => deleteTable(table.id)} style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
                 </div>
