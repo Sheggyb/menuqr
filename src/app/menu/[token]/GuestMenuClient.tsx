@@ -30,6 +30,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
   const [toast, setToast] = useState("");
   const [tableActive, setTableActive] = useState(table.is_active);
+  const [sessionId, setSessionId] = useState<string | null>(() => {
+    try { return sessionStorage.getItem(`menuqr_sid_${table.id}`); } catch { return null; }
+  });
+  const [sessionStatus, setSessionStatus] = useState<"idle" | "pending" | "active" | "declined">(
+    () => {
+      try {
+        const stored = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+        return stored ? "pending" : "idle"; // will be confirmed by poll
+      } catch { return "idle"; }
+    }
+  );
   const [sending, setSending] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -63,37 +74,81 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     });
   }
 
+  async function requestSession() {
+    setSessionStatus("pending");
+    try {
+      const res = await fetch("/api/session/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table_token: table.token }),
+      });
+      const data = await res.json();
+      if (data.session_id) {
+        sessionStorage.setItem(`menuqr_sid_${table.id}`, data.session_id);
+        setSessionId(data.session_id);
+        setSessionStatus("pending");
+      } else if (data.error === "table_closed") {
+        setSessionStatus("idle");
+        showToast("🚫 Table is closed");
+      }
+    } catch {
+      setSessionStatus("idle");
+    }
+  }
+
   async function sendRequest(type: RequestType, item?: MenuItem, note?: string, quantity?: number) {
-    if (sending || !tableActive) { if (!tableActive) showToast("🚫 Table is closed"); return; }
+    const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+    if (sending || !tableActive || !sid || sessionStatus !== "active") {
+      if (!tableActive) showToast("🚫 Table is closed");
+      else if (!sid || sessionStatus !== "active") showToast("🚫 Session not approved");
+      return;
+    }
     setSending(true);
-    const { error } = await supabase.from("table_requests").insert({
-      restaurant_id: restaurant.id,
-      table_id: table.id,
-      type,
-      item_id: item?.id ?? null,
-      item_name: item ? `${quantity && quantity > 1 ? `x${quantity} ` : ""}${item.name}` : null,
-      note: note ?? null,
-      status: "pending",
+    const res = await fetch("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sid,
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        type,
+        item_id: item?.id ?? null,
+        item_name: item ? `${quantity && quantity > 1 ? `x${quantity} ` : ""}${item.name}` : null,
+        note: note ?? null,
+      }),
     });
+    const data = await res.json();
     setSending(false);
-    if (!error) {
+    if (data.ok) {
       showToast("✅ Request sent!");
+    } else if (data.error === "session_invalid") {
+      setSessionStatus("declined");
+      showToast("🚫 Session expired, please request again");
     }
   }
 
   async function submitCart() {
-    if (sending || cart.length === 0 || !tableActive) { if (!tableActive) showToast("🚫 Table is closed"); return; }
+    const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+    if (sending || cart.length === 0 || !tableActive || !sid || sessionStatus !== "active") {
+      if (!tableActive) showToast("🚫 Table is closed");
+      else if (!sid || sessionStatus !== "active") showToast("🚫 Session not approved");
+      return;
+    }
     setSending(true);
     const snapshot = [...cart];
     await Promise.all(snapshot.map(ci =>
-      supabase.from("table_requests").insert({
-        restaurant_id: restaurant.id,
-        table_id: table.id,
-        type: "item_request",
-        item_id: ci.item.id,
-        item_name: `x${ci.quantity} ${ci.item.name}`,
-        note: ci.note || null,
-        status: "pending",
+      fetch("/api/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sid,
+          restaurant_id: restaurant.id,
+          table_id: table.id,
+          type: "item_request",
+          item_id: ci.item.id,
+          item_name: `x${ci.quantity} ${ci.item.name}`,
+          note: ci.note || null,
+        }),
       })
     ));
     setSending(false);
@@ -148,34 +203,76 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Realtime: update tableActive if staff closes/opens this table
+  // Poll table status + session status every 3s
   useEffect(() => {
-    const channel = supabase
-      .channel("table-status-" + table.id)
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "restaurant_tables",
-        filter: `id=eq.${table.id}`,
-      }, (payload) => {
-        setTableActive((payload.new as { is_active: boolean }).is_active);
-      })
-      .subscribe();
-    // Poll every 3s — mobile browsers throttle realtime websockets
-    const checkActive = async () => {
+    const check = async () => {
       try {
-        const res = await fetch(`/api/table-status/${table.token}`);
-        const data = await res.json();
-        setTableActive(data.is_active);
+        // Check table active
+        const r1 = await fetch(`/api/table-status/${table.token}`);
+        const d1 = await r1.json();
+        setTableActive(d1.is_active);
+
+        // Check session status if we have a session
+        const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+        if (sid) {
+          const r2 = await fetch(`/api/session/check?session_id=${sid}`);
+          const d2 = await r2.json();
+          if (d2.status === "active") setSessionStatus("active");
+          else if (d2.status === "closed") {
+            setSessionStatus("declined");
+            sessionStorage.removeItem(`menuqr_sid_${table.id}`);
+            setSessionId(null);
+          }
+        }
       } catch {}
     };
-    const poll = setInterval(checkActive, 3000);
-    // Also check immediately when user comes back to tab/app (mobile)
-    const onVisible = () => { if (document.visibilityState === "visible") checkActive(); };
+    check(); // immediate
+    const poll = setInterval(check, 3000);
+    const onVisible = () => { if (document.visibilityState === "visible") check(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { supabase.removeChannel(channel); clearInterval(poll); document.removeEventListener("visibilitychange", onVisible); };
-  }, [table.id]);
+    return () => { clearInterval(poll); document.removeEventListener("visibilitychange", onVisible); };
+  }, [table.id, table.token]);
 
+
+  // --- SESSION GATE ---
+  // If table is active but no approved session yet, show waiting/request screen
+  if (tableActive && sessionStatus !== "active") {
+    if (sessionStatus === "idle" || sessionStatus === "declined") {
+      return (
+        <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: `radial-gradient(ellipse at 50% 0%, ${accentColor}22 0%, transparent 60%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
+          <div style={{ fontSize: 72, marginBottom: 20 }}>🍽️</div>
+          <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", marginBottom: 8, fontFamily: "Playfair Display, serif" }}>{restaurant.name}</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 280, marginBottom: 32, lineHeight: 1.6 }}>
+            {sessionStatus === "declined" ? "Your session was declined. Tap below to request again." : "Welcome! Tap below to request access to the menu."}
+          </p>
+          <button
+            onClick={requestSession}
+            style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 14, padding: "16px 40px", fontSize: 17, fontWeight: 700, cursor: "pointer", boxShadow: `0 4px 20px ${accentColor}55` }}
+          >
+            {sessionStatus === "declined" ? "🔄 Request Again" : "📲 Request Menu Access"}
+          </button>
+        </div>
+      );
+    }
+
+    if (sessionStatus === "pending") {
+      return (
+        <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: `radial-gradient(ellipse at 50% 0%, ${accentColor}22 0%, transparent 60%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
+          <div style={{ fontSize: 72, marginBottom: 20 }}>⏳</div>
+          <h1 style={{ fontWeight: 900, fontSize: 24, color: "var(--text)", marginBottom: 8, fontFamily: "Playfair Display, serif" }}>Waiting for staff...</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 280, lineHeight: 1.6, marginBottom: 32 }}>
+            A staff member will approve your access in a moment. Please wait.
+          </p>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+            {[0,1,2].map(i => (
+              <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: accentColor, animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+            ))}
+          </div>
+          <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-12px)} }`}</style>
+        </div>
+      );
+    }
+  }
 
   // --- CLOSED CHECK ---
   if (!tableActive) {

@@ -49,6 +49,15 @@ export interface TableRequest {
   table?: TableRow;
 }
 
+export interface TableSession {
+  id: string;
+  table_id: string;
+  restaurant_id: string;
+  session_id: string;
+  status: "pending" | "active" | "closed";
+  created_at: string;
+}
+
 export interface Profile {
   id: string;
   email: string;

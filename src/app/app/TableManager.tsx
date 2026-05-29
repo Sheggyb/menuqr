@@ -39,6 +39,7 @@ export default function TableManager({ restaurant }: Props) {
 
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
+  const [pendingSessions, setPendingSessions] = useState<Array<{ id: string; session_id: string; table: { name: string }; created_at: string }>>([]);
 
   useEffect(() => {
     if (tables.length === 0) return;
@@ -55,6 +56,38 @@ export default function TableManager({ restaurant }: Props) {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [tables.length, restaurant.id]);
+
+  // Poll for pending guest sessions every 4s
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const res = await fetch(`/api/session/pending?restaurant_id=${restaurant.id}`);
+        const data = await res.json();
+        setPendingSessions(data.sessions ?? []);
+      } catch {}
+    };
+    fetchSessions();
+    const interval = setInterval(fetchSessions, 4000);
+    return () => clearInterval(interval);
+  }, [restaurant.id]);
+
+  async function approveSession(session_id: string) {
+    await fetch("/api/session/check", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id, action: "approve" }),
+    });
+    setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+  }
+
+  async function declineSession(session_id: string) {
+    await fetch("/api/session/check", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id, action: "decline" }),
+    });
+    setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+  }
 
   function copyLink(table: TableRow) {
     const url = `${window.location.origin}/menu/${table.token}`;
@@ -130,6 +163,27 @@ export default function TableManager({ restaurant }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
+
+      {/* Pending guest approvals */}
+      {pendingSessions.length > 0 && (
+        <div style={{ background: "var(--surface)", border: "1px solid #f59e0b55", borderRadius: 14, padding: "14px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: "#f59e0b", display: "flex", alignItems: "center", gap: 8 }}>
+            🔔 Guest Access Requests ({pendingSessions.length})
+          </div>
+          {pendingSessions.map(s => (
+            <div key={s.session_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--surface2)", borderRadius: 10, padding: "10px 14px" }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>🪑 {s.table?.name ?? "Unknown table"}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Wants to access the menu</div>
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => approveSession(s.session_id)} style={{ background: "#22c55e", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✅ Approve</button>
+                <button onClick={() => declineSession(s.session_id)} style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}>✕</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <h2 style={{ fontWeight: 700, fontSize: 20 }}>🍽️ Table Manager</h2>
