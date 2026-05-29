@@ -129,6 +129,12 @@ export default function TableManager({ restaurant }: Props) {
 
   async function closeTable(table: TableRow) {
     await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
+    // Close all active/pending sessions for this table so guests must re-request
+    await fetch("/api/session/close-table", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table_id: table.id }),
+    });
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t));
   }
 
@@ -174,7 +180,9 @@ export default function TableManager({ restaurant }: Props) {
             <div key={s.session_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "var(--surface2)", borderRadius: 10, padding: "10px 14px" }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>🪑 {s.table?.name ?? "Unknown table"}</div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Wants to access the menu</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
+                  Wants to access the menu · {new Date(s.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </div>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => approveSession(s.session_id)} style={{ background: "#22c55e", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✅ Approve</button>

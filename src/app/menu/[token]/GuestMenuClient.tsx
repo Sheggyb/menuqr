@@ -218,8 +218,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           const r2 = await fetch(`/api/session/check?session_id=${sid}`);
           const d2 = await r2.json();
           if (d2.status === "active") setSessionStatus("active");
-          else if (d2.status === "closed") {
-            setSessionStatus("declined");
+          else if (d2.status === "closed" || d2.status === "not_found") {
+            // Session was invalidated (table closed/reopened) — must request again
+            setSessionStatus("idle");
             sessionStorage.removeItem(`menuqr_sid_${table.id}`);
             setSessionId(null);
           }

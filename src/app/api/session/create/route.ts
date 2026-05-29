@@ -19,17 +19,7 @@ export async function POST(req: Request) {
   if (!table) return NextResponse.json({ error: "table not found" }, { status: 404 });
   if (!table.is_active) return NextResponse.json({ error: "table_closed" }, { status: 403 });
 
-  // Check if there's already an active session for this table
-  const { data: existing } = await supabase
-    .from("table_sessions")
-    .select("session_id, status")
-    .eq("table_id", table.id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (existing) return NextResponse.json({ error: "table_occupied" }, { status: 409 });
-
-  // Create pending session
+  // Create pending session — multiple guests can request, staff picks who to approve
   const session_id = randomUUID();
   const { error } = await supabase.from("table_sessions").insert({
     table_id: table.id,
