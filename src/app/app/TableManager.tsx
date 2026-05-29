@@ -139,13 +139,11 @@ export default function TableManager({ restaurant }: Props) {
   }
 
   async function clearAndCloseTable(table: TableRow) {
-    // Mark all pending/seen requests as done (archive them)
-    await supabase
-      .from("table_requests")
-      .update({ status: "done" })
-      .eq("table_id", table.id)
-      .in("status", ["pending", "seen"]);
-    // Clear the pending badge count for this table in UI
+    await fetch("/api/table/clear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ table_id: table.id, restaurant_id: restaurant.id }),
+    });
     setPendingByTable(prev => ({ ...prev, [table.id]: 0 }));
   }
 
