@@ -97,6 +97,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   async function requestSession() {
     setSessionStatus("pending");
+    // Clear previous order history — fresh session for new guest
+    sessionStorage.removeItem(`menuqr_session_${table.id}`);
+    setSessionRequests([]);
     try {
       const res = await fetch("/api/session/create", {
         method: "POST",
