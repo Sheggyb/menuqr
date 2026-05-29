@@ -105,45 +105,49 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       </header>
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
-      <nav aria-label="Main navigation" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 24px", display: "flex", gap: 0 }}
-        className="desktop-tabs">
+      <nav aria-label="Main navigation" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", gap: 2 }} className="desktop-tabs">
         {([
-          ["orders", null, "⚡", "Live Orders"],
-          ["menu", null, "🍽️", "Menu"],
-          ["tables", "table", null, "Tables"],
-          ["analytics", null, "📊", "Analytics"],
-          ["history", null, "📋", "History"],
-          ["settings", null, "⚙️", "Settings"],
-        ] as [Tab, string | null, string | null, string][]).map(([id, icon, emoji, label]) => (
-          <button
-            key={id}
-            onClick={() => setTab(id)}
-            style={{
-              padding: "12px 20px",
-              border: "none",
-              borderBottom: tab === id ? "2px solid var(--accent)" : "2px solid transparent",
-              background: "none",
-              cursor: "pointer",
-              fontWeight: tab === id ? 700 : 500,
-              color: tab === id ? "var(--accent)" : "var(--text-muted)",
-              fontSize: 14,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            {icon === "table" ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="6" width="18" height="3" rx="1"/>
-                <line x1="6" y1="9" x2="6" y2="18"/>
-                <line x1="18" y1="9" x2="18" y2="18"/>
-              </svg>
-            ) : emoji}
-            {id === "orders" && pendingCount > 0
-              ? <>{label} <span style={{ background: "#E85D2F", color: "white", fontSize: 11, padding: "1px 6px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span></>
-              : label}
-          </button>
-        ))}
+          ["orders", "bolt", "Live Orders"],
+          ["menu", "fork", "Menu"],
+          ["tables", "table", "Tables"],
+          ["analytics", "chart", "Analytics"],
+          ["history", "clock", "History"],
+          ["settings", "gear", "Settings"],
+        ] as [Tab, string, string][]).map(([id, icon, label]) => {
+          const active = tab === id;
+          return (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              style={{
+                padding: "0 18px",
+                height: 48,
+                border: "none",
+                borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
+                background: "none",
+                cursor: "pointer",
+                fontWeight: active ? 700 : 500,
+                color: active ? "var(--accent)" : "var(--text-muted)",
+                fontSize: 13,
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                whiteSpace: "nowrap",
+                transition: "color 0.15s",
+              }}
+            >
+              {icon === "bolt" && <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>}
+              {icon === "fork" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3h18M3 3v5a6 6 0 0012 0V3M9 8v13M15 8v13"/></svg>}
+              {icon === "table" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="3" rx="1"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/></svg>}
+              {icon === "chart" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
+              {icon === "clock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
+              {icon === "gear" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>}
+              {id === "orders" && pendingCount > 0
+                ? <>{label} <span style={{ background: "#E85D2F", color: "white", fontSize: 10, padding: "1px 6px", borderRadius: 99, fontWeight: 700, lineHeight: 1.6 }}>{pendingCount}</span></>
+                : label}
+            </button>
+          );
+        })}
       </nav>
 
       {/* MOBILE BOTTOM NAV */}
@@ -195,7 +199,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       `}</style>
 
       {/* CONTENT */}
-      <main style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 32px" }}>
         {!checklistDismissed && (
           <OnboardingChecklist
             restaurant={restaurant}

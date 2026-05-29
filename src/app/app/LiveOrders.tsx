@@ -322,13 +322,13 @@ export default function LiveOrders({ restaurant }: Props) {
       {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
         {[
-          { label: "Today total", value: todayStats.total, color: "#6366f1" },
+          { label: "Today total", value: todayStats.total, color: "var(--accent)" },
           { label: "Completed", value: todayStats.done, color: "#22c55e" },
           { label: "Waiting now", value: pendingCount, color: "#E85D2F", extra: estWaitMin > 0 ? `~${estWaitMin} min wait` : undefined },
         ].map(s => (
-          <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, padding: "12px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
+          <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}`, borderRadius: 10, padding: "14px 18px", boxShadow: "var(--shadow-card)" }}>
+            <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
             {"extra" in s && s.extra && <div style={{ fontSize: 10, color: s.color, marginTop: 2, fontWeight: 600 }}>{s.extra}</div>}
           </div>
         ))}

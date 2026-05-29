@@ -14,7 +14,7 @@ const TYPE_LABEL: Record<string, string> = {
 
 function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
   return (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${color}`, borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 4, boxShadow: "var(--shadow-card)" }}>
       <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{label}</div>
       {sub && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{sub}</div>}
@@ -121,10 +121,10 @@ export default function Analytics({ restaurant }: Props) {
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12 }}>
-        <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="#6366f1" />
+        <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="var(--accent)" />
         <StatCard label="Completed" value={done} sub={`${completionRate}% rate`} color="#22c55e" />
-        <StatCard label="Completion rate" value={`${completionRate}%`} color="#3b82f6" />
-        <StatCard label="Top request" value={topType ? TYPE_LABEL[topType[0]]?.split(" ")[1] ?? topType[0] : "—"} sub={topType ? `${topType[1]} times` : undefined} color="#E85D2F" />
+        <StatCard label="Completion rate" value={`${completionRate}%`} color="#22c55e" />
+        <StatCard label="Top request" value={topType ? TYPE_LABEL[topType[0]]?.split(" ")[1] ?? topType[0] : "—"} sub={topType ? `${topType[1]} times` : undefined} color="var(--accent)" />
       </div>
 
       {/* Daily bar chart */}

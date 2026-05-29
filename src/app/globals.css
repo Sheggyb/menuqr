@@ -25,6 +25,8 @@
   --item-unavailable-bg: #fef2f2;
   --shadow-card: 0 1px 4px rgba(0,0,0,0.06);
   --shadow-float: 0 4px 32px rgba(0,0,0,0.08);
+  --surface-2: #f3f4f6;
+  --surface-3: #e9eaec;
   --font-display: "Playfair Display", serif;
 }
 
@@ -161,6 +163,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  box-shadow: var(--shadow-card);
 }
 
 input, textarea, select {
