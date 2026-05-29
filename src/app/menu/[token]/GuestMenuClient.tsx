@@ -19,10 +19,12 @@ interface CartItem {
 }
 
 interface SessionRequest {
+  id: string;       // table_request id from DB
   name: string;
   qty: number;
   price: number;
   time: string;
+  status: "pending" | "seen" | "done"; // live status from DB
 }
 
 export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
@@ -53,6 +55,23 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   const accentColor = restaurant.accent_color || "#E85D2F";
 
+  // Poll order statuses every 4s so guest sees pending→seen→done live
+  useEffect(() => {
+    if (sessionRequests.length === 0) return;
+    const ids = sessionRequests.map(r => r.id).filter(Boolean).join(",");
+    if (!ids) return;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/orders/status?ids=${ids}`);
+        const data = await res.json();
+        setSessionRequests(prev => prev.map(r => data.statuses[r.id] ? { ...r, status: data.statuses[r.id] as SessionRequest["status"] } : r));
+      } catch {}
+    };
+    poll();
+    const interval = setInterval(poll, 4000);
+    return () => clearInterval(interval);
+  }, [sessionRequests.length]);
+
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem(`menuqr_session_${table.id}`);
@@ -60,12 +79,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     } catch { /* ignore */ }
   }, [table.id]);
 
-  function saveSessionRequest(name: string, quantity: number, price: number) {
+  function saveSessionRequest(id: string, name: string, quantity: number, price: number) {
     const req: SessionRequest = {
+      id,
       name,
       qty: quantity,
       price,
       time: new Date().toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" }),
+      status: "pending",
     };
     setSessionRequests(prev => {
       const updated = [...prev, req];
@@ -137,7 +158,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     }
     setSending(true);
     const snapshot = [...cart];
-    await Promise.all(snapshot.map(ci =>
+    const results = await Promise.all(snapshot.map(ci =>
       fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,10 +171,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           item_name: `x${ci.quantity} ${ci.item.name}`,
           note: ci.note || null,
         }),
-      })
+      }).then(r => r.json())
     ));
     setSending(false);
-    snapshot.forEach(ci => saveSessionRequest(ci.item.name, ci.quantity, ci.item.price ?? 0));
+    snapshot.forEach((ci, i) => saveSessionRequest(results[i]?.id ?? crypto.randomUUID(), ci.item.name, ci.quantity, ci.item.price ?? 0));
     setCart([]);
     setCartOpen(false);
     setShowConfirmation(true);
@@ -495,15 +516,25 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           </button>
           {sessionPanelOpen && (
             <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", padding: "12px 16px", maxHeight: 200, overflowY: "auto" }}>
-              {sessionRequests.map((r, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
-                  <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
-                    <span style={{ color: "var(--text-muted)" }}>{r.time}</span>
+              {sessionRequests.map((r, i) => {
+                const statusPill = r.status === "done"
+                  ? { label: "✅ Delivered", bg: "#22c55e22", color: "#22c55e" }
+                  : r.status === "seen"
+                  ? { label: "👀 Preparing", bg: "#f59e0b22", color: "#f59e0b" }
+                  : { label: "🕐 Pending", bg: "var(--surface2)", color: "var(--text-muted)" };
+                return (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                    <div>
+                      <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
+                      <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} kr</span>}
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: statusPill.bg, color: statusPill.color }}>{statusPill.label}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0 2px", fontWeight: 800, fontSize: 14, borderTop: "2px solid var(--border)", marginTop: 4 }}>
                   <span>Total spent</span>

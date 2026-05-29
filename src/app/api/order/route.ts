@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "table_closed" }, { status: 403 });
   }
 
-  const { error } = await supabase.from("table_requests").insert({
+  const { data: inserted, error } = await supabase.from("table_requests").insert({
     restaurant_id,
     table_id,
     type,
@@ -43,8 +43,8 @@ export async function POST(req: Request) {
     item_name: item_name ?? null,
     note: note ?? null,
     status: "pending",
-  });
+  }).select("id").single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, id: inserted.id });
 }

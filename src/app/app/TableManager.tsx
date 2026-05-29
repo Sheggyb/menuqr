@@ -145,8 +145,8 @@ export default function TableManager({ restaurant }: Props) {
       .update({ status: "done" })
       .eq("table_id", table.id)
       .in("status", ["pending", "seen"]);
-    // Refresh requests only, table stays open
-    setTables(tables.map(t => t));
+    // Clear the pending badge count for this table in UI
+    setPendingByTable(prev => ({ ...prev, [table.id]: 0 }));
   }
 
   async function showQR(table: TableRow) {
