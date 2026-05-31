@@ -244,9 +244,8 @@ export default function TableManager({ restaurant }: Props) {
                 return (
                   <div
                     key={table.id}
-                    style={{ background: bgColor, border: `2px solid ${borderColor}`, borderRadius: 10, padding: "10px 8px", textAlign: "center", cursor: "pointer", transition: "transform 0.1s" }}
-                    title={`${table.name} — ${!table.is_active ? "Closed" : pending > 0 ? `${pending} pending` : "Open"} (click to toggle)`}
-                    onClick={() => toggleTable(table)}
+                    style={{ background: bgColor, border: `2px solid ${borderColor}`, borderRadius: 10, padding: "10px 8px", textAlign: "center", transition: "transform 0.1s" }}
+                    title={`${table.name} — ${!table.is_active ? "Closed" : pending > 0 ? `${pending} pending` : "Open"}`}
                   >
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, display: "inline-block", marginBottom: 4 }} />
                     <div style={{ fontSize: 18, marginBottom: 2 }}>🍽️</div>
