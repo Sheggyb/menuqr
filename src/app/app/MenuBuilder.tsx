@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, MenuCategory, MenuItem } from "@/lib/types";
+import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
 
 interface Props { restaurant: Restaurant }
 
@@ -35,9 +36,18 @@ export default function MenuBuilder({ restaurant }: Props) {
   const [quickAdds, setQuickAdds] = useState<Record<string, QuickAdd>>({});
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
-  // Confirmation state
-  const [confirmDeleteItem, setConfirmDeleteItem] = useState<string | null>(null);
+  // Confirmation state — kept for categories only (header delete button)
   const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null);
+
+  // Context menu
+  interface CtxMenu { x: number; y: number; items: ContextMenuAction[] }
+  const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null);
+
+  const openCtxMenu = useCallback((e: React.MouseEvent, items: ContextMenuAction[]) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, items });
+  }, []);
 
   // Currency (persisted per restaurant)
   const [currency, setCurrency] = useState(() => {
@@ -421,6 +431,14 @@ export default function MenuBuilder({ restaurant }: Props) {
                       supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
                     ));
                   }}
+                  onContextMenu={(e) => openCtxMenu(e, [
+                    {
+                      label: "Delete category",
+                      icon: "🗑️",
+                      danger: true,
+                      action: () => setConfirmDeleteCat(cat.id),
+                    },
+                  ])}
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
                     padding: "8px 10px",
@@ -562,6 +580,44 @@ export default function MenuBuilder({ restaurant }: Props) {
                       onDragOver={handleItemDragOver}
                       onDrop={(e) => handleItemDrop(e, item.id)}
                       onDragEnd={handleDragEnd}
+                      onContextMenu={(e) => {
+                        if (isEditing) return;
+                        openCtxMenu(e, [
+                          {
+                            label: "Edit name",
+                            icon: "✏️",
+                            action: () => startEdit(item.id, "name", item.name),
+                          },
+                          {
+                            label: "Edit description",
+                            icon: "📝",
+                            action: () => startEdit(item.id, "description", item.description ?? ""),
+                          },
+                          {
+                            label: "Edit price",
+                            icon: "💰",
+                            action: () => startEdit(item.id, "price", item.price?.toString() ?? ""),
+                          },
+                          { separator: true } as { separator: true; label: string; action: () => void },
+                          {
+                            label: item.is_available ? "Mark as hidden" : "Mark as available",
+                            icon: item.is_available ? "🙈" : "👁️",
+                            action: () => toggleItem(item),
+                          },
+                          {
+                            label: "Duplicate item",
+                            icon: "⧉",
+                            action: () => duplicateItem(item),
+                          },
+                          { separator: true } as { separator: true; label: string; action: () => void },
+                          {
+                            label: "Delete item",
+                            icon: "🗑️",
+                            danger: true,
+                            action: () => deleteItem(item.id),
+                          },
+                        ]);
+                      }}
                       style={{
                         display: "flex", alignItems: "center", gap: 10,
                         padding: "10px 14px",
@@ -659,9 +715,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                         </span>
                       )}
 
-                      {/* Actions */}
+                      {/* Actions — right-click the row for full menu */}
                       {!isEditing && (
-                        <div style={{ display: "flex", gap: 4, alignItems: "center", flexShrink: 0 }}>
+                        <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                          {/* Quick toggle stays visible — most common action */}
                           <button
                             onClick={() => toggleItem(item)}
                             style={{
@@ -674,25 +731,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                           >
                             {item.is_available ? "Live" : "Hidden"}
                           </button>
-                          <button
-                            onClick={() => duplicateItem(item)}
-                            title="Duplicate"
-                            style={{ fontSize: 13, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
-                          >⧉</button>
-                          {confirmDeleteItem === item.id ? (
-                            <>
-                              <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Remove?</span>
-                              <button onClick={() => { deleteItem(item.id); setConfirmDeleteItem(null); }}
-                                style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}>Yes</button>
-                              <button onClick={() => setConfirmDeleteItem(null)}
-                                style={{ fontSize: 11, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>No</button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => setConfirmDeleteItem(item.id)}
-                              style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 2px" }}
-                            >×</button>
-                          )}
+                          {/* Hint icon — shows right-click is available */}
+                          <span
+                            style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.35, userSelect: "none" }}
+                            title="Right-click for more options"
+                          >⋯</span>
                         </div>
                       )}
                     </div>
@@ -702,6 +745,14 @@ export default function MenuBuilder({ restaurant }: Props) {
             )}
           </div>
         </div>
+      )}
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          items={ctxMenu.items}
+          onClose={() => setCtxMenu(null)}
+        />
       )}
     </div>
   );

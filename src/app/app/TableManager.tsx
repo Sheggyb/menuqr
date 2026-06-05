@@ -1,8 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRow } from "@/lib/types";
+import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
 
 interface Props { restaurant: Restaurant }
 
@@ -14,6 +15,19 @@ export default function TableManager({ restaurant }: Props) {
   const [qrModal, setQrModal] = useState<TableRow | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [lastRequests, setLastRequests] = useState<Record<string, string>>({});
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
+  const [pendingSessions, setPendingSessions] = useState<Array<{ id: string; session_id: string; table: { name: string }; created_at: string }>>([]);
+
+  // Context menu
+  interface CtxMenu { x: number; y: number; items: ContextMenuAction[] }
+  const [ctxMenu, setCtxMenu] = useState<CtxMenu | null>(null);
+
+  const openCtxMenu = useCallback((e: React.MouseEvent, items: ContextMenuAction[]) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCtxMenu({ x: e.clientX, y: e.clientY, items });
+  }, []);
 
   useEffect(() => {
     supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id).order("name")
@@ -37,12 +51,6 @@ export default function TableManager({ restaurant }: Props) {
       });
   }, [tables, restaurant.id]);
 
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [confirmClear, setConfirmClear] = useState<string | null>(null);
-  const [confirmClose, setConfirmClose] = useState<string | null>(null);
-  const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
-  const [pendingSessions, setPendingSessions] = useState<Array<{ id: string; session_id: string; table: { name: string }; created_at: string }>>([]);
-
   useEffect(() => {
     if (tables.length === 0) return;
     const fetchPending = () =>
@@ -59,7 +67,6 @@ export default function TableManager({ restaurant }: Props) {
     return () => { supabase.removeChannel(channel); };
   }, [tables.length, restaurant.id]);
 
-  // Poll for pending guest sessions every 4s
   useEffect(() => {
     const fetchSessions = async () => {
       try {
@@ -120,10 +127,6 @@ export default function TableManager({ restaurant }: Props) {
     setTables(tables.map(t => ({ ...t, is_active: newState })));
   }
 
-  async function toggleTable(table: TableRow) {
-    if (table.is_active) await closeTable(table); else await openTable(table);
-  }
-
   async function openTable(table: TableRow) {
     await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t));
@@ -131,7 +134,6 @@ export default function TableManager({ restaurant }: Props) {
 
   async function closeTable(table: TableRow) {
     await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
-    // Close all active/pending sessions for this table so guests must re-request
     await fetch("/api/session/close-table", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -162,6 +164,47 @@ export default function TableManager({ restaurant }: Props) {
     link.href = qrDataUrl;
     link.download = `table-${table.name}.png`;
     link.click();
+  }
+
+  function buildTableCtxMenu(table: TableRow): ContextMenuAction[] {
+    const items: ContextMenuAction[] = [];
+    if (table.is_active) {
+      items.push({
+        label: "Clear orders",
+        icon: "🧹",
+        action: () => clearAndCloseTable(table),
+      });
+      items.push({
+        label: "Close table",
+        icon: "🔒",
+        action: () => closeTable(table),
+      });
+    } else {
+      items.push({
+        label: "Open table",
+        icon: "🔓",
+        action: () => openTable(table),
+      });
+    }
+    items.push({ separator: true } as unknown as ContextMenuAction);
+    items.push({
+      label: "Show QR code",
+      icon: "📱",
+      action: () => showQR(table),
+    });
+    items.push({
+      label: "Copy link",
+      icon: "🔗",
+      action: () => copyLink(table),
+    });
+    items.push({ separator: true } as unknown as ContextMenuAction);
+    items.push({
+      label: "Delete table",
+      icon: "🗑️",
+      danger: true,
+      action: () => deleteTable(table.id),
+    });
+    return items;
   }
 
   if (loading) return <p style={{ color: "var(--text-muted)" }}>Loading tables...</p>;
@@ -221,12 +264,12 @@ export default function TableManager({ restaurant }: Props) {
         </div>
       ) : (
         <>
-          {/* STATUS GRID */}
+          {/* STATUS GRID — read-only */}
           <div className="card" style={{ padding: "16px 20px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
               <h3 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>Table Status</h3>
               <div style={{ display: "flex", gap: 12, fontSize: 11, color: "var(--text-muted)", flexWrap: "wrap" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />Idle</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block" }} />Idle</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />Has requests</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#dc2626", display: "inline-block" }} />Urgent (3+)</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#9ca3af", display: "inline-block" }} />Closed</span>
@@ -257,10 +300,20 @@ export default function TableManager({ restaurant }: Props) {
             </div>
           </div>
 
-          {/* TABLE LIST */}
-          <div style={{ display: "grid", gap: 12 }}>
+          {/* TABLE LIST — right-click for actions */}
+          <div style={{ display: "grid", gap: 8 }}>
             {tables.map(table => (
-              <div key={table.id} className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "14px 16px", flexWrap: "wrap" }}>
+              <div
+                key={table.id}
+                className="card"
+                onContextMenu={(e) => openCtxMenu(e, buildTableCtxMenu(table))}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  gap: 12, padding: "12px 16px", flexWrap: "wrap",
+                  cursor: "context-menu",
+                  transition: "border-color 0.1s",
+                }}
+              >
                 <div>
                   <span style={{ fontWeight: 700 }}>{table.name}</span>
                   {pendingByTable[table.id] > 0 && (
@@ -277,36 +330,24 @@ export default function TableManager({ restaurant }: Props) {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button onClick={() => showQR(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600 }}>📱 QR Code</button>
-                  <button onClick={() => copyLink(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: copiedId === table.id ? "#dcfce7" : "var(--surface)", cursor: "pointer", fontWeight: 600, color: copiedId === table.id ? "#166534" : "var(--text)" }}>
-                    {copiedId === table.id ? "✅ Copied!" : "🔗 Copy link"}
+                {/* Quick actions — always visible */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => copyLink(table)}
+                    style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: copiedId === table.id ? "#dcfce7" : "var(--surface)", cursor: "pointer", fontWeight: 600, color: copiedId === table.id ? "#166534" : "var(--text-muted)" }}
+                  >
+                    {copiedId === table.id ? "✅" : "🔗"}
                   </button>
-                  {table.is_active ? (
-                    <>
-                      {confirmClear === table.id ? (
-                        <>
-                          <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Clear all orders?</span>
-                          <button onClick={async () => { await clearAndCloseTable(table); setConfirmClear(null); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#fff", background: "#f59e0b", cursor: "pointer", fontWeight: 700 }}>Yes, clear</button>
-                          <button onClick={() => setConfirmClear(null)} style={{ fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>Cancel</button>
-                        </>
-                      ) : confirmClose === table.id ? (
-                        <>
-                          <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Close table?</span>
-                          <button onClick={async () => { await closeTable(table); setConfirmClose(null); }} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #dc2626", color: "#fff", background: "#dc2626", cursor: "pointer", fontWeight: 700 }}>Yes, close</button>
-                          <button onClick={() => setConfirmClose(null)} style={{ fontSize: 13, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>Cancel</button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={() => setConfirmClear(table.id)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #f59e0b", color: "#f59e0b", background: "none", cursor: "pointer", fontWeight: 600 }}>🧹 Clear</button>
-                          <button onClick={() => setConfirmClose(table.id)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text)" }}>🔒 Close</button>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <button onClick={() => openTable(table)} style={{ fontSize: 13, padding: "6px 12px", borderRadius: 6, border: "1px solid #22c55e", color: "#22c55e", background: "none", cursor: "pointer", fontWeight: 600 }}>🔓 Open</button>
-                  )}
-                  <button onClick={() => deleteTable(table.id)} style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
+                  <button
+                    onClick={() => showQR(table)}
+                    style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
+                    title="Show QR code"
+                  >📱</button>
+                  {/* Hint */}
+                  <span
+                    style={{ fontSize: 11, color: "var(--text-muted)", opacity: 0.4, userSelect: "none" }}
+                    title="Right-click for more options"
+                  >⋯</span>
                 </div>
               </div>
             ))}
@@ -335,6 +376,14 @@ export default function TableManager({ restaurant }: Props) {
         </div>
       )}
 
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          items={ctxMenu.items}
+          onClose={() => setCtxMenu(null)}
+        />
+      )}
     </div>
   );
 }
