@@ -86,13 +86,15 @@ export default function MenuBuilder({ restaurant }: Props) {
   }, [edit]);
 
   // Filter items by selected category + search
-  const filteredItems = items.filter(item => {
-    const matchCat = selectedCatId ? item.category_id === selectedCatId : true;
-    const matchSearch = !searchQuery
-      || item.name.toLowerCase().includes(searchQuery.toLowerCase())
-      || (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    return matchCat && matchSearch;
-  });
+  const filteredItems = items
+    .filter(item => {
+      const matchCat = selectedCatId ? item.category_id === selectedCatId : true;
+      const matchSearch = !searchQuery
+        || item.name.toLowerCase().includes(searchQuery.toLowerCase())
+        || (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      return matchCat && matchSearch;
+    })
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   // When searching, show items from all categories
   const displayItems = searchQuery
@@ -241,19 +243,21 @@ export default function MenuBuilder({ restaurant }: Props) {
     const sourceItem = allItems.find(i => i.id === draggedId);
     if (!sourceItem) return;
 
+    // Work from the already-sorted category slice
     const catItems = allItems
       .filter(i => i.category_id === sourceItem.category_id)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
     const sourceIdx = catItems.findIndex(i => i.id === draggedId);
-    let targetIdx = catItems.findIndex(i => i.id === targetItemId);
-    if (sourceIdx < 0 || targetIdx < 0) return;
+    const targetIdx = catItems.findIndex(i => i.id === targetItemId);
+    if (sourceIdx < 0 || targetIdx < 0 || sourceIdx === targetIdx) return;
 
+    // Splice using indices from the SAME original array (no re-lookup after splice)
     const reordered = [...catItems];
     const [moved] = reordered.splice(sourceIdx, 1);
-    const adjustedTarget = catItems.findIndex(i => i.id === targetItemId);
-    reordered.splice(adjustedTarget >= 0 ? adjustedTarget : targetIdx, 0, moved);
+    reordered.splice(targetIdx, 0, moved);
 
+    // Stamp new sort_order values into allItems
     const updated = allItems.map(item => {
       const newIdx = reordered.findIndex(r => r.id === item.id);
       return newIdx >= 0 ? { ...item, sort_order: newIdx } : item;
