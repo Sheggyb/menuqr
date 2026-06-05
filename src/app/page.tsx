@@ -23,9 +23,6 @@ export default function LandingPage() {
 
       {/* HERO */}
       <section style={{ textAlign: "center", padding: "80px 32px 60px", maxWidth: 700, margin: "0 auto" }}>
-        <div style={{ display: "inline-block", background: "var(--accent-light)", color: "var(--accent)", fontWeight: 700, fontSize: 13, padding: "4px 14px", borderRadius: 99, marginBottom: 20, border: "1px solid var(--border)" }}>
-          🚀 No app needed — works on any phone
-        </div>
         <h1 style={{ fontSize: 52, fontWeight: 900, marginBottom: 20, lineHeight: 1.1, color: "var(--text)", letterSpacing: "-1px" }}>
           Digital menus &<br /><span style={{ color: "var(--accent)" }}>live table ordering</span><br />for your restaurant
         </h1>
@@ -41,11 +38,11 @@ export default function LandingPage() {
 
       {/* DEMO VISUAL */}
       <section style={{ maxWidth: 640, margin: "0 auto 60px", padding: "0 32px", textAlign: "center" }}>
-        <div style={{ background: "var(--accent)", color: "white", borderRadius: 20, padding: "28px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 20, padding: "32px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, boxShadow: "var(--shadow-card)" }}>
           {[["📱", "Guest scans QR"], ["🍽️", "Sees live menu"], ["⚡", "Staff gets alert"]].map(([icon, label]) => (
-            <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 8px", textAlign: "center" }}>
-              <div style={{ fontSize: 28, marginBottom: 6 }}>{icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.3 }}>{label}</div>
+            <div key={label} style={{ background: "var(--surface-2)", borderRadius: 12, padding: "20px 8px", textAlign: "center" }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>{icon}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3, color: "var(--text-muted)" }}>{label}</div>
             </div>
           ))}
         </div>
@@ -127,29 +124,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section style={{ background: "var(--surface-2)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "60px 32px" }}>
-        <div style={{ maxWidth: 880, margin: "0 auto" }}>
-          <h2 style={{ textAlign: "center", fontWeight: 800, fontSize: 32, marginBottom: 8, color: "var(--text)", letterSpacing: "-0.5px" }}>Loved by restaurant owners</h2>
-          <p style={{ textAlign: "center", color: "var(--text-muted)", marginBottom: 40, fontSize: 16 }}>See what our users are saying</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20 }}>
-            {[
-              { quote: "We set it up in under 10 minutes. Our guests love scanning and ordering without waiting.", name: "Marco R.", role: "Café Owner, Milan" },
-              { quote: "The live orders board is fantastic. Staff know exactly what every table needs, instantly.", name: "Sofia K.", role: "Restaurant Manager, Stockholm" },
-              { quote: "No more 'excuse me!' — guests request refills and the bill right from their phone. Game changer.", name: "James T.", role: "Bar Owner, London" },
-            ].map((t, i) => (
-              <div key={i} className="testimonial-card">
-                <div style={{ fontSize: 24, color: "var(--accent)" }}>❝</div>
-                <p style={{ color: "var(--text)", fontSize: 15, lineHeight: 1.6, margin: 0, flex: 1 }}>{t.quote}</p>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{t.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{t.role}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* CTA */}
       <section style={{ background: "var(--accent)", padding: "60px 32px", textAlign: "center" }}>
