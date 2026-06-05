@@ -55,9 +55,9 @@ export default function MenuBuilder({ restaurant }: Props) {
   const [newCatIcon, setNewCatIcon] = useState("🍽️");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
-  // Drag state
-  const [dragItemId, setDragItemId] = useState<string | null>(null);
-  const [dragCatId, setDragCatId] = useState<string | null>(null);
+  // Drag state — use ref to avoid re-renders during drag
+  const dragItemRef = useRef<string | null>(null);
+  const dragCatRef = useRef<string | null>(null);
 
   // Load data
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function MenuBuilder({ restaurant }: Props) {
   // ─── DRAG & DROP (items) ──────────────────────────────
 
   function handleItemDragStart(e: React.DragEvent, itemId: string) {
-    setDragItemId(itemId);
+    dragItemRef.current = itemId;
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", itemId);
   }
@@ -235,21 +235,22 @@ export default function MenuBuilder({ restaurant }: Props) {
   async function handleItemDrop(e: React.DragEvent, targetItemId: string) {
     e.preventDefault();
     e.stopPropagation();
-    if (!dragItemId || dragItemId === targetItemId) { setDragItemId(null); return; }
-    const sourceItem = allItems.find(i => i.id === dragItemId);
-    if (!sourceItem) { setDragItemId(null); return; }
+    const draggedId = dragItemRef.current;
+    dragItemRef.current = null;
+    if (!draggedId || draggedId === targetItemId) return;
+    const sourceItem = allItems.find(i => i.id === draggedId);
+    if (!sourceItem) return;
 
     const catItems = allItems
       .filter(i => i.category_id === sourceItem.category_id)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
-    const sourceIdx = catItems.findIndex(i => i.id === dragItemId);
+    const sourceIdx = catItems.findIndex(i => i.id === draggedId);
     let targetIdx = catItems.findIndex(i => i.id === targetItemId);
-    if (sourceIdx < 0 || targetIdx < 0) { setDragItemId(null); return; }
+    if (sourceIdx < 0 || targetIdx < 0) return;
 
     const reordered = [...catItems];
     const [moved] = reordered.splice(sourceIdx, 1);
-    // After removing source, targetIdx may have shifted
     const adjustedTarget = catItems.findIndex(i => i.id === targetItemId);
     reordered.splice(adjustedTarget >= 0 ? adjustedTarget : targetIdx, 0, moved);
 
@@ -260,7 +261,6 @@ export default function MenuBuilder({ restaurant }: Props) {
 
     setAllItems(updated);
     setItems(updated);
-    setDragItemId(null);
 
     await Promise.all(reordered.map((item, i) =>
       supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
@@ -268,8 +268,8 @@ export default function MenuBuilder({ restaurant }: Props) {
   }
 
   function handleDragEnd() {
-    setDragItemId(null);
-    setDragCatId(null);
+    dragItemRef.current = null;
+    dragCatRef.current = null;
   }
 
   // ─── RENDER ───────────────────────────────────────────
@@ -399,12 +399,14 @@ export default function MenuBuilder({ restaurant }: Props) {
                   key={cat.id}
                   onClick={() => { setSelectedCatId(cat.id); setSearchQuery(""); }}
                   draggable
-                  onDragStart={(e) => { setDragCatId(cat.id); e.dataTransfer.setData("text/cat", cat.id); }}
+                  onDragStart={(e) => { dragCatRef.current = cat.id; e.dataTransfer.setData("text/cat", cat.id); }}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={async (e) => {
                     e.preventDefault();
-                    if (!dragCatId || dragCatId === cat.id) return;
-                    const sourceIdx = categories.findIndex(c => c.id === dragCatId);
+                    const draggedCatId = dragCatRef.current;
+                    dragCatRef.current = null;
+                    if (!draggedCatId || draggedCatId === cat.id) return;
+                    const sourceIdx = categories.findIndex(c => c.id === draggedCatId);
                     const targetIdx = idx;
                     if (sourceIdx < 0 || sourceIdx === targetIdx) return;
                     const reordered = [...categories];
@@ -414,7 +416,6 @@ export default function MenuBuilder({ restaurant }: Props) {
                     await Promise.all(reordered.map((c, i) =>
                       supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
                     ));
-                    setDragCatId(null);
                   }}
                   style={{
                     display: "flex", alignItems: "center", gap: 8,
@@ -561,10 +562,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                         display: "flex", alignItems: "center", gap: 10,
                         padding: "10px 14px",
                         background: item.is_available ? "var(--surface)" : "var(--item-unavailable-bg)",
-                        border: dragItemId === item.id ? "2px dashed var(--accent)" : "1px solid var(--border)",
+                        border: "1px solid var(--border)",
                         borderRadius: 10,
-                        opacity: dragItemId === item.id ? 0.5 : 1,
-                        transition: "opacity 0.15s, border-color 0.15s",
                       }}
                     >
                       {/* Drag handle */}
