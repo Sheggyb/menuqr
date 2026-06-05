@@ -64,12 +64,14 @@ export default function MenuBuilder({ restaurant }: Props) {
   const [newCatName, setNewCatName] = useState("");
   const [newCatIcon, setNewCatIcon] = useState("🍽️");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiPickerPos, setEmojiPickerPos] = useState({ top: 0, left: 0 });
 
   // Edit category inline
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editCatName, setEditCatName] = useState("");
   const [editCatIcon, setEditCatIcon] = useState("🍽️");
   const [showEditEmojiPicker, setShowEditEmojiPicker] = useState(false);
+  const [editEmojiPickerPos, setEditEmojiPickerPos] = useState({ top: 0, left: 0 });
   const editCatInputRef = useRef<HTMLInputElement>(null);
 
   function startEditCat(cat: MenuCategory) {
@@ -391,26 +393,16 @@ export default function MenuBuilder({ restaurant }: Props) {
             <div style={{ position: "relative" }}>
               <button
                 type="button"
-                onClick={() => setShowEmojiPicker(p => !p)}
+                onClick={(e) => {
+                  const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                  setEmojiPickerPos({ top: rect.bottom + 4, left: rect.left });
+                  setShowEmojiPicker(p => !p);
+                }}
                 style={{ fontSize: 22, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1 }}
               >
                 {newCatIcon}
               </button>
-              {showEmojiPicker && (
-                <div style={{
-                  position: "absolute", top: "110%", left: 0, zIndex: 20,
-                  background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
-                  padding: 10, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4,
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.15)", width: 240,
-                }}>
-                  {CATEGORY_EMOJIS.map(e => (
-                    <button key={e} type="button" onClick={() => { setNewCatIcon(e); setShowEmojiPicker(false); }}
-                      style={{ fontSize: 20, background: newCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 4, lineHeight: 1 }}>
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* emoji picker rendered as fixed portal below */}
             </div>
             <input
               autoFocus
@@ -460,27 +452,16 @@ export default function MenuBuilder({ restaurant }: Props) {
                       {/* Emoji button */}
                       <button
                         type="button"
-                        onClick={() => setShowEditEmojiPicker(p => !p)}
+                        onClick={(e) => {
+                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                          setEditEmojiPickerPos({ top: rect.bottom + 4, left: rect.left });
+                          setShowEditEmojiPicker(p => !p);
+                        }}
                         style={{ fontSize: 16, padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
                       >
                         {editCatIcon}
-                      </button>
-                      {showEditEmojiPicker && (
-                        <div style={{
-                          position: "absolute", top: "100%", left: 0, zIndex: 30,
-                          background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
-                          padding: 8, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3,
-                          boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 220,
-                        }}>
-                          {CATEGORY_EMOJIS.map(e => (
-                            <button key={e} type="button"
-                              onClick={() => { setEditCatIcon(e); setShowEditEmojiPicker(false); }}
-                              style={{ fontSize: 18, background: editCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
-                              {e}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                       </button>
+                       {/* edit emoji picker rendered as fixed portal below */}
                       <input
                         ref={editCatInputRef}
                         value={editCatName}
@@ -850,6 +831,45 @@ export default function MenuBuilder({ restaurant }: Props) {
           items={ctxMenu.items}
           onClose={() => setCtxMenu(null)}
         />
+      )}
+      {/* Add-category emoji picker — fixed so sidebar overflow doesn't clip it */}
+      {showEmojiPicker && (
+        <>
+          <div onClick={() => setShowEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
+          <div style={{
+            position: "fixed", top: emojiPickerPos.top, left: emojiPickerPos.left, zIndex: 99,
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
+            padding: 10, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 240,
+          }}>
+            {CATEGORY_EMOJIS.map(e => (
+              <button key={e} type="button" onClick={() => { setNewCatIcon(e); setShowEmojiPicker(false); }}
+                style={{ fontSize: 20, background: newCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 4, lineHeight: 1 }}>
+                {e}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {/* Edit-category emoji picker — fixed so sidebar overflow doesn't clip it */}
+      {showEditEmojiPicker && (
+        <>
+          <div onClick={() => setShowEditEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
+          <div style={{
+            position: "fixed", top: editEmojiPickerPos.top, left: editEmojiPickerPos.left, zIndex: 99,
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
+            padding: 8, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 220,
+          }}>
+            {CATEGORY_EMOJIS.map(e => (
+              <button key={e} type="button"
+                onClick={() => { setEditCatIcon(e); setShowEditEmojiPicker(false); }}
+                style={{ fontSize: 18, background: editCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
+                {e}
+              </button>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
