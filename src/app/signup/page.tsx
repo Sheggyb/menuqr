@@ -48,13 +48,13 @@ export default function SignupPage() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 16 }}>
       <style>{`* { box-sizing: border-box; }`}</style>
 
-      <div style={{ position: "fixed", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", background: "rgba(232,93,47,0.07)", pointerEvents: "none" }} />
-      <div style={{ position: "fixed", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: "rgba(232,93,47,0.05)", pointerEvents: "none" }} />
+      <div style={{ position: "fixed", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
       <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "40px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "#E85D2F", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 12 }}>🍽️</div>
-          <div style={{ fontWeight: 900, fontSize: 26, color: "#E85D2F", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 12 }}>🍽️</div>
+          <div style={{ fontWeight: 900, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
           <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>Create your free account — no credit card needed</p>
         </div>
 
@@ -77,7 +77,7 @@ export default function SignupPage() {
               <div style={{ marginTop: 8 }}>
                 <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
                   {[1, 2, 3, 4].map(n => (
-                    <div key={n} style={{ flex: 1, height: 4, borderRadius: 99, background: n <= strength.level ? strength.color : "#e5e7eb", transition: "background 0.2s" }} />
+                    <div key={n} style={{ flex: 1, height: 4, borderRadius: 99, background: n <= strength.level ? strength.color : "var(--border)", transition: "background 0.2s" }} />
                   ))}
                 </div>
                 <div style={{ fontSize: 12, color: strength.color, fontWeight: 600 }}>{strength.label}</div>
@@ -85,19 +85,19 @@ export default function SignupPage() {
             )}
           </div>
           {error && (
-            <div style={{ padding: "10px 14px", background: "var(--card-bill-bg)", border: "1px solid #fecaca", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ padding: "10px 14px", background: "var(--card-bill-bg)", border: "1px solid var(--card-bill-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
               ⚠️ {error}
             </div>
           )}
           <button type="submit" disabled={loading}
-            style={{ width: "100%", padding: "13px", borderRadius: 10, background: "#E85D2F", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 15, opacity: loading ? 0.75 : 1, marginTop: 4 }}>
+            style={{ width: "100%", padding: "13px", borderRadius: 10, background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 15, opacity: loading ? 0.75 : 1, marginTop: 4 }}>
             {loading ? "Creating account…" : "Create free account →"}
           </button>
         </form>
 
         <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text-muted)" }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: "#E85D2F", fontWeight: 700, textDecoration: "none" }}>Log in</Link>
+          <Link href="/login" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>Log in</Link>
         </p>
         <p style={{ textAlign: "center", marginTop: 12, fontSize: 12, color: "var(--text-muted)" }}>
           Free forever • No credit card • Cancel anytime

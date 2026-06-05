@@ -5,28 +5,29 @@ export default function LandingPage() {
     <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`
         * { box-sizing: border-box; }
-        .btn-primary { display: inline-block; padding: 14px 32px; borderRadius: 10px; background: #E85D2F; color: white; text-decoration: none; font-weight: 700; font-size: 17px; letter-spacing: -0.2px; transition: transform 0.1s, box-shadow 0.1s; }
+        .btn-primary { display: inline-block; padding: 14px 32px; borderRadius: 10px; background: var(--accent); color: white; text-decoration: none; font-weight: 700; font-size: 17px; letter-spacing: -0.2px; transition: transform 0.1s, box-shadow 0.1s; }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,93,47,0.35); }
-        .feature-card { background: white; border: 1px solid #f0f0ef; border-radius: 16px; padding: 24px; transition: box-shadow 0.2s, transform 0.2s; }
-        .feature-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,0.08); transform: translateY(-2px); }
+        .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: box-shadow 0.2s, transform 0.2s; }
+        .feature-card:hover { box-shadow: var(--shadow-float); transform: translateY(-2px); }
+        .testimonial-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16; }
       `}</style>
 
       {/* NAV */}
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 32px", background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 100 }}>
-        <span style={{ fontWeight: 800, fontSize: 22, color: "#E85D2F", letterSpacing: "-0.5px" }}>MenuQR</span>
+        <span style={{ fontWeight: 800, fontSize: 22, color: "var(--accent)", letterSpacing: "-0.5px" }}>MenuQR</span>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <Link href="/login" style={{ padding: "8px 18px", borderRadius: 8, border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 500, fontSize: 14 }}>Log in</Link>
-          <Link href="/signup" style={{ padding: "8px 18px", borderRadius: 8, background: "#E85D2F", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>Get started free →</Link>
+          <Link href="/signup" style={{ padding: "8px 18px", borderRadius: 8, background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 14 }}>Get started free →</Link>
         </div>
       </nav>
 
       {/* HERO */}
       <section style={{ textAlign: "center", padding: "80px 32px 60px", maxWidth: 700, margin: "0 auto" }}>
-        <div style={{ display: "inline-block", background: "#fff3ef", color: "#E85D2F", fontWeight: 700, fontSize: 13, padding: "4px 14px", borderRadius: 99, marginBottom: 20, border: "1px solid #fcd9cc" }}>
+        <div style={{ display: "inline-block", background: "var(--accent-light)", color: "var(--accent)", fontWeight: 700, fontSize: 13, padding: "4px 14px", borderRadius: 99, marginBottom: 20, border: "1px solid var(--border)" }}>
           🚀 No app needed — works on any phone
         </div>
         <h1 style={{ fontSize: 52, fontWeight: 900, marginBottom: 20, lineHeight: 1.1, color: "var(--text)", letterSpacing: "-1px" }}>
-          Digital menus &<br /><span style={{ color: "#E85D2F" }}>live table ordering</span><br />for your restaurant
+          Digital menus &<br /><span style={{ color: "var(--accent)" }}>live table ordering</span><br />for your restaurant
         </h1>
         <p style={{ fontSize: 19, color: "var(--text-muted)", maxWidth: 520, margin: "0 auto 36px", lineHeight: 1.6 }}>
           Guests scan a QR code at their table, browse your menu, and tap to order — no download, no login, no friction.
@@ -40,7 +41,7 @@ export default function LandingPage() {
 
       {/* DEMO VISUAL */}
       <section style={{ maxWidth: 640, margin: "0 auto 60px", padding: "0 32px", textAlign: "center" }}>
-        <div style={{ background: "#E85D2F", color: "white", borderRadius: 20, padding: "28px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+        <div style={{ background: "var(--accent)", color: "white", borderRadius: 20, padding: "28px 24px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           {[["📱", "Guest scans QR"], ["🍽️", "Sees live menu"], ["⚡", "Staff gets alert"]].map(([icon, label]) => (
             <div key={label} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 8px", textAlign: "center" }}>
               <div style={{ fontSize: 28, marginBottom: 6 }}>{icon}</div>
@@ -72,7 +73,7 @@ export default function LandingPage() {
       </section>
 
       {/* BENEFITS */}
-      <section style={{ background: "var(--surface)", borderTop: "1px solid #f0f0ef", borderBottom: "1px solid var(--border)", padding: "60px 32px" }}>
+      <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "60px 32px" }}>
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <h2 style={{ textAlign: "center", fontWeight: 800, fontSize: 32, marginBottom: 40, color: "var(--text)", letterSpacing: "-0.5px" }}>Everything you need, nothing you don&apos;t</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 20 }}>
@@ -84,9 +85,9 @@ export default function LandingPage() {
               { icon: "🖨️", title: "Print-ready QR codes", text: "One click to print all QR codes formatted for your tables." },
               { icon: "🔄", title: "Live menu updates", text: "Change prices, add items — guests see it instantly." },
             ].map((b) => (
-              <div key={b.title} className="feature-card" style={{ borderTop: "3px solid #E85D2F" }}>
+              <div key={b.title} className="feature-card" style={{ borderTop: "3px solid var(--accent)" }}>
                 <div style={{ fontSize: 28, marginBottom: 10 }}>{b.icon}</div>
-                <h3 style={{ fontWeight: 700, marginBottom: 6, fontSize: 15, color: "#E85D2F" }}>{b.title}</h3>
+                <h3 style={{ fontWeight: 700, marginBottom: 6, fontSize: 15, color: "var(--accent)" }}>{b.title}</h3>
                 <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{b.text}</p>
               </div>
             ))}
@@ -101,9 +102,9 @@ export default function LandingPage() {
         <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
           {[
             { name: "Free", price: "0", period: "forever", color: "var(--text-muted)", features: ["1 restaurant", "Up to 10 tables", "Unlimited menu items", "Live orders dashboard", "QR code generation"] },
-            { name: "Pro", price: "Coming soon", period: "", color: "#E85D2F", features: ["Unlimited tables", "Custom domain", "Analytics & reports", "Multi-language menus", "Priority support"] },
+            { name: "Pro", price: "Coming soon", period: "", color: "var(--accent)", features: ["Unlimited tables", "Custom domain", "Analytics & reports", "Multi-language menus", "Priority support"] },
           ].map(plan => (
-            <div key={plan.name} style={{ flex: "1 1 260px", background: "var(--surface)", border: `2px solid ${plan.color === "#E85D2F" ? "#E85D2F" : "#f0f0ef"}`, borderRadius: 20, padding: "28px 24px" }}>
+            <div key={plan.name} style={{ flex: "1 1 260px", background: "var(--surface)", border: `2px solid ${plan.color === "var(--accent)" ? "var(--accent)" : "var(--border)"}`, borderRadius: 20, padding: "28px 24px" }}>
               <div style={{ fontWeight: 800, fontSize: 18, color: "var(--text)", marginBottom: 6 }}>{plan.name}</div>
               <div style={{ fontSize: 36, fontWeight: 900, color: plan.color, marginBottom: 4 }}>
                 {plan.price === "0" ? "Free" : plan.price}
@@ -127,7 +128,7 @@ export default function LandingPage() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section style={{ background: "#fff7f4", borderTop: "1px solid #fcd9cc", borderBottom: "1px solid #fcd9cc", padding: "60px 32px" }}>
+      <section style={{ background: "var(--surface-2)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "60px 32px" }}>
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <h2 style={{ textAlign: "center", fontWeight: 800, fontSize: 32, marginBottom: 8, color: "var(--text)", letterSpacing: "-0.5px" }}>Loved by restaurant owners</h2>
           <p style={{ textAlign: "center", color: "var(--text-muted)", marginBottom: 40, fontSize: 16 }}>See what our users are saying</p>
@@ -137,8 +138,8 @@ export default function LandingPage() {
               { quote: "The live orders board is fantastic. Staff know exactly what every table needs, instantly.", name: "Sofia K.", role: "Restaurant Manager, Stockholm" },
               { quote: "No more 'excuse me!' — guests request refills and the bill right from their phone. Game changer.", name: "James T.", role: "Bar Owner, London" },
             ].map((t, i) => (
-              <div key={i} style={{ background: "var(--surface)", borderRadius: 16, padding: "24px", border: "1px solid #fcd9cc", display: "flex", flexDirection: "column", gap: 16 }}>
-                <div style={{ fontSize: 24, color: "#E85D2F" }}>❝</div>
+              <div key={i} className="testimonial-card">
+                <div style={{ fontSize: 24, color: "var(--accent)" }}>❝</div>
                 <p style={{ color: "var(--text)", fontSize: 15, lineHeight: 1.6, margin: 0, flex: 1 }}>{t.quote}</p>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{t.name}</div>
@@ -151,16 +152,16 @@ export default function LandingPage() {
       </section>
 
       {/* CTA */}
-      <section style={{ background: "#E85D2F", padding: "60px 32px", textAlign: "center" }}>
+      <section style={{ background: "var(--accent)", padding: "60px 32px", textAlign: "center" }}>
         <h2 style={{ fontWeight: 900, fontSize: 36, color: "white", marginBottom: 12, letterSpacing: "-0.5px" }}>Ready to modernize your restaurant?</h2>
         <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 17, marginBottom: 32 }}>Join restaurants already using MenuQR. Free to start, no credit card needed.</p>
-        <Link href="/signup" style={{ display: "inline-block", padding: "16px 40px", borderRadius: 12, background: "var(--surface)", color: "#E85D2F", textDecoration: "none", fontWeight: 800, fontSize: 18 }}>
+        <Link href="/signup" style={{ display: "inline-block", padding: "16px 40px", borderRadius: 12, background: "var(--surface)", color: "var(--accent)", textDecoration: "none", fontWeight: 800, fontSize: 18 }}>
           Create your menu now →
         </Link>
       </section>
 
       {/* FOOTER */}
-      <footer style={{ borderTop: "1px solid #f0f0ef", background: "var(--surface)", padding: "32px", textAlign: "center" }}>
+      <footer style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "32px", textAlign: "center" }}>
         <div style={{ display: "flex", justifyContent: "center", gap: 24, marginBottom: 12, flexWrap: "wrap" }}>
           <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Home</Link>
           <Link href="/login" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Log in</Link>
