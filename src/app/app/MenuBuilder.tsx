@@ -33,6 +33,21 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   // Quick-add per category
   const [quickAdds, setQuickAdds] = useState<Record<string, QuickAdd>>({});
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  // Confirmation state
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<string | null>(null);
+  const [confirmDeleteCat, setConfirmDeleteCat] = useState<string | null>(null);
+
+  // Currency (persisted per restaurant)
+  const [currency, setCurrency] = useState(() => {
+    try { return localStorage.getItem(`menuqr_currency_${restaurant.id}`) || "SEK"; } catch { return "SEK"; }
+  });
+
+  const CURRENCIES: Record<string, string> = {
+    SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$",
+  };
+  const currencySymbol = CURRENCIES[currency] ?? currency;
 
   // Add category
   const [addingCategory, setAddingCategory] = useState(false);
@@ -155,6 +170,7 @@ export default function MenuBuilder({ restaurant }: Props) {
       setAllItems(i => [...i, item]);
       setItems(i => [...i, item]);
       setQuickAdds(prev => ({ ...prev, [catId]: { name: "", price: "" } }));
+      setShowQuickAdd(false);
     }
   }
 
@@ -226,18 +242,24 @@ export default function MenuBuilder({ restaurant }: Props) {
     e.dataTransfer.setData("text/plain", itemId);
   }
 
-  async function handleItemDrop(e: React.DragEvent, targetIdx: number) {
+  function handleDragOver(e: React.DragEvent) {
     e.preventDefault();
-    if (!dragItemId) return;
+    e.dataTransfer.dropEffect = "move";
+  }
+
+  async function handleItemDrop(e: React.DragEvent, targetItemId: string) {
+    e.preventDefault();
+    if (!dragItemId || dragItemId === targetItemId) { setDragItemId(null); return; }
     const sourceItem = allItems.find(i => i.id === dragItemId);
-    if (!sourceItem) return;
+    if (!sourceItem) { setDragItemId(null); return; }
 
     const catItems = allItems
       .filter(i => i.category_id === sourceItem.category_id)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
     const sourceIdx = catItems.findIndex(i => i.id === dragItemId);
-    if (sourceIdx < 0 || sourceIdx === targetIdx) return;
+    const targetIdx = catItems.findIndex(i => i.id === targetItemId);
+    if (sourceIdx < 0 || targetIdx < 0 || sourceIdx === targetIdx) { setDragItemId(null); return; }
 
     const reordered = [...catItems];
     const [moved] = reordered.splice(sourceIdx, 1);
@@ -255,6 +277,11 @@ export default function MenuBuilder({ restaurant }: Props) {
     await Promise.all(reordered.map((item, i) =>
       supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
     ));
+  }
+
+  function handleDragEnd() {
+    setDragItemId(null);
+    setDragCatId(null);
   }
 
   // ─── RENDER ───────────────────────────────────────────
@@ -295,12 +322,24 @@ export default function MenuBuilder({ restaurant }: Props) {
             />
           </div>
           {!addingCategory && (
-            <button
-              onClick={() => setAddingCategory(true)}
-              style={{ padding: "9px 16px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
-            >
-              + Category
-            </button>
+            <>
+              <select
+                value={currency}
+                onChange={e => { setCurrency(e.target.value); localStorage.setItem(`menuqr_currency_${restaurant.id}`, e.target.value); }}
+                style={{ padding: "7px 8px", fontSize: 12, fontWeight: 600, width: "auto", cursor: "pointer", borderRadius: 8 }}
+                title="Currency for prices"
+              >
+                {Object.entries(CURRENCIES).map(([code, sym]) => (
+                  <option key={code} value={code}>{sym} {code}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setAddingCategory(true)}
+                style={{ padding: "9px 16px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
+              >
+                + Category
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -460,13 +499,62 @@ export default function MenuBuilder({ restaurant }: Props) {
                     style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 14, opacity: categories.findIndex(c => c.id === activeCat.id) === categories.length - 1 ? 0.3 : 1 }}
                     title="Move category down"
                   >↓</button>
-                  <button
-                    onClick={() => deleteCategory(activeCat.id)}
-                    style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid var(--card-bill-border)", background: "var(--card-bill-bg)", cursor: "pointer", color: "#dc2626", fontSize: 12, fontWeight: 600 }}
-                  >Delete category</button>
+                  {confirmDeleteCat === activeCat.id ? (
+                    <>
+                      <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Delete category & all items?</span>
+                      <button onClick={() => { deleteCategory(activeCat.id); setConfirmDeleteCat(null); }}
+                        style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Yes, delete</button>
+                      <button onClick={() => setConfirmDeleteCat(null)}
+                        style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 12 }}>Cancel</button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteCat(activeCat.id)}
+                      style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid var(--card-bill-border)", background: "var(--card-bill-bg)", cursor: "pointer", color: "#dc2626", fontSize: 12, fontWeight: 600 }}
+                    >Delete</button>
+                  )}
                 </div>
+                <button
+                  onClick={() => setShowQuickAdd(s => !s)}
+                  style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid var(--accent)", background: showQuickAdd ? "var(--accent)" : "var(--surface)", color: showQuickAdd ? "white" : "var(--accent)", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap" }}
+                >
+                  {showQuickAdd ? "✕ Close" : "+ Add item"}
+                </button>
               </div>
             ) : null}
+
+            {/* Quick-add row (above items) */}
+            {!searchQuery && selectedCatId && showQuickAdd && (
+              <div style={{
+                marginBottom: 12, padding: "10px 14px",
+                background: "var(--surface)", border: "1px dashed var(--accent)", borderRadius: 10,
+                display: "flex", gap: 8, alignItems: "center",
+              }}>
+                <span style={{ color: "var(--accent)", fontSize: 16, fontWeight: 700, flexShrink: 0 }}>+</span>
+                <input
+                  autoFocus
+                  placeholder="Item name"
+                  value={quickAdds[selectedCatId]?.name ?? ""}
+                  onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], name: e.target.value } }))}
+                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
+                  style={{ flex: 1, padding: "6px 10px", fontSize: 13 }}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder={`Price (${currencySymbol})`}
+                  value={quickAdds[selectedCatId]?.price ?? ""}
+                  onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], price: e.target.value } }))}
+                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
+                  style={{ width: 110, padding: "6px 10px", fontSize: 13 }}
+                />
+                <button
+                  onClick={() => quickAddItem(selectedCatId)}
+                  style={{ padding: "6px 16px", borderRadius: 7, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}
+                >Add</button>
+              </div>
+            )}
 
             {/* Items list */}
             {displayItems.length === 0 ? (
@@ -487,10 +575,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                   return (
                     <div
                       key={item.id}
-                      draggable={!isEditing}
+                      draggable={!isEditing && !searchQuery}
                       onDragStart={(e) => handleItemDragStart(e, item.id)}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => handleItemDrop(e, idx)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleItemDrop(e, item.id)}
+                      onDragEnd={handleDragEnd}
                       style={{
                         display: "flex", alignItems: "center", gap: 10,
                         padding: "10px 14px",
@@ -579,7 +668,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           }}
                           title="Click to edit price"
                         >
-                          {item.price ? `${item.price} kr` : "—"}
+                          {item.price ? `${item.price} ${currencySymbol}` : "—"}
                         </span>
                       )}
 
@@ -610,47 +699,25 @@ export default function MenuBuilder({ restaurant }: Props) {
                             title="Duplicate"
                             style={{ fontSize: 13, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
                           >⧉</button>
-                          <button
-                            onClick={() => deleteItem(item.id)}
-                            style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 2px" }}
-                          >×</button>
+                          {confirmDeleteItem === item.id ? (
+                            <>
+                              <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>Remove?</span>
+                              <button onClick={() => { deleteItem(item.id); setConfirmDeleteItem(null); }}
+                                style={{ fontSize: 11, padding: "3px 8px", borderRadius: 6, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, whiteSpace: "nowrap" }}>Yes</button>
+                              <button onClick={() => setConfirmDeleteItem(null)}
+                                style={{ fontSize: 11, padding: "3px 6px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>No</button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setConfirmDeleteItem(item.id)}
+                              style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "0 2px" }}
+                            >×</button>
+                          )}
                         </div>
                       )}
                     </div>
                   );
                 })}
-              </div>
-            )}
-
-            {/* Quick-add row */}
-            {!searchQuery && selectedCatId && (
-              <div style={{
-                marginTop: 12, padding: "10px 14px",
-                background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 10,
-                display: "flex", gap: 8, alignItems: "center",
-              }}>
-                <span style={{ color: "var(--text-muted)", fontSize: 16, flexShrink: 0 }}>+</span>
-                <input
-                  placeholder="Item name"
-                  value={quickAdds[selectedCatId]?.name ?? ""}
-                  onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], name: e.target.value } }))}
-                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
-                  style={{ flex: 1, padding: "6px 10px", fontSize: 13 }}
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Price"
-                  value={quickAdds[selectedCatId]?.price ?? ""}
-                  onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], price: e.target.value } }))}
-                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
-                  style={{ width: 90, padding: "6px 10px", fontSize: 13 }}
-                />
-                <button
-                  onClick={() => quickAddItem(selectedCatId)}
-                  style={{ padding: "6px 14px", borderRadius: 7, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
-                >Add</button>
               </div>
             )}
           </div>
