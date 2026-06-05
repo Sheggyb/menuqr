@@ -589,7 +589,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 onDrop={handleItemsDrop}
                 style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}
               >
-                {displayItems.map((item, idx) => {
+                {displayItems.map((item) => {
                   const isEditing = edit?.itemId === item.id;
                   const cat = categories.find(c => c.id === item.category_id);
                   return (
