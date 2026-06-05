@@ -65,6 +65,44 @@ export default function MenuBuilder({ restaurant }: Props) {
   const [newCatIcon, setNewCatIcon] = useState("🍽️");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
+  // Edit category inline
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editCatName, setEditCatName] = useState("");
+  const [editCatIcon, setEditCatIcon] = useState("🍽️");
+  const [showEditEmojiPicker, setShowEditEmojiPicker] = useState(false);
+  const editCatInputRef = useRef<HTMLInputElement>(null);
+
+  function startEditCat(cat: MenuCategory) {
+    setEditingCatId(cat.id);
+    setEditCatName(cat.name);
+    setEditCatIcon(cat.icon ?? "🍽️");
+    setShowEditEmojiPicker(false);
+  }
+
+  async function saveEditCat() {
+    if (!editingCatId || !editCatName.trim()) { setEditingCatId(null); return; }
+    await supabase.from("menu_categories")
+      .update({ name: editCatName.trim(), icon: editCatIcon })
+      .eq("id", editingCatId);
+    setCategories(prev => prev.map(c =>
+      c.id === editingCatId ? { ...c, name: editCatName.trim(), icon: editCatIcon } : c
+    ));
+    setEditingCatId(null);
+    setShowEditEmojiPicker(false);
+  }
+
+  function cancelEditCat() {
+    setEditingCatId(null);
+    setShowEditEmojiPicker(false);
+  }
+
+  useEffect(() => {
+    if (editingCatId && editCatInputRef.current) {
+      editCatInputRef.current.focus();
+      editCatInputRef.current.select();
+    }
+  }, [editingCatId]);
+
   // Drag state — use ref to avoid re-renders during drag
   const dragItemRef = useRef<string | null>(null);
   const dragCatRef = useRef<string | null>(null);
@@ -408,56 +446,115 @@ export default function MenuBuilder({ restaurant }: Props) {
             {categories.map((cat, idx) => {
               const active = cat.id === selectedCatId && !searchQuery;
               const count = catItemCounts[cat.id] ?? 0;
+              const isEditingThis = editingCatId === cat.id;
               return (
-                <button
-                  key={cat.id}
-                  onClick={() => { setSelectedCatId(cat.id); setSearchQuery(""); }}
-                  draggable
-                  onDragStart={(e) => { dragCatRef.current = cat.id; e.dataTransfer.setData("text/cat", cat.id); }}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={async (e) => {
-                    e.preventDefault();
-                    const draggedCatId = dragCatRef.current;
-                    dragCatRef.current = null;
-                    if (!draggedCatId || draggedCatId === cat.id) return;
-                    const sourceIdx = categories.findIndex(c => c.id === draggedCatId);
-                    const targetIdx = idx;
-                    if (sourceIdx < 0 || sourceIdx === targetIdx) return;
-                    const reordered = [...categories];
-                    const [moved] = reordered.splice(sourceIdx, 1);
-                    reordered.splice(targetIdx, 0, moved);
-                    setCategories(reordered);
-                    await Promise.all(reordered.map((c, i) =>
-                      supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
-                    ));
-                  }}
-                  onContextMenu={(e) => openCtxMenu(e, [
-                    {
-                      label: "Delete category",
-                      icon: "🗑️",
-                      danger: true,
-                      action: () => setConfirmDeleteCat(cat.id),
-                    },
-                  ])}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    border: "none",
-                    background: active ? "var(--accent)" : "transparent",
-                    color: active ? "white" : "var(--text)",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: active ? 700 : 500,
-                    textAlign: "left",
-                    width: "100%",
-                    transition: "background 0.1s, color 0.1s",
-                  }}
-                >
-                  <span style={{ fontSize: 14, flexShrink: 0 }}>{cat.icon}</span>
-                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{cat.name}</span>
-                  <span style={{ fontSize: 11, fontWeight: 600, opacity: active ? 0.8 : 0.5, flexShrink: 0 }}>{count}</span>
-                </button>
+                <div key={cat.id} style={{ position: "relative" }}>
+                  {isEditingThis ? (
+                    // ── Inline editor ──
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 4,
+                      padding: "4px 6px", borderRadius: 8,
+                      background: "var(--surface2, #1a1a20)",
+                      border: "1px solid var(--accent)",
+                    }}>
+                      {/* Emoji button */}
+                      <button
+                        type="button"
+                        onClick={() => setShowEditEmojiPicker(p => !p)}
+                        style={{ fontSize: 16, padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
+                      >
+                        {editCatIcon}
+                      </button>
+                      {showEditEmojiPicker && (
+                        <div style={{
+                          position: "absolute", top: "100%", left: 0, zIndex: 30,
+                          background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
+                          padding: 8, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3,
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 220,
+                        }}>
+                          {CATEGORY_EMOJIS.map(e => (
+                            <button key={e} type="button"
+                              onClick={() => { setEditCatIcon(e); setShowEditEmojiPicker(false); }}
+                              style={{ fontSize: 18, background: editCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
+                              {e}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <input
+                        ref={editCatInputRef}
+                        value={editCatName}
+                        onChange={e => setEditCatName(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") saveEditCat(); if (e.key === "Escape") cancelEditCat(); }}
+                        style={{ flex: 1, fontSize: 12, padding: "3px 6px", minWidth: 0 }}
+                      />
+                      <button
+                        onClick={saveEditCat}
+                        style={{ fontSize: 11, padding: "2px 6px", borderRadius: 5, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, flexShrink: 0 }}
+                      >✓</button>
+                      <button
+                        onClick={cancelEditCat}
+                        style={{ fontSize: 11, padding: "2px 5px", borderRadius: 5, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer", flexShrink: 0 }}
+                      >✕</button>
+                    </div>
+                  ) : (
+                    // ── Normal button ──
+                    <button
+                      onClick={() => { setSelectedCatId(cat.id); setSearchQuery(""); }}
+                      draggable
+                      onDragStart={(e) => { dragCatRef.current = cat.id; e.dataTransfer.setData("text/cat", cat.id); }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={async (e) => {
+                        e.preventDefault();
+                        const draggedCatId = dragCatRef.current;
+                        dragCatRef.current = null;
+                        if (!draggedCatId || draggedCatId === cat.id) return;
+                        const sourceIdx = categories.findIndex(c => c.id === draggedCatId);
+                        const targetIdx = idx;
+                        if (sourceIdx < 0 || sourceIdx === targetIdx) return;
+                        const reordered = [...categories];
+                        const [moved] = reordered.splice(sourceIdx, 1);
+                        reordered.splice(targetIdx, 0, moved);
+                        setCategories(reordered);
+                        await Promise.all(reordered.map((c, i) =>
+                          supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
+                        ));
+                      }}
+                      onContextMenu={(e) => openCtxMenu(e, [
+                        {
+                          label: "Edit name & icon",
+                          icon: "✏️",
+                          action: () => startEditCat(cat),
+                        },
+                        { separator: true } as unknown as ContextMenuAction,
+                        {
+                          label: "Delete category",
+                          icon: "🗑️",
+                          danger: true,
+                          action: () => setConfirmDeleteCat(cat.id),
+                        },
+                      ])}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 8,
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: "none",
+                        background: active ? "var(--accent)" : "transparent",
+                        color: active ? "white" : "var(--text)",
+                        cursor: "pointer",
+                        fontSize: 13,
+                        fontWeight: active ? 700 : 500,
+                        textAlign: "left",
+                        width: "100%",
+                        transition: "background 0.1s, color 0.1s",
+                      }}
+                    >
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{cat.icon}</span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{cat.name}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, opacity: active ? 0.8 : 0.5, flexShrink: 0 }}>{count}</span>
+                    </button>
+                  )}
+                </div>
               );
             })}
             <button
