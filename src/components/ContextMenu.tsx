@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 
 export interface ContextMenuAction {
   label: string;
@@ -29,7 +30,9 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <>
       {/* Invisible backdrop — click anywhere outside to close */}
       <div
@@ -88,6 +91,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
           )
         )}
       </div>
-    </>
+    </>,
+    document.body
   );
 }

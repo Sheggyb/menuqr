@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, MenuCategory, MenuItem } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
@@ -833,7 +834,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         />
       )}
       {/* Add-category emoji picker — fixed so sidebar overflow doesn't clip it */}
-      {showEmojiPicker && (
+      {showEmojiPicker && typeof document !== "undefined" && createPortal(
         <>
           <div onClick={() => setShowEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
           <div style={{
@@ -849,10 +850,11 @@ export default function MenuBuilder({ restaurant }: Props) {
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
       {/* Edit-category emoji picker — fixed so sidebar overflow doesn't clip it */}
-      {showEditEmojiPicker && (
+      {showEditEmojiPicker && typeof document !== "undefined" && createPortal(
         <>
           <div onClick={() => setShowEditEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
           <div style={{
@@ -869,7 +871,8 @@ export default function MenuBuilder({ restaurant }: Props) {
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
