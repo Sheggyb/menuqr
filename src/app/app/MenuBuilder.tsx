@@ -110,22 +110,6 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   // ─── CATEGORY CRUD ────────────────────────────────────
 
-  async function addCategory() {
-    if (!newCatName.trim()) return;
-    const { data } = await supabase.from("menu_categories")
-      .insert({ restaurant_id: restaurant.id, name: newCatName.trim(), icon: newCatIcon, sort_order: categories.length })
-      .select().single();
-    if (data) {
-      const cat = data as MenuCategory;
-      setCategories(c => [...c, cat]);
-      setSelectedCatId(cat.id);
-      setNewCatName("");
-      setNewCatIcon("🍽️");
-      setShowEmojiPicker(false);
-      setAddingCategory(false);
-    }
-  }
-
   async function deleteCategory(id: string) {
     await supabase.from("menu_categories").delete().eq("id", id);
     setCategories(c => c.filter(x => x.id !== id));
