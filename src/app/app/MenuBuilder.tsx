@@ -227,39 +227,17 @@ export default function MenuBuilder({ restaurant }: Props) {
     e.dataTransfer.setData("text/plain", itemId);
   }
 
-  function handleItemsDragOver(e: React.DragEvent) {
+  function handleItemDragOver(e: React.DragEvent) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
   }
 
-  async function handleItemsDrop(e: React.DragEvent) {
+  async function handleItemDrop(e: React.DragEvent, targetItemId: string) {
     e.preventDefault();
-    if (!dragItemId) return;
+    e.stopPropagation();
+    if (!dragItemId || dragItemId === targetItemId) { setDragItemId(null); return; }
     const sourceItem = allItems.find(i => i.id === dragItemId);
     if (!sourceItem) { setDragItemId(null); return; }
-
-    // Find target position by comparing Y positions of all item elements
-    const container = e.currentTarget as HTMLElement;
-    const itemEls = container.querySelectorAll('[data-item-id]');
-    const mouseY = e.clientY;
-
-    let targetItemId: string | null = null;
-    let insertAfter = false;
-
-    for (let i = 0; i < itemEls.length; i++) {
-      const el = itemEls[i] as HTMLElement;
-      const rect = el.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      if (mouseY < midY) {
-        targetItemId = el.dataset.itemId ?? null;
-        insertAfter = false;
-        break;
-      }
-      targetItemId = el.dataset.itemId ?? null;
-      insertAfter = true;
-    }
-
-    if (!targetItemId || targetItemId === dragItemId) { setDragItemId(null); return; }
 
     const catItems = allItems
       .filter(i => i.category_id === sourceItem.category_id)
@@ -269,13 +247,11 @@ export default function MenuBuilder({ restaurant }: Props) {
     let targetIdx = catItems.findIndex(i => i.id === targetItemId);
     if (sourceIdx < 0 || targetIdx < 0) { setDragItemId(null); return; }
 
-    if (insertAfter) targetIdx = Math.min(targetIdx + 1, catItems.length);
-    if (sourceIdx < targetIdx) targetIdx--; // source removed before target
-    if (sourceIdx === targetIdx) { setDragItemId(null); return; }
-
     const reordered = [...catItems];
     const [moved] = reordered.splice(sourceIdx, 1);
-    reordered.splice(targetIdx, 0, moved);
+    // After removing source, targetIdx may have shifted
+    const adjustedTarget = catItems.findIndex(i => i.id === targetItemId);
+    reordered.splice(adjustedTarget >= 0 ? adjustedTarget : targetIdx, 0, moved);
 
     const updated = allItems.map(item => {
       const newIdx = reordered.findIndex(r => r.id === item.id);
@@ -568,11 +544,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 </p>
               </div>
             ) : (
-              <div
-                onDragOver={handleItemsDragOver}
-                onDrop={handleItemsDrop}
-                style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}
-              >
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
                 {displayItems.map((item) => {
                   const isEditing = edit?.itemId === item.id;
                   const cat = categories.find(c => c.id === item.category_id);
@@ -582,6 +554,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                       data-item-id={item.id}
                       draggable={!isEditing && !searchQuery}
                       onDragStart={(e) => handleItemDragStart(e, item.id)}
+                      onDragOver={handleItemDragOver}
+                      onDrop={(e) => handleItemDrop(e, item.id)}
                       onDragEnd={handleDragEnd}
                       style={{
                         display: "flex", alignItems: "center", gap: 10,
