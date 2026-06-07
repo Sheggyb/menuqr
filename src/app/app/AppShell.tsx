@@ -110,7 +110,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           ["orders", "bolt", "Live Orders"],
           ["menu", "fork", "Menu"],
           ["tables", "table", "Tables"],
-          ["analytics", "chart", "Analytics"],
+          ["analytics", "chart", "Stats"],
           ["history", "clock", "History"],
           ["settings", "gear", "Settings"],
         ] as [Tab, string, string][]).map(([id, icon, label]) => {
