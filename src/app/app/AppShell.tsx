@@ -179,14 +179,14 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
             }}
           >
             {icon === "table-svg" ? (
-              <span style={{ fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", width: "1em", height: "1em" }}>
+              <span style={{ height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="6" width="18" height="3" rx="1"/>
                   <line x1="6" y1="9" x2="6" y2="18"/>
                   <line x1="18" y1="9" x2="18" y2="18"/>
                 </svg>
               </span>
-            ) : <span style={{ fontSize: 20 }}>{icon}</span>}
+            ) : <span style={{ fontSize: 20, height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</span>}
             {id === "orders" && pendingCount > 0 && (
               <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "#E85D2F", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span>
             )}
