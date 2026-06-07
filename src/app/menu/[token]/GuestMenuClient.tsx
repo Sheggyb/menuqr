@@ -72,6 +72,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     } catch { return "kr"; }
   })();
 
+  const [readyBanner, setReadyBanner] = useState<string[]>([]); // item names that just became "done"
+
   // Poll order statuses every 4s so guest sees pending→seen→done live
   useEffect(() => {
     if (sessionRequests.length === 0) return;
@@ -81,7 +83,15 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       try {
         const res = await fetch(`/api/orders/status?ids=${ids}`);
         const data = await res.json();
-        setSessionRequests(prev => prev.map(r => data.statuses[r.id] ? { ...r, status: data.statuses[r.id] as SessionRequest["status"] } : r));
+        setSessionRequests(prev => {
+          const next = prev.map(r => data.statuses[r.id] ? { ...r, status: data.statuses[r.id] as SessionRequest["status"] } : r);
+          // Detect transitions to "done" — show collect notification
+          const justDone = prev
+            .filter(r => r.status !== "done" && data.statuses[r.id] === "done")
+            .map(r => r.name);
+          if (justDone.length > 0) setReadyBanner(justDone);
+          return next;
+        });
       } catch {}
     };
     poll();
@@ -366,8 +376,51 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       <style>{`
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
         * { box-sizing: border-box; }
       `}</style>
+
+      {/* COLLECT NOTIFICATION BANNER */}
+      {readyBanner.length > 0 && (
+        <div
+          onClick={() => setReadyBanner([])}
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.6)", zIndex: 200,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24, animation: "fadeIn 0.2s ease",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#22c55e", borderRadius: 20,
+              padding: "32px 28px", textAlign: "center", maxWidth: 320, width: "100%",
+              boxShadow: "0 8px 40px rgba(34,197,94,0.5)",
+              animation: "popIn 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <div style={{ fontSize: 64, lineHeight: 1, marginBottom: 16 }}>🔔</div>
+            <h2 style={{ color: "white", fontWeight: 900, fontSize: 26, margin: "0 0 10px" }}>
+              {readyBanner.length === 1 ? "Your order is ready!" : "Orders are ready!"}
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, marginBottom: 24, lineHeight: 1.5 }}>
+              {readyBanner.length === 1
+                ? <><strong>{readyBanner[0]}</strong> is ready to collect.</>
+                : <>
+                    {readyBanner.slice(0, -1).join(", ")} and <strong>{readyBanner[readyBanner.length - 1]}</strong> are ready.
+                  </>
+              }
+            </p>
+            <button
+              onClick={() => setReadyBanner([])}
+              style={{ background: "white", color: "#16a34a", border: "none", borderRadius: 12, padding: "13px 32px", fontWeight: 800, fontSize: 16, cursor: "pointer" }}
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <header style={{ background: accentColor, color: "white", padding: "20px 16px 16px", textAlign: "center", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
