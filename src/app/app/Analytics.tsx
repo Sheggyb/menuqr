@@ -130,7 +130,7 @@ export default function Analytics({ restaurant }: Props) {
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
         <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
         <div style={{ overflowX: "auto" }}>
-          <div style={{ display: "flex", gap: range === "30d" ? 6 : 8, alignItems: "flex-end", paddingBottom: 40, minWidth: range === "30d" ? 30 * 32 : "unset", position: "relative" }}>
+          <div style={{ display: "flex", gap: range === "30d" ? 4 : 6, alignItems: "flex-end", paddingBottom: 42, minWidth: range === "30d" ? 30 * 36 : 7 * 52, position: "relative" }}>
             {buckets.map((b, i) => {
               const d = new Date(b.date);
               const dayNum = d.getDate();
@@ -139,17 +139,14 @@ export default function Analytics({ restaurant }: Props) {
               const labelTop = range === "7d" ? weekday : `${mon} ${dayNum}`;
               const labelBot = range === "7d" ? `${mon} ${dayNum}` : "";
               const isToday = i === buckets.length - 1;
-              const showLabel = range === "7d" || i % 5 === 0 || isToday;
               return (
-                <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 26 : 36, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 32 : 46, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
                   <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>
                   <div style={{ width: "100%", background: "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.18 : isToday ? 1 : 0.7 }} />
-                  {showLabel && (
-                    <div style={{ position: "absolute", bottom: -38, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                      <span style={{ fontSize: 10, color: isToday ? "var(--accent)" : "var(--text-muted)", fontWeight: isToday ? 700 : 400, whiteSpace: "nowrap" }}>{labelTop}</span>
-                      {labelBot && <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{labelBot}</span>}
-                    </div>
-                  )}
+                  <div style={{ position: "absolute", bottom: -38, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                    <span style={{ fontSize: range === "30d" ? 9 : 10, color: isToday ? "var(--accent)" : "var(--text-muted)", fontWeight: isToday ? 700 : 400, whiteSpace: "nowrap" }}>{labelTop}</span>
+                    {labelBot && <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{labelBot}</span>}
+                  </div>
                 </div>
               );
             })}
