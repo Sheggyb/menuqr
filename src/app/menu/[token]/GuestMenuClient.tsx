@@ -137,18 +137,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       if (data.session_id) {
         sessionStorage.setItem(`menuqr_sid_${table.id}`, data.session_id);
         setSessionId(data.session_id);
-        // Café/takeaway: auto-approve — no need to wait for staff
-        const venueType = restaurant.venue_type ?? "table_service";
-        if (venueType === "cafe" || venueType === "takeaway") {
-          await fetch("/api/session/check", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id: data.session_id, action: "approve" }),
-          });
-          setSessionStatus("active");
-        } else {
-          setSessionStatus("pending");
-        }
+        // Always wait for staff to approve — regardless of venue type
+        setSessionStatus("pending");
       } else if (data.error === "table_closed") {
         setSessionStatus("idle");
         showToast("🚫 Table is closed");
