@@ -188,26 +188,39 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     }
     setSending(true);
     const snapshot = [...cart];
-    const results = await Promise.all(snapshot.map(ci =>
-      fetch("/api/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sid,
-          restaurant_id: restaurant.id,
-          table_id: table.id,
-          type: "item_request",
-          item_id: ci.item.id,
-          item_name: `x${ci.quantity} ${ci.item.name}`,
-          note: ci.note || null,
-        }),
-      }).then(r => r.json())
-    ));
+    // Merge all cart items into ONE order line
+    const combinedName = snapshot.map(ci =>
+      `x${ci.quantity} ${ci.item.name}${ci.note ? ` (📝 ${ci.note})` : ""}`
+    ).join("\n");
+    const combinedNote = snapshot.filter(ci => ci.note).length > 0
+      ? snapshot.map(ci => `${ci.item.name}: ${ci.note}`).join("; ")
+      : null;
+    const totalPrice = snapshot.reduce((s, ci) => s + ci.quantity * (ci.item.price ?? 0), 0);
+
+    const res = await fetch("/api/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sid,
+        restaurant_id: restaurant.id,
+        table_id: table.id,
+        type: "item_request",
+        item_id: null,
+        item_name: combinedName,
+        note: combinedNote,
+      }),
+    });
+    const data = await res.json();
     setSending(false);
-    snapshot.forEach((ci, i) => saveSessionRequest(results[i]?.id ?? crypto.randomUUID(), ci.item.name, ci.quantity, ci.item.price ?? 0));
-    setCart([]);
-    setCartOpen(false);
-    setShowConfirmation(true);
+    if (data.ok) {
+      saveSessionRequest(data.id ?? crypto.randomUUID(), `${snapshot.length} items`, 1, totalPrice);
+      setCart([]);
+      setCartOpen(false);
+      setShowConfirmation(true);
+    } else if (data.error === "session_invalid") {
+      setSessionStatus("declined");
+      showToast("🚫 Session expired, please request again");
+    }
   }
 
   function addToCart(item: MenuItem) {

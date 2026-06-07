@@ -74,7 +74,7 @@ function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
             {TYPE_LABEL[req.type] ?? req.type}
           </span>
           {req.item_name && (
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>{req.item_name}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "pre-line", lineHeight: 1.5 }}>{req.item_name}</span>
           )}
           {req.note && (
             <span style={{ fontSize: 12, color: "var(--text-muted)" }}>📝 {req.note}</span>
