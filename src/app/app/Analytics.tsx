@@ -60,7 +60,7 @@ export default function Analytics({ restaurant }: Props) {
   if (!loading && requests.length === 0) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Analytics</h2>
+        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Stats</h2>
         <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
           {(["7d", "30d"] as const).map(r => (
             <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
@@ -109,7 +109,7 @@ export default function Analytics({ restaurant }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Range selector */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Analytics</h2>
+        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)" }}>📊 Stats</h2>
         <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
           {(["7d", "30d"] as const).map(r => (
             <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
@@ -122,28 +122,29 @@ export default function Analytics({ restaurant }: Props) {
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))", gap: 12 }}>
         <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="var(--accent)" />
-        <StatCard label="Completed" value={done} sub={`${completionRate}% rate`} color="#22c55e" />
-        <StatCard label="Completion rate" value={`${completionRate}%`} color="#22c55e" />
+        <StatCard label="Completed" value={done} sub={`${completionRate}% done`} color="#22c55e" />
         <StatCard label="Top request" value={topType ? TYPE_LABEL[topType[0]]?.split(" ")[1] ?? topType[0] : "—"} sub={topType ? `${topType[1]} times` : undefined} color="var(--accent)" />
       </div>
 
       {/* Daily bar chart */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
         <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
-        <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 120, overflowX: "auto" }}>
-          {buckets.map(b => (
-            <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>{b.total > 0 ? b.total : ""}</div>
-              <div style={{ width: "100%", background: "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.2 : 1 }} />
-            </div>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 4, marginTop: 4 }}>
-          {buckets.map((b, i) => (
-            <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, textAlign: "center", fontSize: 9, color: "var(--text-muted)", overflow: "hidden" }}>
-              {range === "7d" ? b.label.split(",")[0] : (i % 5 === 0 ? new Date(b.date).getDate() : "")}
-            </div>
-          ))}
+        <div style={{ overflowX: "auto" }}>
+          <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 120, minWidth: range === "30d" ? 30 * 18 : "unset" }}>
+            {buckets.map(b => (
+              <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>{b.total > 0 ? b.total : ""}</div>
+                <div style={{ width: "100%", background: "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.2 : 1 }} />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 4, marginTop: 4, minWidth: range === "30d" ? 30 * 18 : "unset" }}>
+            {buckets.map((b, i) => (
+              <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, textAlign: "center", fontSize: 9, color: "var(--text-muted)", overflow: "hidden" }}>
+                {range === "7d" ? b.label.split(",")[0] : (i % 5 === 0 ? new Date(b.date).getDate() : "")}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
