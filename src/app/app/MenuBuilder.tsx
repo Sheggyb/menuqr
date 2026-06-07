@@ -569,32 +569,26 @@ export default function MenuBuilder({ restaurant }: Props) {
                 >Clear</button>
               </div>
             ) : activeCat ? (
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
                   {activeCat.icon} {activeCat.name}
                   <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 13 }}>
                     ({filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""})
                   </span>
                 </h3>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {confirmDeleteCat === activeCat.id ? (
-                    <>
-                      <span style={{ fontSize: 12, color: "var(--text-muted)", alignSelf: "center" }}>Delete category & all items?</span>
-                      <button onClick={() => { deleteCategory(activeCat.id); setConfirmDeleteCat(null); }}
-                        style={{ padding: "4px 12px", borderRadius: 6, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Yes, delete</button>
-                      <button onClick={() => setConfirmDeleteCat(null)}
-                        style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 12 }}>Cancel</button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmDeleteCat(activeCat.id)}
-                      style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid var(--card-bill-border)", background: "var(--card-bill-bg)", cursor: "pointer", color: "#dc2626", fontSize: 12, fontWeight: 600 }}
-                    >Delete</button>
-                  )}
-                </div>
+                {/* ⋮ category actions — works on desktop (right-click) and mobile (tap) */}
+                <button
+                  onClick={(e) => openCtxMenu(e, [
+                    { label: "Edit name & icon", icon: "✏️", action: () => startEditCat(activeCat) },
+                    { separator: true } as unknown as ContextMenuAction,
+                    { label: "Delete category", icon: "🗑️", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
+                  ])}
+                  style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 18, lineHeight: 1, fontWeight: 700 }}
+                  title="Category options"
+                >⋮</button>
                 <button
                   onClick={() => setShowQuickAdd(s => !s)}
-                  style={{ padding: "5px 12px", borderRadius: 6, border: "1px solid var(--accent)", background: showQuickAdd ? "var(--accent)" : "var(--surface)", color: showQuickAdd ? "white" : "var(--accent)", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap" }}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--accent)", background: showQuickAdd ? "var(--accent)" : "var(--surface)", color: showQuickAdd ? "white" : "var(--accent)", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
                 >
                   {showQuickAdd ? "✕ Close" : "+ Add item"}
                 </button>
@@ -794,10 +788,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                         </span>
                       )}
 
-                      {/* Actions — right-click the row for full menu */}
+                      {/* Actions */}
                       {!isEditing && (
                         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                          {/* Quick toggle stays visible — most common action */}
+                          {/* Availability toggle */}
                           <button
                             onClick={() => toggleItem(item)}
                             style={{
@@ -810,11 +804,30 @@ export default function MenuBuilder({ restaurant }: Props) {
                           >
                             {item.is_available ? "Live" : "Hidden"}
                           </button>
-                          {/* Hint icon — shows right-click is available */}
-                          <span
-                            style={{ color: "var(--text-muted)", fontSize: 12, opacity: 0.35, userSelect: "none" }}
-                            title="Right-click for more options"
-                          >⋯</span>
+                          {/* ⋮ more actions — tap on mobile, right-click also works on desktop */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openCtxMenu(e, [
+                                { label: "Edit name", icon: "✏️", action: () => startEdit(item.id, "name", item.name) },
+                                { label: "Edit description", icon: "📝", action: () => startEdit(item.id, "description", item.description ?? "") },
+                                { label: "Edit price", icon: "💰", action: () => startEdit(item.id, "price", item.price?.toString() ?? "") },
+                                { separator: true } as unknown as ContextMenuAction,
+                                { label: item.is_available ? "Mark as hidden" : "Mark as available", icon: item.is_available ? "🙈" : "👁️", action: () => toggleItem(item) },
+                                { label: "Duplicate item", icon: "⧉", action: () => duplicateItem(item) },
+                                { separator: true } as unknown as ContextMenuAction,
+                                { label: "Delete item", icon: "🗑️", danger: true, action: () => deleteItem(item.id) },
+                              ]);
+                            }}
+                            style={{
+                              padding: "3px 7px", borderRadius: 6,
+                              border: "1px solid var(--border)",
+                              background: "var(--surface)",
+                              cursor: "pointer", color: "var(--text-muted)",
+                              fontSize: 16, fontWeight: 700, lineHeight: 1,
+                            }}
+                            title="More options"
+                          >⋮</button>
                         </div>
                       )}
                     </div>
@@ -833,6 +846,47 @@ export default function MenuBuilder({ restaurant }: Props) {
           onClose={() => setCtxMenu(null)}
         />
       )}
+      {/* Delete category confirm modal */}
+      {confirmDeleteCat && (() => {
+        const cat = categories.find(c => c.id === confirmDeleteCat);
+        if (!cat) return null;
+        const itemCount = catItemCounts[cat.id] ?? 0;
+        return typeof document !== "undefined" ? createPortal(
+          <>
+            <style>{`@keyframes modalFadeIn { from { opacity:0; transform:scale(0.95) } to { opacity:1; transform:scale(1) } }`}</style>
+            <div
+              onClick={() => setConfirmDeleteCat(null)}
+              style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
+            >
+              <div
+                onClick={e => e.stopPropagation()}
+                style={{ background: "var(--surface)", borderRadius: 16, padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
+              >
+                <div style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>🗑️</div>
+                <h3 style={{ fontWeight: 800, fontSize: 18, textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
+                  Delete &ldquo;{cat.icon} {cat.name}&rdquo;?
+                </h3>
+                <p style={{ fontSize: 14, color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
+                  {itemCount > 0
+                    ? `This will also delete all ${itemCount} item${itemCount !== 1 ? "s" : ""} in this category. This cannot be undone.`
+                    : "This cannot be undone."}
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    onClick={() => setConfirmDeleteCat(null)}
+                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}
+                  >Cancel</button>
+                  <button
+                    onClick={() => { deleteCategory(confirmDeleteCat); setConfirmDeleteCat(null); }}
+                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                  >Yes, delete</button>
+                </div>
+              </div>
+            </div>
+          </>,
+          document.body
+        ) : null;
+      })()}
       {/* Add-category emoji picker — fixed so sidebar overflow doesn't clip it */}
       {showEmojiPicker && typeof document !== "undefined" && createPortal(
         <>
