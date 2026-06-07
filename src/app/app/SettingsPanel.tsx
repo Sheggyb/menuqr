@@ -9,6 +9,9 @@ export default function SettingsPanel({ restaurant }: Props) {
   const supabase = createClient();
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || "#E85D2F");
+  const [venueType, setVenueType] = useState<Restaurant["venue_type"]>(
+    restaurant.venue_type ?? "table_service"
+  );
   const [quickActions, setQuickActions] = useState<string[]>(
     restaurant.quick_actions ?? ["waiter", "bill", "refill"]
   );
@@ -26,6 +29,12 @@ export default function SettingsPanel({ restaurant }: Props) {
     { id: "refill", label: "Refill Drinks", icon: "🔄", desc: "Guest can request a drink refill" },
   ];
 
+  const VENUE_TYPES = [
+    { id: "table_service", icon: "🍽️", label: "Table Service", desc: "Sit-down restaurant — guests order at the table" },
+    { id: "cafe", icon: "☕", label: "Café / Counter", desc: "Guest orders, gets notified when ready to collect" },
+    { id: "takeaway", icon: "🥡", label: "Takeaway / Pickup", desc: "Guest orders ahead, kitchen notifies when ready" },
+  ];
+
   function toggleAction(id: string) {
     setQuickActions(prev =>
       prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
@@ -38,7 +47,7 @@ export default function SettingsPanel({ restaurant }: Props) {
     setError("");
     const { error: err } = await supabase
       .from("restaurants")
-      .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions })
+      .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions, venue_type: venueType })
       .eq("id", restaurant.id);
     setLoading(false);
     if (err) { setError(err.message); } else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
@@ -70,6 +79,31 @@ export default function SettingsPanel({ restaurant }: Props) {
       <h2 style={{ fontWeight: 700, fontSize: 20 }}>⚙️ Settings</h2>
       <div className="card" style={{ maxWidth: 520 }}>
         <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Venue type</label>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>This controls which features are available to your guests.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {VENUE_TYPES.map(v => {
+                const selected = venueType === v.id;
+                return (
+                  <div
+                    key={v.id}
+                    onClick={() => setVenueType(v.id as Restaurant["venue_type"])}
+                    style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, border: `2px solid ${selected ? "var(--accent)" : "var(--border)"}`, background: selected ? "var(--item-available-bg)" : "var(--surface)", cursor: "pointer" }}
+                  >
+                    <span style={{ fontSize: 24 }}>{v.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)" }}>{v.label}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{v.desc}</div>
+                    </div>
+                    <div style={{ width: 18, height: 18, borderRadius: "50%", border: `2px solid ${selected ? "var(--accent)" : "var(--border)"}`, background: selected ? "var(--accent)" : "transparent", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {selected && <div style={{ width: 8, height: 8, borderRadius: "50%", background: "white" }} />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Restaurant name</label>
             <input value={name} onChange={e => setName(e.target.value)} required />

@@ -6,6 +6,7 @@ export interface Restaurant {
   logo_url: string | null;
   accent_color: string;
   quick_actions: string[];
+  venue_type: "table_service" | "cafe" | "takeaway";
   created_at: string;
 }
 
