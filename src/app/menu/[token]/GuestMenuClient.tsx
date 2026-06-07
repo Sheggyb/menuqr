@@ -425,7 +425,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>{item.name}</div>
                 {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
-                {item.price ? <div style={{ fontWeight: 800, color: accentColor, marginTop: 6, fontSize: 16 }}>{item.price} ${currencySymbol}</div> : null}
+                {item.price ? <div style={{ fontWeight: 800, color: accentColor, marginTop: 6, fontSize: 16 }}>{item.price} {currencySymbol}</div> : null}
               </div>
               <button onClick={() => addToCart(item)}
                 style={{ width: 38, height: 38, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 800, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 8px ${accentColor}55` }}>
@@ -443,7 +443,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: 99, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer", zIndex: 40, boxShadow: `0 4px 20px ${accentColor}66`, display: "flex", alignItems: "center", gap: 10, animation: "fadeIn 0.2s ease", whiteSpace: "nowrap" }}>
           <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: "50%", width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{cartCount}</span>
           View Order
-          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14 }}>· {cartTotal} ${currencySymbol}</span>}
+          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14 }}>· {cartTotal} {currencySymbol}</span>}
         </button>
       )}
 
@@ -460,7 +460,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 14 }}>x{ci.quantity} {ci.item.name}</div>
                   {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>📝 {ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 700 }}>{ci.quantity * ci.item.price} ${currencySymbol}</div> : null}
+                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 700 }}>{ci.quantity * ci.item.price} {currencySymbol}</div> : null}
                 </div>
                 <button onClick={() => removeFromCart(idx)} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 18, fontWeight: 700, padding: "0 4px" }}>×</button>
               </div>
@@ -468,7 +468,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             {cartTotal > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 4px", fontWeight: 800, fontSize: 15 }}>
                 <span>Total</span>
-                <span style={{ color: accentColor }}>{cartTotal} ${currencySymbol}</span>
+                <span style={{ color: accentColor }}>{cartTotal} {currencySymbol}</span>
               </div>
             )}
             <button onClick={submitCart}
@@ -486,7 +486,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "slideUp 0.22s ease" }}>
             <h3 style={{ fontWeight: 700, marginBottom: 12, fontSize: 17 }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 8, fontSize: 15 }}>{noteFor.item.price} ${currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 8, fontSize: 15 }}>{noteFor.item.price} {currencySymbol}</span> : null}
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
@@ -528,7 +528,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               🧾 My Bill
               {sessionRequests.some(r => r.price > 0) && (
                 <span style={{ marginLeft: 10, color: accentColor, fontWeight: 800 }}>
-                  {sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} ${currencySymbol}
+                  {sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}
                 </span>
               )}
             </span>
@@ -559,7 +559,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                           <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} ${currencySymbol}</span>}
+                          {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
                           <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: pill.bg, color: pill.color }}>{pill.label}</span>
                         </div>
                       </div>
@@ -578,7 +578,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                         <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
                         <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
-                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} ${currencySymbol}</span>}
+                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
                     </div>
                   ))}
                 </div>
@@ -588,7 +588,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontWeight: 700, fontSize: 14 }}>My Total</span>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} ${currencySymbol}</span>
+                  <span style={{ fontWeight: 800, fontSize: 18, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}</span>
                 </div>
               )}
             </div>

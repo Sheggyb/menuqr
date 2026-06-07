@@ -142,7 +142,7 @@ export default function LandingPage() {
           <Link href="/login" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Log in</Link>
           <Link href="/signup" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>Sign up</Link>
         </div>
-        <p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>© 2025 MenuQR — Digital menus for modern restaurants.</p>
+        <p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>© 2026 MenuQR — Digital menus for modern restaurants.</p>
       </footer>
     </main>
   );
