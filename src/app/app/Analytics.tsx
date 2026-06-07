@@ -130,20 +130,26 @@ export default function Analytics({ restaurant }: Props) {
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
         <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
         <div style={{ overflowX: "auto" }}>
-          <div style={{ display: "flex", gap: 4, alignItems: "flex-end", height: 120, minWidth: range === "30d" ? 30 * 18 : "unset" }}>
-            {buckets.map(b => (
-              <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700 }}>{b.total > 0 ? b.total : ""}</div>
-                <div style={{ width: "100%", background: "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.2 : 1 }} />
-              </div>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 4, marginTop: 4, minWidth: range === "30d" ? 30 * 18 : "unset" }}>
-            {buckets.map((b, i) => (
-              <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 14 : 24, textAlign: "center", fontSize: 9, color: "var(--text-muted)", overflow: "hidden" }}>
-                {range === "7d" ? b.label.split(",")[0] : (i % 5 === 0 ? new Date(b.date).getDate() : "")}
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: range === "30d" ? 3 : 6, alignItems: "flex-end", paddingBottom: 36, minWidth: range === "30d" ? 30 * 22 : "unset", position: "relative" }}>
+            {buckets.map((b, i) => {
+              const d = new Date(b.date);
+              const dayNum = d.getDate();
+              const mon = d.toLocaleDateString("en", { month: "short" });
+              const weekday = d.toLocaleDateString("en", { weekday: "short" });
+              const labelTop = range === "7d" ? weekday : `${mon} ${dayNum}`;
+              const labelBot = range === "7d" ? `${mon} ${dayNum}` : "";
+              const isToday = i === buckets.length - 1;
+              return (
+                <div key={b.date} style={{ flex: 1, minWidth: range === "30d" ? 18 : 36, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                  <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>
+                  <div style={{ width: "100%", background: isToday ? "var(--accent)" : "var(--accent)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.18 : isToday ? 1 : 0.7 }} />
+                  <div style={{ position: "absolute", bottom: -34, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                    <span style={{ fontSize: range === "30d" ? 8 : 10, color: isToday ? "var(--accent)" : "var(--text-muted)", fontWeight: isToday ? 700 : 400, whiteSpace: "nowrap" }}>{labelTop}</span>
+                    {labelBot && <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{labelBot}</span>}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

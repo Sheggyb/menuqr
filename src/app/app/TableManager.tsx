@@ -30,8 +30,8 @@ export default function TableManager({ restaurant }: Props) {
   }, []);
 
   useEffect(() => {
-    supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id).order("name")
-      .then(({ data }) => { setTables(data ?? []); setLoading(false); });
+    supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id)
+      .then(({ data }) => { setTables((data ?? []).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))); setLoading(false); });
   }, [restaurant.id]);
 
   useEffect(() => {
