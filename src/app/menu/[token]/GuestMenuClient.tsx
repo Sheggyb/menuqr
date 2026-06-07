@@ -361,14 +361,15 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       </header>
 
       {/* QUICK ACTIONS */}
+      {(restaurant.quick_actions ?? ["waiter","bill","refill"]).length > 0 && (
       <div style={{ padding: "16px 16px 0" }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 8 }}>Quick actions</p>
-        <div role="group" aria-label="Quick actions" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
-          {([
+        <div role="group" aria-label="Quick actions" style={{ display: "grid", gridTemplateColumns: `repeat(${(restaurant.quick_actions ?? ["waiter","bill","refill"]).length}, 1fr)`, gap: 10 }}>
+          {(([
             ["waiter", "🙋", "Call Waiter"],
             ["bill", "💳", "Request Bill"],
             ["refill", "🔄", "Refill Drinks"],
-          ] as [RequestType, string, string][]).map(([type, icon, label]) => (
+          ] as [string, string, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type)) as [RequestType, string, string][]).map(([type, icon, label]) => (
             <button key={type} onClick={() => sendRequest(type)}
               style={{ padding: "16px 8px", borderRadius: 14, border: `2px solid ${accentColor}`, background: "var(--surface)", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, WebkitTapHighlightColor: "transparent", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
               onTouchStart={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.95)"; }}
@@ -379,6 +380,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           ))}
         </div>
       </div>
+      )}
 
       <div style={{ margin: "16px 16px 0", borderTop: "1px solid var(--border)" }} />
 

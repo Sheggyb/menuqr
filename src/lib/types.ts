@@ -5,6 +5,7 @@ export interface Restaurant {
   slug: string;
   logo_url: string | null;
   accent_color: string;
+  quick_actions: string[];
   created_at: string;
 }
 

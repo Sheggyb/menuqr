@@ -9,6 +9,9 @@ export default function SettingsPanel({ restaurant }: Props) {
   const supabase = createClient();
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || "#E85D2F");
+  const [quickActions, setQuickActions] = useState<string[]>(
+    restaurant.quick_actions ?? ["waiter", "bill", "refill"]
+  );
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -17,13 +20,25 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
+  const ALL_ACTIONS = [
+    { id: "waiter", label: "Call Waiter", icon: "🙋", desc: "Guest can call a staff member to the table" },
+    { id: "bill", label: "Request Bill", icon: "💳", desc: "Guest can request the bill at the table" },
+    { id: "refill", label: "Refill Drinks", icon: "🔄", desc: "Guest can request a drink refill" },
+  ];
+
+  function toggleAction(id: string) {
+    setQuickActions(prev =>
+      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+    );
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     const { error: err } = await supabase
       .from("restaurants")
-      .update({ name: name.trim(), accent_color: accent })
+      .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions })
       .eq("id", restaurant.id);
     setLoading(false);
     if (err) { setError(err.message); } else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
@@ -68,6 +83,33 @@ export default function SettingsPanel({ restaurant }: Props) {
               <div style={{ width: 32, height: 32, borderRadius: 8, background: accent, border: "1px solid var(--border)" }} />
             </div>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>This color is used on guest menus as the brand color.</p>
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Quick actions on guest menu</label>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>Choose which buttons guests can see and use.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {ALL_ACTIONS.map(action => {
+                const on = quickActions.includes(action.id);
+                return (
+                  <div
+                    key={action.id}
+                    onClick={() => toggleAction(action.id)}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 10, border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`, background: on ? "var(--item-available-bg)" : "var(--surface)", cursor: "pointer", gap: 12 }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 20 }}>{action.icon}</span>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{action.label}</div>
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{action.desc}</div>
+                      </div>
+                    </div>
+                    <div style={{ width: 40, height: 22, borderRadius: 99, background: on ? "var(--accent)" : "var(--border)", position: "relative", flexShrink: 0, transition: "background 0.2s" }}>
+                      <div style={{ position: "absolute", top: 2, left: on ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "white", transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.2)" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
           {error && <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>}
           {saved && <p style={{ color: "#16a34a", fontSize: 13, fontWeight: 600 }}>✅ Settings saved!</p>}
