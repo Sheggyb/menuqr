@@ -378,7 +378,7 @@ export default function LiveOrders({ restaurant }: Props) {
 
       {/* Kanban */}
       <style>{`
-        .kanban-board { display: flex; gap: 12; align-items: flex-start; }
+        .kanban-board { display: flex; gap: 12px; align-items: flex-start; }
         @media (max-width: 600px) { .kanban-board { flex-direction: column !important; } }
       `}</style>
       <div className="kanban-board" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>

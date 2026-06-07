@@ -310,7 +310,7 @@ export default function TableManager({ restaurant }: Props) {
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: 12, padding: "12px 16px", flexWrap: "wrap",
-                  cursor: "context-menu",
+                  cursor: "default",
                   transition: "border-color 0.1s",
                 }}
               >

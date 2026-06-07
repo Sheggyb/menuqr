@@ -29,7 +29,14 @@ interface SessionRequest {
 
 export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
   const supabase = createClient();
-  const [activeCategory, setActiveCategory] = useState(categories[0]?.id ?? "");
+  // Only show categories that actually have available items
+  const itemCountByCategory: Record<string, number> = {};
+  for (const item of items) {
+    itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
+  }
+  const visibleCategories = categories.filter(c => (itemCountByCategory[c.id] ?? 0) > 0);
+
+  const [activeCategory, setActiveCategory] = useState(visibleCategories[0]?.id ?? "");
   const [toast, setToast] = useState("");
   const [tableActive, setTableActive] = useState(table.is_active);
   const [sessionId, setSessionId] = useState<string | null>(() => {
@@ -55,11 +62,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   const accentColor = restaurant.accent_color || "#E85D2F";
 
-  // Currency from restaurant settings (default SEK)
+  // Currency — prefer the value saved in restaurant settings, fall back to staff localStorage, then SEK
   const currencySymbol = (() => {
+    const map: Record<string, string> = { SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$" };
+    if (restaurant.currency) return map[restaurant.currency] ?? restaurant.currency;
     try {
       const stored = localStorage.getItem(`menuqr_currency_${restaurant.id}`);
-      const map: Record<string, string> = { SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$" };
       return map[stored || "SEK"] ?? "kr";
     } catch { return "kr"; }
   })();
@@ -119,8 +127,18 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       if (data.session_id) {
         sessionStorage.setItem(`menuqr_sid_${table.id}`, data.session_id);
         setSessionId(data.session_id);
-        // If table already had active guests, new guest is auto-approved instantly
-        setSessionStatus("pending");
+        // Café/takeaway: auto-approve — no need to wait for staff
+        const venueType = restaurant.venue_type ?? "table_service";
+        if (venueType === "cafe" || venueType === "takeaway") {
+          await fetch("/api/session/check", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: data.session_id, action: "approve" }),
+          });
+          setSessionStatus("active");
+        } else {
+          setSessionStatus("pending");
+        }
       } else if (data.error === "table_closed") {
         setSessionStatus("idle");
         showToast("🚫 Table is closed");
@@ -224,10 +242,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const cartTotal = cart.reduce((sum, c) => sum + c.quantity * (c.item.price ?? 0), 0);
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
-  const itemCountByCategory: Record<string, number> = {};
-  for (const item of items) {
-    itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
-  }
+  // itemCountByCategory and visibleCategories computed at top of component
 
   // Back-to-top
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -394,7 +409,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       )}
 
       {/* CATEGORY TABS */}
-      {categories.length > 0 && items.length > 0 && (
+      {visibleCategories.length > 0 && items.length > 0 && (
         <div style={{ paddingTop: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10, paddingLeft: 16 }}>Menu</p>
           <div
@@ -403,7 +418,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             style={{ overflowX: "auto", display: "flex", gap: 8, paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: "none" }}
           >
             <style>{`[data-cattabs]::-webkit-scrollbar { display: none; }`}</style>
-            {categories.map(cat => {
+            {visibleCategories.map(cat => {
               const active = activeCategory === cat.id;
               return (
                 <button
@@ -630,7 +645,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 80 : 80, right: 16, zIndex: 35, width: 44, height: 44, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${accentColor}66`, animation: "fadeIn 0.2s ease" }}
+          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 76 : 24, right: 16, zIndex: 35, width: 44, height: 44, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${accentColor}66`, animation: "fadeIn 0.2s ease" }}
           aria-label="Back to top"
         >↑</button>
       )}

@@ -201,7 +201,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       `}</style>
 
       {/* CONTENT */}
-      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 32px" }}>
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 24px" }}>
         {!checklistDismissed && (
           <OnboardingChecklist
             restaurant={restaurant}

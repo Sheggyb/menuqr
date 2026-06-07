@@ -15,6 +15,10 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [quickActions, setQuickActions] = useState<string[]>(
     restaurant.quick_actions ?? ["waiter", "bill", "refill"]
   );
+  const [currency, setCurrency] = useState(() => {
+    if (restaurant.currency) return restaurant.currency;
+    try { return localStorage.getItem(`menuqr_currency_${restaurant.id}`) || "SEK"; } catch { return "SEK"; }
+  });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +51,7 @@ export default function SettingsPanel({ restaurant }: Props) {
     setError("");
     const { error: err } = await supabase
       .from("restaurants")
-      .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions, venue_type: venueType })
+      .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions, venue_type: venueType, currency })
       .eq("id", restaurant.id);
     setLoading(false);
     if (err) { setError(err.message); } else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
@@ -107,6 +111,19 @@ export default function SettingsPanel({ restaurant }: Props) {
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Restaurant name</label>
             <input value={name} onChange={e => setName(e.target.value)} required />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Currency</label>
+            <select
+              value={currency}
+              onChange={e => { setCurrency(e.target.value); localStorage.setItem(`menuqr_currency_${restaurant.id}`, e.target.value); }}
+              style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 14, cursor: "pointer", width: "100%" }}
+            >
+              {[["SEK","kr — SEK"],["USD","$ — USD"],["EUR","€ — EUR"],["GBP","£ — GBP"],["NOK","kr — NOK"],["DKK","kr — DKK"],["CHF","CHF — CHF"],["JPY","¥ — JPY"],["AUD","$ — AUD"],["CAD","$ — CAD"]].map(([code, label]) => (
+                <option key={code} value={code}>{label}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Shown on guest menus next to prices.</p>
           </div>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 4 }}>Accent color</label>

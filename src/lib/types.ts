@@ -7,6 +7,7 @@ export interface Restaurant {
   accent_color: string;
   quick_actions: string[];
   venue_type: "table_service" | "cafe" | "takeaway";
+  currency?: string;
   created_at: string;
 }
 
