@@ -393,20 +393,48 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* CATEGORY TABS */}
       {categories.length > 0 && items.length > 0 && (
-        <div style={{ paddingTop: 12 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 8, paddingLeft: 16 }}>Menu</p>
-          <div role="tablist" aria-label="Menu categories" style={{ overflowX: "auto", display: "flex", gap: 0, borderBottom: "2px solid var(--border)", paddingLeft: 16 }}>
-            {categories.map(cat => (
-              <button key={cat.id} role="tab" aria-selected={activeCategory === cat.id} onClick={() => setActiveCategory(cat.id)}
-                style={{ padding: "8px 14px", border: "none", borderBottom: activeCategory === cat.id ? `2px solid ${accentColor}` : "2px solid transparent", marginBottom: "-2px", background: "none", cursor: "pointer", fontWeight: activeCategory === cat.id ? 700 : 500, color: activeCategory === cat.id ? accentColor : "var(--text-muted)", whiteSpace: "nowrap", fontSize: 14, display: "flex", alignItems: "center", gap: 6 }}>
-                {cat.icon} {cat.name}
-                {(itemCountByCategory[cat.id] ?? 0) > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 700, background: activeCategory === cat.id ? accentColor : "var(--border)", color: activeCategory === cat.id ? "white" : "var(--text-muted)", borderRadius: 99, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>
-                    {itemCountByCategory[cat.id]}
-                  </span>
-                )}
-              </button>
-            ))}
+        <div style={{ paddingTop: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10, paddingLeft: 16 }}>Menu</p>
+          <div
+            role="tablist"
+            aria-label="Menu categories"
+            style={{ overflowX: "auto", display: "flex", gap: 8, paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: "none" }}
+          >
+            <style>{`[data-cattabs]::-webkit-scrollbar { display: none; }`}</style>
+            {categories.map(cat => {
+              const active = activeCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveCategory(cat.id)}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: 99,
+                    border: `2px solid ${active ? accentColor : "var(--border)"}`,
+                    background: active ? accentColor : "var(--surface)",
+                    color: active ? "white" : "var(--text-muted)",
+                    cursor: "pointer",
+                    fontWeight: active ? 700 : 500,
+                    whiteSpace: "nowrap",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    flexShrink: 0,
+                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                  }}
+                >
+                  {cat.icon} {cat.name}
+                  {(itemCountByCategory[cat.id] ?? 0) > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, background: active ? "rgba(255,255,255,0.25)" : "var(--border)", color: active ? "white" : "var(--text-muted)", borderRadius: 99, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>
+                      {itemCountByCategory[cat.id]}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
