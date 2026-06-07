@@ -330,7 +330,7 @@ export default function TableManager({ restaurant }: Props) {
                     </div>
                   )}
                 </div>
-                {/* Quick actions — always visible */}
+                {/* Quick actions */}
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button
                     onClick={() => copyLink(table)}
@@ -343,11 +343,12 @@ export default function TableManager({ restaurant }: Props) {
                     style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
                     title="Show QR code"
                   >📱</button>
-                  {/* Hint */}
-                  <span
-                    style={{ fontSize: 11, color: "var(--text-muted)", opacity: 0.4, userSelect: "none" }}
-                    title="Right-click for more options"
-                  >⋯</span>
+                  {/* ⋮ more actions — tap on mobile, right-click also works on desktop */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openCtxMenu(e, buildTableCtxMenu(table)); }}
+                    style={{ fontSize: 16, padding: "5px 9px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 700, lineHeight: 1 }}
+                    title="More options"
+                  >⋮</button>
                 </div>
               </div>
             ))}

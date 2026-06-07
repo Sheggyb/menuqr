@@ -705,7 +705,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                         title="Drag to reorder"
                       >⋮⋮</span>
 
-                      {/* Item info with inline editing */}
+                      {/* Item info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {isEditing && edit.field === "name" ? (
                           <input
@@ -717,11 +717,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             style={{ fontWeight: 600, fontSize: 14, padding: "4px 8px", width: "70%" }}
                           />
                         ) : (
-                          <span
-                            onClick={() => startEdit(item.id, "name", item.name)}
-                            style={{ fontWeight: 600, fontSize: 14, cursor: "pointer", display: "block" }}
-                            title="Click to edit name"
-                          >
+                          <span style={{ fontWeight: 600, fontSize: 14, display: "block" }}>
                             {item.name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Untitled</span>}
                           </span>
                         )}
@@ -737,19 +733,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                           />
                         ) : (
                           item.description && (
-                            <span
-                              onClick={() => startEdit(item.id, "description", item.description ?? "")}
-                              style={{ color: "var(--text-muted)", fontSize: 12, display: "block", lineHeight: 1.4, cursor: "pointer" }}
-                              title="Click to edit description"
-                            >{item.description}</span>
+                            <span style={{ color: "var(--text-muted)", fontSize: 12, display: "block", lineHeight: 1.4 }}>
+                              {item.description}
+                            </span>
                           )
-                        )}
-                        {!isEditing && !item.description && (
-                          <span
-                            onClick={() => startEdit(item.id, "description", "")}
-                            style={{ color: "var(--text-muted)", fontSize: 11, cursor: "pointer", opacity: 0.5 }}
-                            title="Click to add description"
-                          >+ description</span>
                         )}
                       </div>
 
@@ -767,16 +754,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                           style={{ width: 80, padding: "4px 8px", fontSize: 14, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
                         />
                       ) : (
-                        <span
-                          onClick={() => startEdit(item.id, "price", item.price?.toString() ?? "")}
-                          style={{
-                            fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0,
-                            color: item.price ? "var(--accent)" : "var(--text-muted)",
-                            opacity: item.price ? 1 : 0.4,
-                            minWidth: 50, textAlign: "right",
-                          }}
-                          title="Click to edit price"
-                        >
+                        <span style={{
+                          fontWeight: 700, fontSize: 14, flexShrink: 0,
+                          color: item.price ? "var(--accent)" : "var(--text-muted)",
+                          opacity: item.price ? 1 : 0.4,
+                          minWidth: 50, textAlign: "right",
+                        }}>
                           {item.price ? `${item.price} ${currencySymbol}` : "—"}
                         </span>
                       )}
