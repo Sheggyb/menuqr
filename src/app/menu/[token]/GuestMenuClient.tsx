@@ -89,7 +89,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           const justDone = prev
             .filter(r => r.status !== "done" && data.statuses[r.id] === "done")
             .map(r => r.name);
-          if (justDone.length > 0) setReadyBanner(justDone);
+          if (justDone.length > 0 && restaurant.venue_type !== "table_service") setReadyBanner(justDone);
           return next;
         });
       } catch {}
