@@ -213,7 +213,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     const data = await res.json();
     setSending(false);
     if (data.ok) {
-      saveSessionRequest(data.id ?? crypto.randomUUID(), `${snapshot.length} items`, 1, totalPrice);
+      saveSessionRequest(data.id ?? crypto.randomUUID(), combinedName, 1, totalPrice);
       setCart([]);
       setCartOpen(false);
       setShowConfirmation(true);
@@ -657,7 +657,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                     return (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                         <div>
-                          <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
+                          <span style={{ fontWeight: 600, whiteSpace: "pre-line" }}>{r.name}</span>
                           <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -677,7 +677,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                   {sessionRequests.filter(r => r.status === "done").map((r, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13, opacity: 0.7 }}>
                       <div>
-                        <span style={{ fontWeight: 600 }}>x{r.qty} {r.name}</span>
+                        <span style={{ fontWeight: 600, whiteSpace: "pre-line" }}>{r.name}</span>
                         <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
                       {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
