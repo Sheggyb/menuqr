@@ -370,56 +370,48 @@ export default function LiveOrders({ restaurant }: Props) {
         @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; } .lo-columns { flex-direction: column; } }
       `}</style>
 
-      {/* Toolbar */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+      {/* Toolbar — compact one-line filters + stats */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search by table..."
+          placeholder="Search table..."
           value={searchTable}
           onChange={e => setSearchTable(e.target.value)}
-          style={{ flex: "1 1 160px", padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+          style={{ width: 150, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 12, outline: "none", flexShrink: 0 }}
         />
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
-          style={{ padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, cursor: "pointer" }}
+          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 12, cursor: "pointer", flexShrink: 0 }}
         >
-          <option value="all">All types</option>
+          <option value="all">All</option>
           {ALL_TYPES.map(t => (
             <option key={t} value={t}>{TYPE_LABEL[t]}</option>
           ))}
         </select>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-          <button
-            role="switch"
-            aria-checked={soundEnabled}
-            onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
-            title={soundEnabled ? "Sound on — click to mute" : "Sound off — click to enable"}
-            style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: soundEnabled ? "var(--text)" : "var(--text-muted)", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
-          >
-            <IconBell width={14} height={14} />
-            Sound
-            <span aria-hidden="true" style={{ width: 26, height: 15, borderRadius: 99, background: soundEnabled ? "#22c55e" : "var(--border)", position: "relative", flexShrink: 0, transition: "background 0.15s ease" }}>
-              <span style={{ position: "absolute", top: 2, left: soundEnabled ? 13 : 2, width: 11, height: 11, borderRadius: "50%", background: "white", transition: "left 0.15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
-            </span>
-          </button>
+        <button
+          onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
+          title={soundEnabled ? "Sound on" : "Sound off"}
+          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 14, lineHeight: 1, flexShrink: 0, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
+        >{soundEnabled ? "🔔" : "🔕"}</button>
+
+        <div style={{ flex: 1 }} />
+
+        {/* Compact stats */}
+        <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+          Today: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.total}</strong>
+          {" · "}Done: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.done}</strong>
+          {" · "}Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{pendingCount}</strong>
+          {estWaitMin > 0 ? ` (~${estWaitMin}m)` : ""}
+        </span>
+
+        {pendingCount > 0 && (
           <button
             onClick={markAllDone}
-            disabled={pendingCount === 0}
-            style={{ padding: "8px 12px", borderRadius: 8, border: "none", background: pendingCount === 0 ? "var(--surface-2)" : "#22c55e", color: pendingCount === 0 ? "var(--text-muted)" : "white", fontSize: 13, fontWeight: 600, cursor: pendingCount === 0 ? "default" : "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
-          >
-            <IconCheckCircle width={14} height={14} strokeWidth={2} /> Mark all done{pendingCount > 0 ? ` (${pendingCount})` : ""}
-          </button>
-        </div>
-      </div>
-
-      {/* Stats pill */}
-      <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: -12 }}>
-        Today: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.total}</strong>
-        {" · "}Done: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.done}</strong>
-        {" · "}Waiting: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{pendingCount}</strong>
-        {estWaitMin > 0 ? ` (~${estWaitMin} min)` : ""}
+            style={{ padding: "6px 10px", borderRadius: 6, border: "none", background: "#22c55e", color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+          >✓ Done ({pendingCount})</button>
+        )}
       </div>
 
       {/* New + In Progress side-by-side */}
