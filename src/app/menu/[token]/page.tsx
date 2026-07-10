@@ -35,13 +35,18 @@ export default async function GuestMenuPage({ params }: Props) {
 
   if (!table) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
-      <div aria-hidden="true" style={{ fontSize: 64, marginBottom: 16 }}>🔍</div>
-      <h1 style={{ fontWeight: 800, fontSize: 24, marginBottom: 8, color: "var(--text)" }}>Table not found</h1>
+      <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 24 }}>
+        <svg width={44} height={44} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.5-4.5" />
+        </svg>
+      </div>
+      <h1 style={{ fontWeight: 700, fontSize: 24, marginBottom: 8, color: "var(--text)", fontFamily: "'Playfair Display', serif" }}>Table not found</h1>
       <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 320, lineHeight: 1.6 }}>
         This QR code doesn&apos;t match any active table. Please ask a staff member for help or scan the QR code again.
       </p>
-      <div style={{ marginTop: 24, padding: "10px 20px", borderRadius: 10, background: "#fef3c7", border: "1px solid #fde047", color: "#92400e", fontSize: 13, fontWeight: 600 }}>
-        ⚠️ If you think this is a mistake, please contact the restaurant.
+      <div style={{ marginTop: 24, padding: "10px 20px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
+        If you think this is a mistake, please contact the restaurant.
       </div>
     </div>
   );

@@ -27,6 +27,26 @@ interface SessionRequest {
   status: "pending" | "seen" | "done"; // live status from DB
 }
 
+/* ── Minimal line icons (stroke 1.5, currentColor) ──────────────── */
+function icon(path: React.ReactNode, size = 20) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {path}
+    </svg>
+  );
+}
+const IconDish = (size = 40) => icon(<><path d="M4 16a8 8 0 0 1 16 0" /><path d="M12 8V6" /><path d="M2.5 16h19" /><path d="M5 20h14" /></>, size);
+const IconClock = (size = 40) => icon(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>, size);
+const IconLock = (size = 40) => icon(<><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7.5a4 4 0 0 1 8 0V11" /></>, size);
+const IconCheck = (size = 40) => icon(<><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.2l2.4 2.4 4.6-5" /></>, size);
+const IconBell = (size = 20) => icon(<><path d="M18 9.5a6 6 0 0 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" /><path d="M10.3 19.5a2 2 0 0 0 3.4 0" /></>, size);
+const IconCard = (size = 20) => icon(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10.5h18" /></>, size);
+const IconRefresh = (size = 20) => icon(<><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" /><path d="M20.5 3.5v4h-4" /></>, size);
+const IconReceipt = (size = 18) => icon(<><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3v-17Z" /><path d="M9 8.5h6" /><path d="M9 12h6" /></>, size);
+const IconChevron = (up: boolean, size = 14) => icon(up ? <path d="M6 14.5l6-6 6 6" /> : <path d="M6 9.5l6 6 6-6" />, size);
+const IconArrowUp = (size = 18) => icon(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>, size);
+const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
+
 export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
   const supabase = createClient();
   // Only show categories that actually have available items
@@ -141,7 +161,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         setSessionStatus("pending");
       } else if (data.error === "table_closed") {
         setSessionStatus("idle");
-        showToast("🚫 Table is closed");
+        showToast("Table is closed");
       }
     } catch {
       setSessionStatus("idle");
@@ -151,8 +171,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   async function sendRequest(type: RequestType, item?: MenuItem, note?: string, quantity?: number) {
     const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
     if (sending || !tableActive || !sid || sessionStatus !== "active") {
-      if (!tableActive) showToast("🚫 Table is closed");
-      else if (!sid || sessionStatus !== "active") showToast("🚫 Session not approved");
+      if (!tableActive) showToast("Table is closed");
+      else if (!sid || sessionStatus !== "active") showToast("Session not approved");
       return;
     }
     setSending(true);
@@ -172,25 +192,25 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     const data = await res.json();
     setSending(false);
     if (data.ok) {
-      showToast("✅ Request sent!");
+      showToast("Request sent");
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
-      showToast("🚫 Session expired, please request again");
+      showToast("Session expired, please request again");
     }
   }
 
   async function submitCart() {
     const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
     if (sending || cart.length === 0 || !tableActive || !sid || sessionStatus !== "active") {
-      if (!tableActive) showToast("🚫 Table is closed");
-      else if (!sid || sessionStatus !== "active") showToast("🚫 Session not approved");
+      if (!tableActive) showToast("Table is closed");
+      else if (!sid || sessionStatus !== "active") showToast("Session not approved");
       return;
     }
     setSending(true);
     const snapshot = [...cart];
     // Merge all cart items into ONE order line
     const combinedName = snapshot.map(ci =>
-      `x${ci.quantity} ${ci.item.name}${ci.note ? ` (📝 ${ci.note})` : ""}`
+      `x${ci.quantity} ${ci.item.name}${ci.note ? ` (${ci.note})` : ""}`
     ).join("\n");
     const combinedNote = snapshot.filter(ci => ci.note).length > 0
       ? snapshot.map(ci => `${ci.item.name}: ${ci.note}`).join("; ")
@@ -219,7 +239,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       setShowConfirmation(true);
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
-      showToast("🚫 Session expired, please request again");
+      showToast("Session expired, please request again");
     }
   }
 
@@ -239,7 +259,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       return [...prev, { item: noteFor.item, quantity: qty, note: noteText }];
     });
     setNoteFor(null);
-    showToast("Added to order!");
+    showToast("Added to order");
   }
 
   function removeFromCart(idx: number) {
@@ -257,10 +277,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   // itemCountByCategory and visibleCategories computed at top of component
 
-  // Back-to-top
+  // Back-to-top + scrolled state (for sticky pill row border)
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
-    function onScroll() { setShowBackToTop(window.scrollY > 300); }
+    function onScroll() {
+      setShowBackToTop(window.scrollY > 300);
+      setScrolled(window.scrollY > 8);
+    }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -302,17 +326,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   if (tableActive && sessionStatus !== "active") {
     if (sessionStatus === "idle" || sessionStatus === "declined") {
       return (
-        <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: `radial-gradient(ellipse at 50% 0%, ${accentColor}22 0%, transparent 60%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
-          <div aria-hidden="true" style={{ fontSize: 72, marginBottom: 20 }}>🍽️</div>
-          <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", marginBottom: 8, fontFamily: "Playfair Display, serif" }}>{restaurant.name}</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 280, marginBottom: 32, lineHeight: 1.6 }}>
-            {sessionStatus === "declined" ? "Your session was declined. Tap below to request again." : "Welcome! Tap below to request access to the menu."}
+        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
+          <style>{`@keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
+          <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconQr(44)}</div>
+          <h1 style={{ fontWeight: 700, fontSize: 28, color: "var(--text)", margin: "0 0 4px", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>{restaurant.name}</h1>
+          <div aria-hidden="true" style={{ width: 32, height: 2, background: accentColor, margin: "16px auto 20px" }} />
+          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, marginBottom: 36, lineHeight: 1.7 }}>
+            {sessionStatus === "declined" ? "Your session was declined. Tap below to request again." : "Welcome. Tap below to request access to the menu."}
           </p>
           <button
             onClick={requestSession}
-            style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 14, padding: "16px 40px", fontSize: 17, fontWeight: 700, cursor: "pointer", boxShadow: `0 4px 20px ${accentColor}55` }}
+            style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 12, padding: "15px 44px", fontSize: 16, fontWeight: 600, letterSpacing: "0.01em", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}
           >
-            {sessionStatus === "declined" ? "🔄 Request Again" : "📲 Request Menu Access"}
+            {sessionStatus === "declined" ? "Request Again" : "Request Menu Access"}
           </button>
         </div>
       );
@@ -320,18 +346,21 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
     if (sessionStatus === "pending") {
       return (
-        <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: `radial-gradient(ellipse at 50% 0%, ${accentColor}22 0%, transparent 60%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
-          <div style={{ fontSize: 72, marginBottom: 20 }}>⏳</div>
-          <h1 style={{ fontWeight: 900, fontSize: 24, color: "var(--text)", marginBottom: 8, fontFamily: "Playfair Display, serif" }}>Waiting for staff...</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 280, lineHeight: 1.6, marginBottom: 32 }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
+          <style>{`
+            @keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes gmDot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+          `}</style>
+          <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconClock(44)}</div>
+          <h1 style={{ fontWeight: 700, fontSize: 24, color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>Waiting for staff</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, lineHeight: 1.7, marginBottom: 32 }}>
             A staff member will approve your access in a moment. Please wait.
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             {[0,1,2].map(i => (
-              <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: accentColor, animation: `bounce 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+              <div key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: accentColor, animation: `gmDot 1.4s ease-in-out ${i * 0.22}s infinite` }} />
             ))}
           </div>
-          <style>{`@keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-12px)} }`}</style>
         </div>
       );
     }
@@ -340,11 +369,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   // --- CLOSED CHECK ---
   if (!tableActive) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
-        <div style={{ fontSize: 72, marginBottom: 20 }}>🔒</div>
-        <h1 style={{ fontWeight: 900, fontSize: 26, color: "var(--text)", marginBottom: 12 }}>We&apos;re closed</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 280 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
-        <div style={{ marginTop: 24, background: accentColor, color: "white", borderRadius: 99, padding: "10px 24px", fontWeight: 700, fontSize: 14 }}>{restaurant.name}</div>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
+        <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconLock(44)}</div>
+        <h1 style={{ fontWeight: 700, fontSize: 26, color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>We&apos;re closed</h1>
+        <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, lineHeight: 1.7 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
+        <div style={{ marginTop: 32, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", borderTop: "1px solid var(--border)", paddingTop: 16 }}>{restaurant.name}</div>
       </div>
     );
   }
@@ -352,20 +381,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   // --- CONFIRMATION SCREEN ---
   if (showConfirmation) {
     return (
-      <div style={{ minHeight: "100vh", background: accentColor, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "Inter, system-ui, sans-serif" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
         <style>{`
-          @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-          @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          * { box-sizing: border-box; }
+          @keyframes gmScaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+          @keyframes gmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         `}</style>
-        <div aria-hidden="true" style={{ animation: "popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)", fontSize: 80, marginBottom: 24, lineHeight: 1 }}>✅</div>
-        <h1 style={{ color: "white", fontWeight: 900, fontSize: 32, margin: "0 0 12px", textAlign: "center", animation: "fadeUp 0.4s ease 0.2s both" }}>Order sent!</h1>
-        <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 17, textAlign: "center", marginBottom: 36, animation: "fadeUp 0.4s ease 0.35s both", maxWidth: 300 }}>
-          Your order is with the kitchen. Sit back and relax! 🍽️
+        <div aria-hidden="true" style={{ animation: "gmScaleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1)", color: accentColor, marginBottom: 28 }}>{IconCheck(52)}</div>
+        <h1 style={{ color: "var(--text)", fontWeight: 700, fontSize: 30, margin: "0 0 12px", fontFamily: "'Playfair Display', serif", animation: "gmFadeUp 0.4s ease 0.15s both" }}>Order sent</h1>
+        <p style={{ color: "var(--text-muted)", fontSize: 16, marginBottom: 40, animation: "gmFadeUp 0.4s ease 0.28s both", maxWidth: 300, lineHeight: 1.7 }}>
+          Your order is with the kitchen. Sit back and relax.
         </p>
         <button
           onClick={() => setShowConfirmation(false)}
-          style={{ padding: "14px 36px", borderRadius: 14, background: "var(--surface)", color: accentColor, border: "none", fontWeight: 800, fontSize: 16, cursor: "pointer", animation: "fadeUp 0.4s ease 0.5s both", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}
+          style={{ padding: "14px 40px", borderRadius: 12, background: accentColor, color: "#fff", border: "none", fontWeight: 600, fontSize: 15, letterSpacing: "0.01em", cursor: "pointer", animation: "gmFadeUp 0.4s ease 0.4s both", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}
         >
           Back to menu
         </button>
@@ -375,12 +403,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   // --- MAIN MENU ---
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", backgroundImage: "radial-gradient(ellipse at 50% 0%, rgba(184,138,30,0.05) 0%, transparent 50%)", fontFamily: "Inter, system-ui, sans-serif", paddingBottom: sessionRequests.length > 0 ? 110 : 90 }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", paddingBottom: sessionRequests.length > 0 ? 110 : 90, animation: "gmFadeIn 0.35s ease both" }}>
       <style>{`
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
-        * { box-sizing: border-box; }
+        @keyframes gmSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes gmScaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes gmItemIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes gmPulse { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+        [data-cattabs] { scrollbar-width: none; }
+        [data-cattabs]::-webkit-scrollbar { display: none; }
+        [data-gm-add]:active { transform: scale(0.94); }
+        [data-gm-add] { transition: transform 0.12s ease, background 0.15s ease; }
       `}</style>
 
       {/* COLLECT NOTIFICATION BANNER */}
@@ -389,91 +422,93 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           onClick={() => setReadyBanner([])}
           style={{
             position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-            background: "rgba(0,0,0,0.6)", zIndex: 200,
+            background: "rgba(0,0,0,0.55)", zIndex: 200,
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 24, animation: "fadeIn 0.2s ease",
+            padding: 24, animation: "gmFadeIn 0.2s ease",
           }}
         >
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: "#22c55e", borderRadius: 20,
-              padding: "32px 28px", textAlign: "center", maxWidth: 320, width: "100%",
-              boxShadow: "0 8px 40px rgba(34,197,94,0.5)",
-              animation: "popIn 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+              background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)",
+              padding: "36px 28px 28px", textAlign: "center", maxWidth: 320, width: "100%",
+              boxShadow: "0 12px 48px rgba(0,0,0,0.25)",
+              animation: "gmScaleIn 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
             }}
           >
-            <div aria-hidden="true" style={{ fontSize: 64, lineHeight: 1, marginBottom: 16 }}>🔔</div>
-            <h2 style={{ color: "white", fontWeight: 900, fontSize: 26, margin: "0 0 10px" }}>
-              {readyBanner.length === 1 ? "Your order is ready!" : "Orders are ready!"}
+            <div aria-hidden="true" style={{ color: accentColor, marginBottom: 18 }}>{IconBell(40)}</div>
+            <h2 style={{ color: "var(--text)", fontWeight: 700, fontSize: 22, margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
+              {readyBanner.length === 1 ? "Your order is ready" : "Orders are ready"}
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, marginBottom: 24, lineHeight: 1.5 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 26, lineHeight: 1.6 }}>
               {readyBanner.length === 1
-                ? <><strong>{readyBanner[0]}</strong> is ready to collect.</>
+                ? <><strong style={{ color: "var(--text)" }}>{readyBanner[0]}</strong> is ready to collect.</>
                 : <>
-                    {readyBanner.slice(0, -1).join(", ")} and <strong>{readyBanner[readyBanner.length - 1]}</strong> are ready.
+                    {readyBanner.slice(0, -1).join(", ")} and <strong style={{ color: "var(--text)" }}>{readyBanner[readyBanner.length - 1]}</strong> are ready.
                   </>
               }
             </p>
             <button
               onClick={() => setReadyBanner([])}
-              style={{ background: "white", color: "#16a34a", border: "none", borderRadius: 12, padding: "13px 32px", fontWeight: 800, fontSize: 16, cursor: "pointer" }}
+              style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 12, padding: "13px 36px", fontWeight: 600, fontSize: 15, cursor: "pointer" }}
             >
-              Got it!
+              Got it
             </button>
           </div>
         </div>
       )}
 
       {/* HEADER */}
-      <header style={{ background: accentColor, color: "white", padding: "20px 16px 16px", textAlign: "center", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-        <h1 style={{ fontWeight: 800, fontSize: 20, margin: 0, letterSpacing: "-0.3px", fontFamily: "'Playfair Display', serif" }}>{restaurant.name}</h1>
-        <p style={{ margin: "3px 0 0", opacity: 0.88, fontSize: 13 }}>🍽️ {table.name}</p>
+      <header style={{ background: "var(--bg)", padding: "22px 20px 18px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14 }}>
+          <h1 style={{ fontWeight: 700, fontSize: 21, margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
+          <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: 12, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
+        </div>
       </header>
 
       {/* QUICK ACTIONS */}
       {(restaurant.quick_actions ?? ["waiter","bill","refill"]).length > 0 && (
-      <div style={{ padding: "16px 16px 0" }}>
-        <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 8 }}>Quick actions</p>
+      <div style={{ padding: "20px 20px 0" }}>
+        <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10 }}>Quick actions</p>
         <div role="group" aria-label="Quick actions" style={{ display: "grid", gridTemplateColumns: `repeat(${(restaurant.quick_actions ?? ["waiter","bill","refill"]).length}, 1fr)`, gap: 10 }}>
           {(([
-            ["waiter", "🙋", "Call Waiter"],
-            ["bill", "💳", "Request Bill"],
-            ["refill", "🔄", "Refill Drinks"],
-          ] as [string, string, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type)) as [RequestType, string, string][]).map(([type, icon, label]) => (
+            ["waiter", IconBell(22), "Call Waiter"],
+            ["bill", IconCard(22), "Request Bill"],
+            ["refill", IconRefresh(22), "Refill Drinks"],
+          ] as [string, React.ReactNode, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type as string)) as [RequestType, React.ReactNode, string][]).map(([type, iconEl, label]) => (
             <button key={type} onClick={() => sendRequest(type)}
-              style={{ padding: "16px 8px", borderRadius: 14, border: `2px solid ${accentColor}`, background: "var(--surface)", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, WebkitTapHighlightColor: "transparent", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-              onTouchStart={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.95)"; }}
+              style={{ padding: "15px 8px", borderRadius: 14, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, WebkitTapHighlightColor: "transparent", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.12s ease" }}
+              onTouchStart={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
               onTouchEnd={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}>
-              <span style={{ fontSize: 26 }}>{icon}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: accentColor, lineHeight: 1.2 }}>{label}</span>
+              <span aria-hidden="true" style={{ color: accentColor, display: "inline-flex" }}>{iconEl}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", lineHeight: 1.2 }}>{label}</span>
             </button>
           ))}
         </div>
       </div>
       )}
 
-      <div style={{ margin: "16px 16px 0", borderTop: "1px solid var(--border)" }} />
+      <div style={{ margin: "20px 20px 0", borderTop: "1px solid var(--border)" }} />
 
       {/* EMPTY MENU */}
       {items.length === 0 && (
-        <div style={{ textAlign: "center", padding: "48px 24px", color: "var(--text-muted)" }}>
-          <div aria-hidden="true" style={{ fontSize: 48, marginBottom: 12 }}>🍽️</div>
-          <h2 style={{ fontWeight: 700, fontSize: 20, color: "var(--text)", marginBottom: 8 }}>Menu coming soon</h2>
-          <p style={{ fontSize: 14, color: "var(--text-muted)" }}>The restaurant is still setting up their menu. Please ask your server.</p>
+        <div style={{ textAlign: "center", padding: "72px 32px", color: "var(--text-muted)" }}>
+          <div aria-hidden="true" style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 20 }}>{IconDish(40)}</div>
+          <h2 style={{ fontWeight: 700, fontSize: 21, color: "var(--text)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>Menu coming soon</h2>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7, maxWidth: 280, margin: "0 auto" }}>The restaurant is still setting up their menu. Please ask your server.</p>
         </div>
       )}
 
       {/* CATEGORY TABS */}
       {visibleCategories.length > 0 && items.length > 0 && (
-        <div style={{ paddingTop: 16 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10, paddingLeft: 16 }}>Menu</p>
+        <div style={{ paddingTop: 20 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 6, paddingLeft: 20 }}>Menu</p>
           <div
             role="tablist"
             aria-label="Menu categories"
-            style={{ overflowX: "auto", display: "flex", gap: 8, paddingLeft: 16, paddingRight: 16, paddingBottom: 4, scrollbarWidth: "none" }}
+            data-cattabs=""
+            style={{ overflowX: "auto", display: "flex", gap: 22, paddingLeft: 20, paddingRight: 20, position: "sticky", top: 0, zIndex: 9, background: "var(--bg)", borderBottom: scrolled ? "1px solid var(--border)" : "1px solid transparent", transition: "border-color 0.2s ease" }}
           >
-            <style>{`[data-cattabs]::-webkit-scrollbar { display: none; }`}</style>
             {visibleCategories.map(cat => {
               const active = activeCategory === cat.id;
               return (
@@ -483,25 +518,27 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                   aria-selected={active}
                   onClick={() => setActiveCategory(cat.id)}
                   style={{
-                    padding: "8px 16px",
-                    borderRadius: 99,
-                    border: `2px solid ${active ? accentColor : "var(--border)"}`,
-                    background: active ? accentColor : "var(--surface)",
-                    color: active ? "white" : "var(--text-muted)",
+                    padding: "12px 2px 10px",
+                    border: "none",
+                    borderBottom: active ? `2px solid ${accentColor}` : "2px solid transparent",
+                    background: "transparent",
+                    color: active ? "var(--text)" : "var(--text-muted)",
                     cursor: "pointer",
-                    fontWeight: active ? 700 : 500,
+                    fontWeight: 600,
                     whiteSpace: "nowrap",
-                    fontSize: 14,
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
                     display: "flex",
                     alignItems: "center",
                     gap: 6,
                     flexShrink: 0,
-                    transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                    transition: "color 0.15s, border-color 0.15s",
                   }}
                 >
-                  {cat.icon} {cat.name}
+                  {cat.name}
                   {(itemCountByCategory[cat.id] ?? 0) > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 700, background: active ? "rgba(255,255,255,0.25)" : "var(--border)", color: active ? "white" : "var(--text-muted)", borderRadius: 99, padding: "1px 6px", minWidth: 18, textAlign: "center" }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: active ? accentColor : "var(--text-muted)", letterSpacing: 0 }}>
                       {itemCountByCategory[cat.id]}
                     </span>
                   )}
@@ -514,24 +551,31 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* MENU ITEMS */}
       {items.length > 0 && (
-        <div role="list" aria-label="Menu items" style={{ padding: "12px 16px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div key={activeCategory} role="list" aria-label="Menu items" style={{ padding: "14px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
           {visibleItems.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)" }}>
-              <div aria-hidden="true" style={{ fontSize: 36, marginBottom: 8 }}>🍽️</div>
-              <p style={{ fontSize: 14, fontWeight: 500 }}>No items in this category.</p>
+            <div style={{ textAlign: "center", padding: "72px 24px", color: "var(--text-muted)", animation: "gmItemIn 0.3s ease both" }}>
+              <div aria-hidden="true" style={{ opacity: 0.7, marginBottom: 16 }}>{IconDish(36)}</div>
+              <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>No items in this category.</p>
             </div>
-          ) : visibleItems.map(item => (
+          ) : visibleItems.map((item, idx) => (
             <div key={item.id} role="listitem"
-              style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--border)", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+              style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: `gmItemIn 0.3s ease ${Math.min(idx * 0.03, 0.24)}s both` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>{item.name}</div>
-                {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 3, lineHeight: 1.4, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
-                {item.price ? <div style={{ fontWeight: 800, color: accentColor, marginTop: 6, fontSize: 16 }}>{item.price} {currencySymbol}</div> : null}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 10, justifyContent: "space-between" }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", lineHeight: 1.35 }}>{item.name}</div>
+                  {item.price ? (
+                    <span style={{ fontWeight: 600, color: accentColor, fontSize: 13, background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, borderRadius: 99, padding: "3px 10px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                      {item.price} {currencySymbol}
+                    </span>
+                  ) : null}
+                </div>
+                {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 5, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
               </div>
               <button onClick={() => addToCart(item)}
+                data-gm-add=""
                 aria-label={`Add ${item.name} to order`}
-                style={{ width: 38, height: 38, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 800, fontSize: 22, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 2px 8px ${accentColor}55` }}>
-                +
+                style={{ padding: "8px 18px", borderRadius: 99, background: "transparent", color: accentColor, border: `1px solid color-mix(in srgb, ${accentColor} 45%, transparent)`, cursor: "pointer", fontWeight: 600, fontSize: 13, letterSpacing: "0.01em", flexShrink: 0, WebkitTapHighlightColor: "transparent" }}>
+                Add
               </button>
             </div>
           ))}
@@ -542,41 +586,41 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {cart.length > 0 && !cartOpen && (
         <button
           onClick={() => setCartOpen(true)}
-          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: 99, padding: "14px 28px", fontWeight: 700, fontSize: 15, cursor: "pointer", zIndex: 40, boxShadow: `0 4px 20px ${accentColor}66`, display: "flex", alignItems: "center", gap: 10, animation: "fadeIn 0.2s ease", whiteSpace: "nowrap" }}>
-          <span style={{ background: "rgba(255,255,255,0.25)", borderRadius: "50%", width: 26, height: 26, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13 }}>{cartCount}</span>
+          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: 99, padding: "14px 26px", fontWeight: 600, fontSize: 15, cursor: "pointer", zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: 10, animation: "gmFadeIn 0.2s ease", whiteSpace: "nowrap" }}>
+          <span key={cartCount} style={{ background: "rgba(255,255,255,0.22)", borderRadius: "50%", width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, animation: "gmPulse 0.35s ease" }}>{cartCount}</span>
           View Order
-          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14 }}>· {cartTotal} {currencySymbol}</span>}
+          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14, fontWeight: 500 }}>· {cartTotal} {currencySymbol}</span>}
         </button>
       )}
 
       {/* CART MODAL */}
       {cartOpen && (
-        <div onClick={() => setCartOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "fadeIn 0.15s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", padding: "20px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "slideUp 0.22s ease", maxHeight: "80vh", overflowY: "auto" }}>
+        <div onClick={() => setCartOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "22px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 800, fontSize: 18, margin: 0 }}>Your Order</h3>
+              <h3 style={{ fontWeight: 700, fontSize: 19, margin: 0, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>Your Order</h3>
               <button onClick={() => setCartOpen(false)} aria-label="Close order" style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}>×</button>
             </div>
             {cart.map((ci, idx) => (
-              <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid var(--border)" }}>
+              <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14 }}>x{ci.quantity} {ci.item.name}</div>
-                  {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)" }}>📝 {ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 700 }}>{ci.quantity * ci.item.price} {currencySymbol}</div> : null}
+                  <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
+                  {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
+                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{ci.quantity * ci.item.price} {currencySymbol}</div> : null}
                 </div>
-                <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "#f87171", cursor: "pointer", fontSize: 18, fontWeight: 700, padding: "0 4px" }}>×</button>
+                <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, fontWeight: 600, padding: "0 4px" }}>×</button>
               </div>
             ))}
             {cartTotal > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0 4px", fontWeight: 800, fontSize: 15 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 4px", fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
                 <span>Total</span>
                 <span style={{ color: accentColor }}>{cartTotal} {currencySymbol}</span>
               </div>
             )}
             <button onClick={submitCart}
               disabled={sending}
-              style={{ width: "100%", padding: "14px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 16, marginTop: 16, opacity: sending ? 0.7 : 1 }}>
-              {sending ? "Sending..." : `✅ Send Order (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
+              style={{ width: "100%", padding: "14px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 15, letterSpacing: "0.01em", marginTop: 16, opacity: sending ? 0.7 : 1, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
+              {sending ? "Sending..." : `Send Order (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
             </button>
           </div>
         </div>
@@ -584,18 +628,18 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* ADD ITEM MODAL */}
       {noteFor && (
-        <div onClick={() => setNoteFor(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "fadeIn 0.15s ease" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "slideUp 0.22s ease" }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 12, fontSize: 17 }}>
+        <div onClick={() => setNoteFor(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: 18, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 8, fontSize: 15 }}>{noteFor.item.price} {currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{noteFor.item.price} {currencySymbol}</span> : null}
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${accentColor}`, background: "var(--surface)", cursor: "pointer", fontSize: 20, fontWeight: 700, color: accentColor, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                <span style={{ fontSize: 20, fontWeight: 800, minWidth: 28, textAlign: "center" }}>{qty}</span>
-                <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `2px solid ${accentColor}`, background: accentColor, cursor: "pointer", fontSize: 20, fontWeight: 700, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 18, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                <span style={{ fontSize: 18, fontWeight: 700, minWidth: 28, textAlign: "center", color: "var(--text)" }}>{qty}</span>
+                <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${accentColor}`, background: accentColor, cursor: "pointer", fontSize: 18, fontWeight: 600, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
               </div>
             </div>
             <textarea
@@ -603,14 +647,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               onChange={e => setNoteText(e.target.value)}
               placeholder="Special request? (e.g. no onions)"
               rows={2}
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 8, fontSize: 14, outline: "none", resize: "none", background: "var(--bg)", color: "var(--text)" }}
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 10, fontSize: 14, outline: "none", resize: "none", background: "var(--bg)", color: "var(--text)" }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button onClick={confirmAddToCart}
-                style={{ flex: 1, padding: "13px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 15 }}>
+                style={{ flex: 1, padding: "13px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 15 }}>
                 Add to order
               </button>
-              <button onClick={() => setNoteFor(null)} style={{ padding: "13px 16px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}>
+              <button onClick={() => setNoteFor(null)} style={{ padding: "13px 18px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 500, fontSize: 14 }}>
                 Cancel
               </button>
             </div>
@@ -620,49 +664,50 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* STICKY SESSION SUMMARY */}
       {sessionRequests.length > 0 && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30, boxShadow: "0 -4px 24px rgba(0,0,0,0.3)" }}>
+        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 30, boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
           {/* Toggle bar */}
           <button
             onClick={() => setSessionPanelOpen(o => !o)}
-            style={{ width: "100%", background: "var(--surface)", color: "var(--text)", border: "none", borderTop: "1px solid var(--border)", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
+            style={{ width: "100%", background: "color-mix(in srgb, var(--surface) 82%, transparent)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", color: "var(--text)", border: "none", borderTop: "1px solid var(--border)", padding: "13px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
           >
-            <span style={{ fontWeight: 700, fontSize: 14 }}>
-              🧾 My Bill
+            <span style={{ fontWeight: 600, fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span aria-hidden="true" style={{ color: "var(--text-muted)", display: "inline-flex" }}>{IconReceipt(17)}</span>
+              My Bill
               {sessionRequests.some(r => r.price > 0) && (
-                <span style={{ marginLeft: 10, color: accentColor, fontWeight: 800 }}>
+                <span style={{ color: accentColor, fontWeight: 700 }}>
                   {sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}
                 </span>
               )}
             </span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8 }}>
               {sessionRequests.filter(r => r.status !== "done").length > 0 && (
-                <span style={{ background: accentColor, color: "#fff", borderRadius: 20, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
+                <span style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 600 }}>
                   {sessionRequests.filter(r => r.status !== "done").length} on the way
                 </span>
               )}
-              {sessionPanelOpen ? "▼" : "▲"}
+              <span aria-hidden="true" style={{ display: "inline-flex" }}>{IconChevron(!sessionPanelOpen)}</span>
             </span>
           </button>
 
           {sessionPanelOpen && (
-            <div style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", maxHeight: 320, overflowY: "auto" }}>
+            <div style={{ background: "color-mix(in srgb, var(--surface) 92%, transparent)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderTop: "1px solid var(--border)", maxHeight: 320, overflowY: "auto" }}>
               {/* On the way */}
               {sessionRequests.filter(r => r.status !== "done").length > 0 && (
-                <div style={{ padding: "10px 16px 0" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>On the way</div>
+                <div style={{ padding: "12px 20px 0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>On the way</div>
                   {sessionRequests.filter(r => r.status !== "done").map((r, i) => {
                     const pill = r.status === "seen"
-                      ? { label: "👀 Preparing", bg: "#f59e0b22", color: "#f59e0b" }
-                      : { label: "🕐 Pending", bg: "var(--surface2)", color: "var(--text-muted)" };
+                      ? { label: "Preparing", bg: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor }
+                      : { label: "Pending", bg: "var(--surface-2)", color: "var(--text-muted)" };
                     return (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
                         <div>
-                          <span style={{ fontWeight: 600, whiteSpace: "pre-line" }}>{r.name}</span>
+                          <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
                           <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, background: pill.bg, color: pill.color }}>{pill.label}</span>
+                          {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99, background: pill.bg, color: pill.color, letterSpacing: "0.02em" }}>{pill.label}</span>
                         </div>
                       </div>
                     );
@@ -672,15 +717,15 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
               {/* Delivered */}
               {sessionRequests.filter(r => r.status === "done").length > 0 && (
-                <div style={{ padding: "10px 16px 0" }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: "#22c55e", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Delivered</div>
+                <div style={{ padding: "12px 20px 0" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Delivered</div>
                   {sessionRequests.filter(r => r.status === "done").map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderBottom: "1px solid var(--border)", fontSize: 13, opacity: 0.7 }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13, opacity: 0.65 }}>
                       <div>
-                        <span style={{ fontWeight: 600, whiteSpace: "pre-line" }}>{r.name}</span>
+                        <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
                         <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
-                      {r.price > 0 && <span style={{ fontWeight: 700, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
+                      {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
                     </div>
                   ))}
                 </div>
@@ -688,9 +733,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
               {/* Total */}
               {sessionRequests.some(r => r.price > 0) && (
-                <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 700, fontSize: 14 }}>My Total</span>
-                  <span style={{ fontWeight: 800, fontSize: 18, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}</span>
+                <div style={{ padding: "13px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>My Total</span>
+                  <span style={{ fontWeight: 700, fontSize: 17, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}</span>
                 </div>
               )}
             </div>
@@ -702,14 +747,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       {showBackToTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 76 : 24, right: 16, zIndex: 35, width: 44, height: 44, borderRadius: "50%", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: `0 4px 16px ${accentColor}66`, animation: "fadeIn 0.2s ease" }}
+          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 76 : 24, right: 16, zIndex: 35, width: 42, height: 42, borderRadius: "50%", background: "var(--surface)", color: "var(--text)", border: "1px solid var(--border)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.12)", animation: "gmFadeIn 0.2s ease" }}
           aria-label="Back to top"
-        >↑</button>
+        >{IconArrowUp(18)}</button>
       )}
 
       {/* TOAST */}
       {toast && (
-        <div role="status" aria-live="polite" style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", background: "#16a34a", color: "white", padding: "10px 22px", borderRadius: 99, fontWeight: 600, fontSize: 14, zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(22,163,74,0.4)", animation: "fadeIn 0.2s ease" }}>
+        <div role="status" aria-live="polite" style={{ position: "fixed", top: 78, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", padding: "10px 22px", borderRadius: 99, fontWeight: 500, fontSize: 13, letterSpacing: "0.01em", zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", animation: "gmFadeIn 0.2s ease" }}>
           {toast}
         </div>
       )}

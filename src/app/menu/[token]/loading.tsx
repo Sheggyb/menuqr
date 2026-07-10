@@ -4,27 +4,31 @@ export default function GuestMenuLoading() {
       <style>{`
         @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
       `}</style>
-      {/* Header bar */}
-      <div style={{ background: "var(--surface-2)", padding: "28px 20px 22px", animation: "pulse-soft 1.4s ease-in-out infinite" }}>
-        <div style={{ height: 22, width: "55%", borderRadius: 8, background: "var(--surface-3)" }} />
-        <div style={{ height: 13, width: "35%", borderRadius: 6, background: "var(--surface-3)", marginTop: 10 }} />
+      {/* Header — accent-edged serif title line */}
+      <div style={{ padding: "22px 20px 18px", borderBottom: "1px solid var(--border)", animation: "pulse-soft 1.4s ease-in-out infinite" }}>
+        <div style={{ borderLeft: "2px solid var(--surface-3)", paddingLeft: 14 }}>
+          <div style={{ height: 20, width: "50%", borderRadius: 6, background: "var(--surface-3)" }} />
+          <div style={{ height: 10, width: "25%", borderRadius: 5, background: "var(--surface-2)", marginTop: 9 }} />
+        </div>
       </div>
-      {/* Category pills */}
-      <div style={{ display: "flex", gap: 8, padding: "14px 16px 6px" }}>
-        {[70, 90, 60, 80].map((w, i) => (
-          <div key={i} style={{ height: 30, width: w, borderRadius: 99, background: "var(--surface-2)", animation: "pulse-soft 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
+      {/* Category tab row */}
+      <div style={{ display: "flex", gap: 22, padding: "18px 20px 10px", borderBottom: "1px solid var(--border)" }}>
+        {[56, 72, 48, 64].map((w, i) => (
+          <div key={i} style={{ height: 11, width: w, borderRadius: 4, background: "var(--surface-2)", animation: "pulse-soft 1.4s ease-in-out infinite", animationDelay: `${i * 0.1}s` }} />
         ))}
       </div>
-      {/* Item rows */}
-      <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+      {/* Item cards */}
+      <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, animation: "pulse-soft 1.4s ease-in-out infinite", animationDelay: `${i * 0.12}s` }}>
+          <div key={i} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: "pulse-soft 1.4s ease-in-out infinite", animationDelay: `${i * 0.12}s` }}>
             <div style={{ flex: 1 }}>
-              <div style={{ height: 15, width: "60%", borderRadius: 6, background: "var(--surface-2)" }} />
-              <div style={{ height: 12, width: "85%", borderRadius: 6, background: "var(--surface-2)", marginTop: 8 }} />
-              <div style={{ height: 14, width: 60, borderRadius: 6, background: "var(--surface-2)", marginTop: 8 }} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+                <div style={{ height: 14, width: "55%", borderRadius: 5, background: "var(--surface-2)" }} />
+                <div style={{ height: 22, width: 58, borderRadius: 99, background: "var(--surface-2)", flexShrink: 0 }} />
+              </div>
+              <div style={{ height: 11, width: "80%", borderRadius: 5, background: "var(--surface-2)", marginTop: 10 }} />
             </div>
-            <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--surface-2)", flexShrink: 0 }} />
+            <div style={{ width: 62, height: 33, borderRadius: 99, border: "1px solid var(--border)", background: "var(--surface-2)", flexShrink: 0 }} />
           </div>
         ))}
       </div>
