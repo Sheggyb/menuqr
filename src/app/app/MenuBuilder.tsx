@@ -438,20 +438,20 @@ export default function MenuBuilder({ restaurant }: Props) {
         @keyframes mbSlideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .mb-additem-row { animation: mbSlideDown 0.16s ease; }
       `}</style>
-      {/* SEARCH BAR */}
-      <div style={{ padding: "0 0 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ position: "relative", width: "100%" }}>
-          <IconSearch width={18} height={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
+      {/* Toolbar — compact one-line search + actions */}
+      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+          <IconSearch width={14} height={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
           <input
             type="text"
             placeholder="Search menu..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ height: 48, padding: "0 16px 0 46px", width: "100%", fontSize: 15, borderRadius: 12, boxSizing: "border-box" }}
+            style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box", maxWidth: 300 }}
           />
         </div>
         {!addingCategory && (
-          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
+          <>
             <select
               value={currency}
               onChange={async e => {
@@ -461,7 +461,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
                 if (error) toast.error("Could not save the currency");
               }}
-              style={{ padding: "7px 8px", fontSize: 13, fontWeight: 600, width: "auto", cursor: "pointer", borderRadius: 8 }}
+              style={{ width: 90, padding: "6px 8px", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 6, flexShrink: 0 }}
               title="Currency for prices"
             >
               {Object.entries(CURRENCIES).map(([code, sym]) => (
@@ -470,11 +470,11 @@ export default function MenuBuilder({ restaurant }: Props) {
             </select>
             <button
               onClick={() => setAddingCategory(true)}
-              style={{ padding: "9px 16px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
+              style={{ padding: "7px 14px", borderRadius: 6, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", flexShrink: 0 }}
             >
               + Category
             </button>
-          </div>
+          </>
         )}
       </div>
 
