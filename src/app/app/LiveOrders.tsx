@@ -365,7 +365,9 @@ export default function LiveOrders({ restaurant }: Props) {
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
         .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-        @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; } }
+        .lo-columns { display: flex; gap: 24px; align-items: flex-start; }
+        .lo-columns > section { flex: 1; min-width: 0; }
+        @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; } .lo-columns { flex-direction: column; } }
       `}</style>
 
       {/* Toolbar */}
@@ -420,42 +422,45 @@ export default function LiveOrders({ restaurant }: Props) {
         {estWaitMin > 0 ? ` (~${estWaitMin} min)` : ""}
       </div>
 
-      {/* New */}
-      <Section
-        title="New"
-        count={pending.length}
-        icon={<IconBell width={18} height={18} />}
-        emptyText={searchTable || filterType !== "all" ? "No matching requests" : "No new orders"}
-        isEmpty={pending.length === 0}
-      >
-        {pending.map(req => (
-          <RequestCard
-            key={req.id}
-            req={req}
-            leaving={leavingIds.has(req.id)}
-            onPickUp={() => moveAnimated(req.id, "seen")}
-          />
-        ))}
-      </Section>
+      {/* New + In Progress side-by-side */}
+      <div className="lo-columns">
+        {/* New */}
+        <Section
+          title="New"
+          count={pending.length}
+          icon={<IconBell width={18} height={18} />}
+          emptyText={searchTable || filterType !== "all" ? "No matching requests" : "No new orders"}
+          isEmpty={pending.length === 0}
+        >
+          {pending.map(req => (
+            <RequestCard
+              key={req.id}
+              req={req}
+              leaving={leavingIds.has(req.id)}
+              onPickUp={() => moveAnimated(req.id, "seen")}
+            />
+          ))}
+        </Section>
 
-      {/* In Progress */}
-      <Section
-        title="In Progress"
-        count={seen.length}
-        icon={<IconClock width={18} height={18} />}
-        emptyText={searchTable || filterType !== "all" ? "No matching requests" : "Nothing in progress"}
-        isEmpty={seen.length === 0}
-      >
-        {seen.map(req => (
-          <RequestCard
-            key={req.id}
-            req={req}
-            leaving={leavingIds.has(req.id)}
-            onDone={() => moveAnimated(req.id, "done")}
-            onUndo={() => move(req.id, "pending")}
-          />
-        ))}
-      </Section>
+        {/* In Progress */}
+        <Section
+          title="In Progress"
+          count={seen.length}
+          icon={<IconClock width={18} height={18} />}
+          emptyText={searchTable || filterType !== "all" ? "No matching requests" : "Nothing in progress"}
+          isEmpty={seen.length === 0}
+        >
+          {seen.map(req => (
+            <RequestCard
+              key={req.id}
+              req={req}
+              leaving={leavingIds.has(req.id)}
+              onDone={() => moveAnimated(req.id, "done")}
+              onUndo={() => move(req.id, "pending")}
+            />
+          ))}
+        </Section>
+      </div>
     </div>
   );
 }
