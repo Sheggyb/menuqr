@@ -2,11 +2,14 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
+import { CURRENCIES } from "@/lib/constants";
+import { useToast } from "@/components/Toast";
 
 interface Props { restaurant: Restaurant }
 
 export default function SettingsPanel({ restaurant }: Props) {
   const supabase = createClient();
+  const toast = useToast();
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || "#E85D2F");
   const [venueType, setVenueType] = useState<Restaurant["venue_type"]>(
@@ -26,6 +29,28 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  // Sound alerts — browser-local, read by LiveOrders (key: menuqr_sound)
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return localStorage.getItem("menuqr_sound") !== "off";
+  });
+
+  function toggleSound() {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    localStorage.setItem("menuqr_sound", next ? "on" : "off");
+    // Play a test beep if turning on
+    if (next) {
+      try {
+        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880; gain.gain.value = 0.15;
+        osc.start(); osc.stop(ctx.currentTime + 0.15);
+      } catch { /* ignore */ }
+    }
+  }
 
   const ALL_ACTIONS = [
     { id: "waiter", label: "Call Waiter", icon: "🙋", desc: "Guest can call a staff member to the table" },
@@ -54,7 +79,14 @@ export default function SettingsPanel({ restaurant }: Props) {
       .update({ name: name.trim(), accent_color: accent, quick_actions: quickActions, venue_type: venueType, currency })
       .eq("id", restaurant.id);
     setLoading(false);
-    if (err) { setError(err.message); } else { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+    if (err) {
+      setError(err.message);
+      toast.error("Could not save changes");
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      toast.success("Settings saved");
+    }
   }
 
   async function handleDelete() {
@@ -119,8 +151,8 @@ export default function SettingsPanel({ restaurant }: Props) {
               onChange={e => { setCurrency(e.target.value); localStorage.setItem(`menuqr_currency_${restaurant.id}`, e.target.value); }}
               style={{ padding: "9px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 14, cursor: "pointer", width: "100%" }}
             >
-              {[["SEK","kr — SEK"],["USD","$ — USD"],["EUR","€ — EUR"],["GBP","£ — GBP"],["NOK","kr — NOK"],["DKK","kr — DKK"],["CHF","CHF — CHF"],["JPY","¥ — JPY"],["AUD","$ — AUD"],["CAD","$ — CAD"]].map(([code, label]) => (
-                <option key={code} value={code}>{label}</option>
+              {Object.entries(CURRENCIES).map(([code, sym]) => (
+                <option key={code} value={code}>{sym} — {code}</option>
               ))}
             </select>
             <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Shown on guest menus next to prices.</p>
@@ -168,6 +200,37 @@ export default function SettingsPanel({ restaurant }: Props) {
             {loading ? "Saving..." : "Save settings"}
           </button>
         </form>
+      </div>
+
+      {/* Notification settings */}
+      <div className="card" style={{ maxWidth: 520 }}>
+        <h3 style={{ fontWeight: 700, fontSize: 16, marginBottom: 16 }}>🔔 Notifications</h3>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>Sound alerts</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>Play an audio ping when a new order comes in</div>
+          </div>
+          <button
+            type="button"
+            onClick={toggleSound}
+            style={{
+              width: 52, height: 28, borderRadius: 99,
+              background: soundEnabled ? "var(--accent)" : "#d1d5db",
+              border: "none", cursor: "pointer", position: "relative", flexShrink: 0, transition: "background 0.2s",
+            }}
+            aria-label={soundEnabled ? "Disable sound" : "Enable sound"}
+            aria-pressed={soundEnabled}
+          >
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
+              position: "absolute", top: 3, left: soundEnabled ? 27 : 3,
+              transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+            }} />
+          </button>
+        </div>
+        <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
+          Sound setting is stored in your browser. Each device needs to enable it separately.
+        </p>
       </div>
 
       {/* Danger Zone */}

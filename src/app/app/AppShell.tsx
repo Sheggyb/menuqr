@@ -11,6 +11,8 @@ import OnboardingChecklist from "./OnboardingChecklist";
 import Analytics from "./Analytics";
 import RequestHistory from "./RequestHistory";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ToastProvider } from "@/components/Toast";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { useTheme } from "@/lib/theme";
 
 type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
@@ -77,6 +79,8 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   }
 
   return (
+    <ToastProvider>
+    <ConfirmProvider>
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       {/* TOP NAV */}
       <header style={{ background: resolvedTheme === "dark" ? "rgba(18,18,21,0.92)" : "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", position: "sticky", top: 0, zIndex: 40 }}>
@@ -90,6 +94,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             style={{ fontSize: 16, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
           >
             {resolvedTheme === "dark" ? "☀️" : "🌙"}
@@ -143,7 +148,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               {icon === "clock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
               {icon === "gear" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>}
               {id === "orders" && pendingCount > 0
-                ? <>{label} <span style={{ background: "#E85D2F", color: "white", fontSize: 10, padding: "1px 6px", borderRadius: 99, fontWeight: 700, lineHeight: 1.6 }}>{pendingCount}</span></>
+                ? <>{label} <span style={{ background: "var(--accent)", color: "white", fontSize: 10, padding: "1px 6px", borderRadius: 99, fontWeight: 700, lineHeight: 1.6 }}>{pendingCount}</span></>
                 : label}
             </button>
           );
@@ -157,6 +162,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           ["menu", "🍽️", "Menu"],
           ["tables", "table-svg", "Tables"],
           ["analytics", "📊", "Stats"],
+          ["history", "🕐", "History"],
           ["settings", "⚙️", "Settings"],
         ] as [Tab, string, string][]).map(([id, icon, label]) => (
           <button
@@ -188,7 +194,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               </span>
             ) : <span style={{ fontSize: 20, height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</span>}
             {id === "orders" && pendingCount > 0 && (
-              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "#E85D2F", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span>
+              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span>
             )}
             {label}
           </button>
@@ -218,6 +224,8 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {tab === "settings" && <ErrorBoundary fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} /></ErrorBoundary>}
       </main>
     </div>
+    </ConfirmProvider>
+    </ToastProvider>
   );
 }
 

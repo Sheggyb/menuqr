@@ -4,6 +4,10 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, MenuCategory, MenuItem } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
+import { CURRENCIES } from "@/lib/constants";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { Skeleton, SkeletonList } from "@/components/Skeleton";
 
 interface Props { restaurant: Restaurant }
 
@@ -21,6 +25,8 @@ interface QuickAdd {
 
 export default function MenuBuilder({ restaurant }: Props) {
   const supabase = createClient();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [allItems, setAllItems] = useState<MenuItem[]>([]);
@@ -50,14 +56,12 @@ export default function MenuBuilder({ restaurant }: Props) {
     setCtxMenu({ x: e.clientX, y: e.clientY, items });
   }, []);
 
-  // Currency (persisted per restaurant)
+  // Currency — restaurant.currency (DB, saved in Settings) is the source of truth;
+  // localStorage is only a fallback for restaurants that never saved settings.
   const [currency, setCurrency] = useState(() => {
+    if (restaurant.currency) return restaurant.currency;
     try { return localStorage.getItem(`menuqr_currency_${restaurant.id}`) || "SEK"; } catch { return "SEK"; }
   });
-
-  const CURRENCIES: Record<string, string> = {
-    SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$",
-  };
   const currencySymbol = CURRENCIES[currency] ?? currency;
 
   // Add category
@@ -84,9 +88,10 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   async function saveEditCat() {
     if (!editingCatId || !editCatName.trim()) { setEditingCatId(null); return; }
-    await supabase.from("menu_categories")
+    const { error } = await supabase.from("menu_categories")
       .update({ name: editCatName.trim(), icon: editCatIcon })
       .eq("id", editingCatId);
+    if (error) { toast.error("Could not save the category"); return; }
     setCategories(prev => prev.map(c =>
       c.id === editingCatId ? { ...c, name: editCatName.trim(), icon: editCatIcon } : c
     ));
@@ -164,7 +169,9 @@ export default function MenuBuilder({ restaurant }: Props) {
   // ─── CATEGORY CRUD ────────────────────────────────────
 
   async function deleteCategory(id: string) {
-    await supabase.from("menu_categories").delete().eq("id", id);
+    const { error } = await supabase.from("menu_categories").delete().eq("id", id);
+    if (error) { toast.error("Could not delete the category"); return; }
+    toast.success("Category deleted");
     setCategories(c => c.filter(x => x.id !== id));
     setAllItems(i => i.filter(x => x.category_id !== id));
     setItems(i => i.filter(x => x.category_id !== id));
@@ -176,9 +183,10 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   async function addCategory() {
     if (!newCatName.trim()) return;
-    const { data } = await supabase.from("menu_categories")
+    const { data, error } = await supabase.from("menu_categories")
       .insert({ restaurant_id: restaurant.id, name: newCatName.trim(), icon: newCatIcon, sort_order: categories.length })
       .select().single();
+    if (error) { toast.error("Could not add the category"); return; }
     if (data) {
       const cat = data as MenuCategory;
       setCategories(c => [...c, cat]);
@@ -193,7 +201,7 @@ export default function MenuBuilder({ restaurant }: Props) {
   async function quickAddItem(catId: string) {
     const q = quickAdds[catId];
     if (!q?.name.trim()) return;
-    const { data } = await supabase.from("menu_items")
+    const { data, error } = await supabase.from("menu_items")
       .insert({
         restaurant_id: restaurant.id,
         category_id: catId,
@@ -203,6 +211,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         sort_order: allItems.filter(i => i.category_id === catId).length,
       })
       .select().single();
+    if (error) { toast.error("Could not add the item"); return; }
     if (data) {
       const item = data as MenuItem;
       setAllItems(i => [...i, item]);
@@ -213,7 +222,7 @@ export default function MenuBuilder({ restaurant }: Props) {
   }
 
   async function duplicateItem(item: MenuItem) {
-    const { data } = await supabase.from("menu_items")
+    const { data, error } = await supabase.from("menu_items")
       .insert({
         restaurant_id: restaurant.id,
         category_id: item.category_id,
@@ -224,6 +233,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         sort_order: allItems.filter(i => i.category_id === item.category_id).length,
       })
       .select().single();
+    if (error) { toast.error("Could not duplicate the item"); return; }
     if (data) {
       const newItem = data as MenuItem;
       setAllItems(i => [...i, newItem]);
@@ -232,16 +242,26 @@ export default function MenuBuilder({ restaurant }: Props) {
   }
 
   async function toggleItem(item: MenuItem) {
-    await supabase.from("menu_items").update({ is_available: !item.is_available }).eq("id", item.id);
+    const { error } = await supabase.from("menu_items").update({ is_available: !item.is_available }).eq("id", item.id);
+    if (error) { toast.error("Could not update the item"); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === item.id ? { ...x, is_available: !x.is_available } : x);
     setAllItems(updater);
     setItems(updater);
   }
 
-  async function deleteItem(id: string) {
-    await supabase.from("menu_items").delete().eq("id", id);
-    setAllItems(i => i.filter(x => x.id !== id));
-    setItems(i => i.filter(x => x.id !== id));
+  async function deleteItem(item: MenuItem) {
+    const ok = await confirm({
+      title: `Delete "${item.name || "Untitled"}"?`,
+      message: "This cannot be undone.",
+      confirmLabel: "Yes, delete",
+      danger: true,
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("menu_items").delete().eq("id", item.id);
+    if (error) { toast.error("Could not delete the item"); return; }
+    toast.success("Item deleted");
+    setAllItems(i => i.filter(x => x.id !== item.id));
+    setItems(i => i.filter(x => x.id !== item.id));
   }
 
   // ─── INLINE EDIT ──────────────────────────────────────
@@ -260,7 +280,8 @@ export default function MenuBuilder({ restaurant }: Props) {
     } else {
       update[edit.field] = value || null;
     }
-    await supabase.from("menu_items").update(update).eq("id", edit.itemId);
+    const { error } = await supabase.from("menu_items").update(update).eq("id", edit.itemId);
+    if (error) { toast.error("Could not save changes"); setEdit(null); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === edit.itemId ? { ...x, ...update } as MenuItem : x);
     setAllItems(updater);
     setItems(updater);
@@ -317,9 +338,14 @@ export default function MenuBuilder({ restaurant }: Props) {
     setAllItems(updated);
     setItems(updated);
 
-    await Promise.all(reordered.map((item, i) =>
+    const results = await Promise.all(reordered.map((item, i) =>
       supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
     ));
+    if (results.some(r => r.error)) {
+      toast.error("Could not save the new order");
+      setAllItems(allItems);
+      setItems(allItems);
+    }
   }
 
   function handleDragEnd() {
@@ -329,7 +355,17 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   // ─── RENDER ───────────────────────────────────────────
 
-  if (loading) return <p style={{ color: "var(--text-muted)", padding: 24 }}>Loading menu...</p>;
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }} aria-busy="true">
+      <Skeleton height={38} borderRadius={8} />
+      <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+          {[1, 2, 3, 4].map(i => <Skeleton key={i} height={32} borderRadius={8} />)}
+        </div>
+        <div style={{ flex: 1 }}><SkeletonList count={4} /></div>
+      </div>
+    </div>
+  );
 
   const activeCat = categories.find(c => c.id === selectedCatId);
   const hasSearchResults = searchQuery && displayItems.length > 0;
@@ -368,7 +404,13 @@ export default function MenuBuilder({ restaurant }: Props) {
             <>
               <select
                 value={currency}
-                onChange={e => { setCurrency(e.target.value); localStorage.setItem(`menuqr_currency_${restaurant.id}`, e.target.value); }}
+                onChange={async e => {
+                  const next = e.target.value;
+                  setCurrency(next);
+                  try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch { /* ignore */ }
+                  const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
+                  if (error) toast.error("Could not save the currency");
+                }}
                 style={{ padding: "7px 8px", fontSize: 12, fontWeight: 600, width: "auto", cursor: "pointer", borderRadius: 8 }}
                 title="Currency for prices"
               >
@@ -498,9 +540,13 @@ export default function MenuBuilder({ restaurant }: Props) {
                         const [moved] = reordered.splice(sourceIdx, 1);
                         reordered.splice(targetIdx, 0, moved);
                         setCategories(reordered);
-                        await Promise.all(reordered.map((c, i) =>
+                        const results = await Promise.all(reordered.map((c, i) =>
                           supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
                         ));
+                        if (results.some(r => r.error)) {
+                          toast.error("Could not save the new order");
+                          setCategories(categories);
+                        }
                       }}
                       onContextMenu={(e) => openCtxMenu(e, [
                         {
@@ -508,7 +554,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           icon: "✏️",
                           action: () => startEditCat(cat),
                         },
-                        { separator: true } as unknown as ContextMenuAction,
+                        { separator: true },
                         {
                           label: "Delete category",
                           icon: "🗑️",
@@ -580,7 +626,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 <button
                   onClick={(e) => openCtxMenu(e, [
                     { label: "Edit name & icon", icon: "✏️", action: () => startEditCat(activeCat) },
-                    { separator: true } as unknown as ContextMenuAction,
+                    { separator: true },
                     { label: "Delete category", icon: "🗑️", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
                   ])}
                   style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 18, lineHeight: 1, fontWeight: 700 }}
@@ -671,7 +717,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             icon: "💰",
                             action: () => startEdit(item.id, "price", item.price?.toString() ?? ""),
                           },
-                          { separator: true } as { separator: true; label: string; action: () => void },
+                          { separator: true },
                           {
                             label: item.is_available ? "Mark as hidden" : "Mark as available",
                             icon: item.is_available ? "🙈" : "👁️",
@@ -682,12 +728,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                             icon: "⧉",
                             action: () => duplicateItem(item),
                           },
-                          { separator: true } as { separator: true; label: string; action: () => void },
+                          { separator: true },
                           {
                             label: "Delete item",
                             icon: "🗑️",
                             danger: true,
-                            action: () => deleteItem(item.id),
+                            action: () => deleteItem(item),
                           },
                         ]);
                       }}
@@ -795,11 +841,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                                 { label: "Edit name", icon: "✏️", action: () => startEdit(item.id, "name", item.name) },
                                 { label: "Edit description", icon: "📝", action: () => startEdit(item.id, "description", item.description ?? "") },
                                 { label: "Edit price", icon: "💰", action: () => startEdit(item.id, "price", item.price?.toString() ?? "") },
-                                { separator: true } as unknown as ContextMenuAction,
+                                { separator: true },
                                 { label: item.is_available ? "Mark as hidden" : "Mark as available", icon: item.is_available ? "🙈" : "👁️", action: () => toggleItem(item) },
                                 { label: "Duplicate item", icon: "⧉", action: () => duplicateItem(item) },
-                                { separator: true } as unknown as ContextMenuAction,
-                                { label: "Delete item", icon: "🗑️", danger: true, action: () => deleteItem(item.id) },
+                                { separator: true },
+                                { label: "Delete item", icon: "🗑️", danger: true, action: () => deleteItem(item) },
                               ]);
                             }}
                             style={{

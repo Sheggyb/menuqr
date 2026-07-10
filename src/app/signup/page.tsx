@@ -93,6 +93,12 @@ export default function SignupPage() {
             style={{ width: "100%", padding: "13px", borderRadius: 10, background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 15, opacity: loading ? 0.75 : 1, marginTop: 4 }}>
             {loading ? "Creating account…" : "Create free account →"}
           </button>
+          <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+            By creating an account you agree to our{" "}
+            <Link href="/terms" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>Terms</Link>
+            {" "}and{" "}
+            <Link href="/privacy" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>Privacy Policy</Link>.
+          </p>
         </form>
 
         <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text-muted)" }}>

@@ -30,10 +30,10 @@
   --font-display: "Playfair Display", serif;
 }
 
-/* ── Dark theme (freebuff-inspired) ───────────────── */
+/* ── Dark theme ────────────────────────────────────── */
 .dark,
 [data-theme="dark"] {
-  /* Deep near-black backgrounds — barber-900/800/700 */
+  /* Deep near-black backgrounds */
   --bg: #0a0a0b;
   --surface: #121215;
   --surface-2: #1a1a20;
@@ -45,7 +45,7 @@
 
   --accent-light: #2a1508;
 
-  /* Status cards — dark tinted, matching freebuff muted palette */
+  /* Status cards — dark tinted, muted palette */
   --card-waiter-bg: #1e1a0a;
   --card-waiter-border: #5a4a0f;
   --card-bill-bg: #1e0d10;
@@ -103,7 +103,7 @@ body {
   margin: 0;
 }
 
-/* Dark mode: subtle radial gold glow + diagonal texture (freebuff pattern) */
+/* Dark mode: subtle radial glow + diagonal texture */
 [data-theme="dark"] body,
 .dark body {
   background-color: var(--bg);
@@ -179,12 +179,12 @@ input, textarea, select {
 }
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(184,138,30,0.08);
+  box-shadow: 0 0 0 3px rgba(232,93,47,0.15);
 }
 [data-theme="dark"] input:focus,
 [data-theme="dark"] textarea:focus,
 [data-theme="dark"] select:focus {
-  box-shadow: 0 0 0 3px rgba(184,138,30,0.15);
+  box-shadow: 0 0 0 3px rgba(232,93,47,0.25);
 }
 
 @keyframes skeleton-shimmer {

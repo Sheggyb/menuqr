@@ -2,13 +2,15 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
-export interface ContextMenuAction {
-  label: string;
-  icon?: string;
-  action: () => void;
-  danger?: boolean;
-  separator?: true;
-}
+export type ContextMenuAction =
+  | {
+      label: string;
+      icon?: string;
+      action: () => void;
+      danger?: boolean;
+      separator?: never;
+    }
+  | { separator: true };
 
 interface Props {
   x: number;

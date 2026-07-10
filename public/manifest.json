@@ -1,8 +1,16 @@
 {
-  "name": "MenuQR",
+  "name": "MenuQR — QR code menus & live table orders",
   "short_name": "MenuQR",
+  "description": "Digital menus and live table ordering for restaurants. Guests scan a QR code, browse the menu, and order with a tap.",
   "theme_color": "#E85D2F",
   "background_color": "#FAFAF8",
   "display": "standalone",
-  "start_url": "/"
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    }
+  ]
 }

@@ -4,11 +4,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRow } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
+import { Skeleton, SkeletonList } from "@/components/Skeleton";
 
 interface Props { restaurant: Restaurant }
 
 export default function TableManager({ restaurant }: Props) {
   const supabase = createClient();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,7 +36,11 @@ export default function TableManager({ restaurant }: Props) {
 
   useEffect(() => {
     supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id)
-      .then(({ data }) => { setTables((data ?? []).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }))); setLoading(false); });
+      .then(({ data, error }) => {
+        if (error) toast.error("Could not load tables");
+        setTables((data ?? []).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
+        setLoading(false);
+      });
   }, [restaurant.id]);
 
   useEffect(() => {
@@ -71,31 +80,48 @@ export default function TableManager({ restaurant }: Props) {
     const fetchSessions = async () => {
       try {
         const res = await fetch(`/api/session/pending?restaurant_id=${restaurant.id}`);
+        if (!res.ok) return;
         const data = await res.json();
         setPendingSessions(data.sessions ?? []);
-      } catch {}
+      } catch { /* network hiccup — the fallback refresh will catch up */ }
     };
     fetchSessions();
-    const interval = setInterval(fetchSessions, 4000);
-    return () => clearInterval(interval);
+    // Realtime: react instantly to new / updated guest sessions
+    const channel = supabase.channel(`table-sessions:${restaurant.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "table_sessions", filter: `restaurant_id=eq.${restaurant.id}` }, fetchSessions)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "table_sessions", filter: `restaurant_id=eq.${restaurant.id}` }, fetchSessions)
+      .subscribe();
+    // Slow fallback refresh in case a realtime event is missed
+    const interval = setInterval(fetchSessions, 30000);
+    return () => { supabase.removeChannel(channel); clearInterval(interval); };
   }, [restaurant.id]);
 
   async function approveSession(session_id: string) {
-    await fetch("/api/session/check", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id, action: "approve" }),
-    });
-    setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+    try {
+      const res = await fetch("/api/session/check", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id, action: "approve" }),
+      });
+      if (!res.ok) { toast.error("Could not approve the guest"); return; }
+      setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+    } catch {
+      toast.error("Could not approve the guest");
+    }
   }
 
   async function declineSession(session_id: string) {
-    await fetch("/api/session/check", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id, action: "decline" }),
-    });
-    setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+    try {
+      const res = await fetch("/api/session/check", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id, action: "decline" }),
+      });
+      if (!res.ok) { toast.error("Could not decline the guest"); return; }
+      setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
+    } catch {
+      toast.error("Could not decline the guest");
+    }
   }
 
   function copyLink(table: TableRow) {
@@ -109,49 +135,70 @@ export default function TableManager({ restaurant }: Props) {
   async function addTable() {
     if (!newName.trim()) return;
     const token = crypto.randomUUID();
-    const { data } = await supabase.from("restaurant_tables")
+    const { data, error } = await supabase.from("restaurant_tables")
       .insert({ restaurant_id: restaurant.id, name: newName.trim(), token, is_active: true })
       .select().single();
+    if (error) { toast.error("Could not add the table"); return; }
     if (data) { setTables(t => [...t, data as TableRow]); setNewName(""); }
   }
 
-  async function deleteTable(id: string) {
-    await supabase.from("restaurant_tables").delete().eq("id", id);
-    setTables(t => t.filter(x => x.id !== id));
+  async function deleteTable(table: TableRow) {
+    const ok = await confirm({
+      title: `Delete "${table.name}"?`,
+      message: "Its QR code will stop working. This cannot be undone.",
+      confirmLabel: "Yes, delete",
+      danger: true,
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("restaurant_tables").delete().eq("id", table.id);
+    if (error) { toast.error("Could not delete the table"); return; }
+    toast.success("Table deleted");
+    setTables(t => t.filter(x => x.id !== table.id));
   }
 
   async function toggleAll() {
     const anyActive = tables.some(t => t.is_active);
     const newState = !anyActive;
-    await supabase.from("restaurant_tables").update({ is_active: newState }).eq("restaurant_id", restaurant.id);
+    const { error } = await supabase.from("restaurant_tables").update({ is_active: newState }).eq("restaurant_id", restaurant.id);
+    if (error) { toast.error("Could not update the tables"); return; }
     setTables(tables.map(t => ({ ...t, is_active: newState })));
   }
 
   async function openTable(table: TableRow) {
-    await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
+    const { error } = await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
+    if (error) { toast.error("Could not open the table"); return; }
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t));
   }
 
   async function closeTable(table: TableRow) {
-    await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
-    await fetch("/api/session/close-table", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table_id: table.id }),
-    });
+    const { error } = await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
+    if (error) { toast.error("Could not close the table"); return; }
+    try {
+      await fetch("/api/session/close-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table_id: table.id }),
+      });
+    } catch { /* table is closed either way; session cleanup is best-effort */ }
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: false } : t));
   }
 
   async function clearAndCloseTable(table: TableRow) {
-    await fetch("/api/table/clear", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ table_id: table.id, restaurant_id: restaurant.id }),
-    });
-    setPendingByTable(prev => ({ ...prev, [table.id]: 0 }));
+    try {
+      const res = await fetch("/api/table/clear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table_id: table.id, restaurant_id: restaurant.id }),
+      });
+      if (!res.ok) { toast.error("Could not clear the table"); return; }
+      setPendingByTable(prev => ({ ...prev, [table.id]: 0 }));
+    } catch {
+      toast.error("Could not clear the table");
+    }
   }
 
   async function showQR(table: TableRow) {
+    setQrDataUrl("");
     setQrModal(table);
     const url = `${window.location.origin}/menu/${table.token}`;
     const QRCode = (await import("qrcode")).default;
@@ -160,6 +207,7 @@ export default function TableManager({ restaurant }: Props) {
   }
 
   function downloadQR(table: TableRow) {
+    if (!qrDataUrl) return;
     const link = document.createElement("a");
     link.href = qrDataUrl;
     link.download = `table-${table.name}.png`;
@@ -186,7 +234,7 @@ export default function TableManager({ restaurant }: Props) {
         action: () => openTable(table),
       });
     }
-    items.push({ separator: true } as unknown as ContextMenuAction);
+    items.push({ separator: true });
     items.push({
       label: "Show QR code",
       icon: "📱",
@@ -197,17 +245,22 @@ export default function TableManager({ restaurant }: Props) {
       icon: "🔗",
       action: () => copyLink(table),
     });
-    items.push({ separator: true } as unknown as ContextMenuAction);
+    items.push({ separator: true });
     items.push({
       label: "Delete table",
       icon: "🗑️",
       danger: true,
-      action: () => deleteTable(table.id),
+      action: () => deleteTable(table),
     });
     return items;
   }
 
-  if (loading) return <p style={{ color: "var(--text-muted)" }}>Loading tables...</p>;
+  if (loading) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }} aria-busy="true">
+      <Skeleton height={28} width="40%" borderRadius={8} />
+      <SkeletonList count={4} />
+    </div>
+  );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -229,7 +282,7 @@ export default function TableManager({ restaurant }: Props) {
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => approveSession(s.session_id)} style={{ background: "#22c55e", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>✅ Approve</button>
-                <button onClick={() => declineSession(s.session_id)} style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}>✕</button>
+                <button onClick={() => declineSession(s.session_id)} aria-label="Decline guest access request" style={{ background: "var(--surface)", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 12px", fontSize: 13, cursor: "pointer" }}>✕</button>
               </div>
             </div>
           ))}
@@ -293,7 +346,7 @@ export default function TableManager({ restaurant }: Props) {
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, display: "inline-block", marginBottom: 4 }} />
                     <div style={{ fontSize: 18, marginBottom: 2 }}>🍽️</div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: textColor, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{table.name}</div>
-                    {pending > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: "#E85D2F", marginTop: 2 }}>{pending} !</div>}
+                    {pending > 0 && <div style={{ fontSize: 10, fontWeight: 800, color: "var(--accent)", marginTop: 2 }}>{pending} !</div>}
                   </div>
                 );
               })}
@@ -317,7 +370,7 @@ export default function TableManager({ restaurant }: Props) {
                 <div>
                   <span style={{ fontWeight: 700 }}>{table.name}</span>
                   {pendingByTable[table.id] > 0 && (
-                    <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: "#E85D2F", color: "white", fontWeight: 700, animation: "pulse 1.5s ease-in-out infinite" }}>
+                    <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, background: "var(--accent)", color: "white", fontWeight: 700, animation: "pulse 1.5s ease-in-out infinite" }}>
                       {pendingByTable[table.id]} waiting
                     </span>
                   )}
@@ -334,6 +387,7 @@ export default function TableManager({ restaurant }: Props) {
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button
                     onClick={() => copyLink(table)}
+                    aria-label={copiedId === table.id ? "Link copied" : `Copy menu link for ${table.name}`}
                     style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: copiedId === table.id ? "#dcfce7" : "var(--surface)", cursor: "pointer", fontWeight: 600, color: copiedId === table.id ? "#166534" : "var(--text-muted)" }}
                   >
                     {copiedId === table.id ? "✅" : "🔗"}
@@ -342,12 +396,14 @@ export default function TableManager({ restaurant }: Props) {
                     onClick={() => showQR(table)}
                     style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
                     title="Show QR code"
+                    aria-label={`Show QR code for ${table.name}`}
                   >📱</button>
                   {/* ⋮ more actions — tap on mobile, right-click also works on desktop */}
                   <button
                     onClick={(e) => { e.stopPropagation(); openCtxMenu(e, buildTableCtxMenu(table)); }}
                     style={{ fontSize: 16, padding: "5px 9px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 700, lineHeight: 1 }}
                     title="More options"
+                    aria-label={`More options for ${table.name}`}
                   >⋮</button>
                 </div>
               </div>
@@ -370,7 +426,9 @@ export default function TableManager({ restaurant }: Props) {
               <div style={{ width: 220, height: 220, margin: "0 auto 16px", background: "var(--item-available-bg)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)" }}>Loading...</div>
             )}
             <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-              <button className="btn-primary" onClick={() => downloadQR(qrModal)}>⬇️ Download PNG</button>
+              <button className="btn-primary" onClick={() => downloadQR(qrModal)} disabled={!qrDataUrl} style={{ opacity: qrDataUrl ? 1 : 0.5, cursor: qrDataUrl ? "pointer" : "default" }}>
+                {qrDataUrl ? "⬇️ Download PNG" : "Generating…"}
+              </button>
               <button className="btn-secondary" onClick={() => setQrModal(null)}>Close</button>
             </div>
           </div>

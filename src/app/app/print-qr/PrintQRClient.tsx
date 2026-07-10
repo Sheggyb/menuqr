@@ -36,12 +36,15 @@ export default function PrintQRClient({ tables, restaurantName }: Props) {
       {/* Header bar — hidden on print */}
       <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <Link href="/app" style={{ color: "#E85D2F", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>← Back to Dashboard</Link>
+          <Link href="/app" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>← Back to Dashboard</Link>
           <h1 style={{ fontWeight: 800, fontSize: 22, margin: 0 }}>🖨️ Print QR Codes — {restaurantName}</h1>
         </div>
         <button
-          onClick={() => window.print()}
-          style={{ padding: "10px 24px", borderRadius: 8, background: "#E85D2F", color: "white", border: "none", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
+          onClick={() => {
+            try { localStorage.setItem("menuqr_printed_qr", "1"); } catch { /* ignore */ }
+            window.print();
+          }}
+          style={{ padding: "10px 24px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
         >
           🖨️ Print
         </button>

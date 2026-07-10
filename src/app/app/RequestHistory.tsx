@@ -2,15 +2,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
+import { TYPE_LABEL } from "@/lib/constants";
+import { SkeletonList } from "@/components/Skeleton";
 
 interface Props { restaurant: Restaurant }
-
-const TYPE_LABEL: Record<string, string> = {
-  waiter: "🙋 Waiter",
-  bill: "💳 Bill",
-  refill: "🔄 Refill",
-  item_request: "🍽️ Order",
-};
 
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   done:    { bg: "#dcfce7", color: "#16a34a", label: "Done" },
@@ -85,7 +80,7 @@ export default function RequestHistory({ restaurant }: Props) {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>Loading history...</div>
+        <SkeletonList count={5} />
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", color: "#9ca3af" }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
@@ -95,10 +90,22 @@ export default function RequestHistory({ restaurant }: Props) {
         <>
           <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>{filtered.length} request{filtered.length !== 1 ? "s" : ""}</p>
 
-          {/* Table */}
+          {/* Table — becomes stacked cards on narrow screens */}
+          <style>{`
+            .history-row { display: grid; grid-template-columns: 1fr 80px 100px 140px 80px; gap: 0; align-items: center; }
+            .history-cell-label { display: none; }
+            @media (max-width: 640px) {
+              .history-header { display: none !important; }
+              .history-row { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: flex-start; }
+              .history-row > div { min-width: 0; }
+              .history-cell-main { flex: 1 1 100%; }
+              .history-cell-status { order: -1; margin-left: auto; }
+              .history-cell-label { display: inline; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-right: 4px; }
+            }
+          `}</style>
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden" }}>
             {/* Header */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 100px 140px 80px", gap: 0, padding: "10px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }}>
+            <div className="history-row history-header" style={{ padding: "10px 16px", borderBottom: "1px solid var(--border)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }}>
               <span>Item / Type</span>
               <span>Table</span>
               <span>Note</span>
@@ -109,15 +116,15 @@ export default function RequestHistory({ restaurant }: Props) {
               const tableName = ((r.table as { name: string } | undefined)?.name ?? "—");
               const badge = STATUS_BADGE[r.status] ?? STATUS_BADGE.done;
               return (
-                <div key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 100px 140px 80px", gap: 0, padding: "12px 16px", borderBottom: i < pageItems.length - 1 ? "1px solid var(--border)" : "none", alignItems: "center", fontSize: 13 }}>
-                  <div>
+                <div key={r.id} className="history-row" style={{ padding: "12px 16px", borderBottom: i < pageItems.length - 1 ? "1px solid var(--border)" : "none", fontSize: 13 }}>
+                  <div className="history-cell-main">
                     <div style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>{r.item_name || TYPE_LABEL[r.type] || r.type}</div>
                     {r.item_name && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{TYPE_LABEL[r.type]}</div>}
                   </div>
-                  <div style={{ color: "var(--text-muted)", fontSize: 12 }}>{tableName}</div>
-                  <div style={{ color: "var(--text-muted)", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.note || "—"}</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: 12 }}><span className="history-cell-label">Table</span>{tableName}</div>
+                  <div style={{ color: "var(--text-muted)", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}><span className="history-cell-label">Note</span>{r.note || "—"}</div>
                   <div style={{ color: "var(--text-muted)", fontSize: 11 }}>{fmt(r.created_at)}</div>
-                  <div>
+                  <div className="history-cell-status">
                     <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99 }}>{badge.label}</span>
                   </div>
                 </div>

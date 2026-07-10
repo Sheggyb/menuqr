@@ -1,5 +1,5 @@
 "use client";
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -12,6 +12,17 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Prefill remembered email
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("menuqr_remember_email");
+      if (saved) {
+        setEmail(saved);
+        setRememberMe(true);
+      }
+    } catch { /* ignore */ }
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +47,7 @@ function LoginForm() {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 16 }}>
       <style>{`
         * { box-sizing: border-box; }
-        .login-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); borderRadius: 10px; fontSize: 15px; outline: none; transition: border-color 0.15s; fontFamily: inherit; }
+        .login-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.15s; font-family: inherit; }
         .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,93,47,0.12); }
       `}</style>
 

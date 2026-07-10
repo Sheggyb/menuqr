@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import type { Restaurant, MenuCategory, TableRow } from "@/lib/types";
 
 interface Props {
@@ -11,7 +12,11 @@ interface Props {
 export default function OnboardingChecklist({ restaurant, categories, tables, onDismiss }: Props) {
   const hasItems = categories.length > 0;
   const hasTables = tables.length > 0;
-  const hasPrinted = hasTables; // proxy: if tables exist, assume they can print
+  // Set by the print-QR page when the user actually prints (key: menuqr_printed_qr)
+  const [hasPrinted, setHasPrinted] = useState(false);
+  useEffect(() => {
+    try { setHasPrinted(localStorage.getItem("menuqr_printed_qr") === "1"); } catch { /* ignore */ }
+  }, []);
 
   const steps = [
     { label: "Add menu items", done: hasItems, hint: "Go to the Menu tab" },
@@ -107,6 +112,7 @@ export default function OnboardingChecklist({ restaurant, categories, tables, on
           onClick={onDismiss}
           style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 18, lineHeight: 1, flexShrink: 0, marginLeft: 12, padding: "0 4px" }}
           title="Dismiss"
+          aria-label="Dismiss checklist"
         >
           ×
         </button>

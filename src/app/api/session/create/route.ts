@@ -1,10 +1,22 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import { parseJson, badRequest, forbidden, tooManyRequests } from "@/lib/validate";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
-  const { table_token } = await req.json();
-  if (!table_token) return NextResponse.json({ error: "missing table_token" }, { status: 400 });
+  const body = await parseJson(req);
+  if (!body) return badRequest("invalid body");
+
+  const { table_token } = body;
+  if (typeof table_token !== "string" || !table_token || table_token.length > 100) {
+    return badRequest("missing table_token");
+  }
+
+  // A real guest scans once; anything faster is abuse.
+  if (!rateLimit(`session-create:${table_token}:${clientIp(req)}`, 5, 60_000)) {
+    return tooManyRequests();
+  }
 
   const supabase = createAdminClient();
 
@@ -15,7 +27,7 @@ export async function POST(req: Request) {
     .single();
 
   if (!table) return NextResponse.json({ error: "table not found" }, { status: 404 });
-  if (!table.is_active) return NextResponse.json({ error: "table_closed" }, { status: 403 });
+  if (!table.is_active) return forbidden("table_closed");
 
   // Always create a pending session — staff approves each person individually
   const session_id = randomUUID();

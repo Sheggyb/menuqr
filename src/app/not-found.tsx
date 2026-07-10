@@ -8,14 +8,14 @@ export default function NotFound() {
         * { box-sizing: border-box; }
       `}</style>
       <div style={{ textAlign: "center", maxWidth: 440 }}>
-        <div style={{ fontSize: 90, marginBottom: 8, animation: "float 3s ease-in-out infinite", display: "block" }}>🍽️</div>
-        <div style={{ fontSize: 80, fontWeight: 900, color: "#E85D2F", lineHeight: 1, marginBottom: 8, letterSpacing: "-4px" }}>404</div>
+        <div aria-hidden="true" style={{ fontSize: 90, marginBottom: 8, animation: "float 3s ease-in-out infinite", display: "block" }}>🍽️</div>
+        <div style={{ fontSize: 80, fontWeight: 900, color: "var(--accent)", lineHeight: 1, marginBottom: 8, letterSpacing: "-4px" }}>404</div>
         <h1 style={{ fontWeight: 800, fontSize: 26, marginBottom: 12, color: "var(--text)" }}>This page doesn&apos;t exist</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 16, marginBottom: 32, lineHeight: 1.6, maxWidth: 320, margin: "0 auto 32px" }}>
           The QR code might be outdated, the table may no longer exist, or you took a wrong turn.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, background: "#E85D2F", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 2px 10px rgba(232,93,47,0.3)" }}>
+          <Link href="/" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 2px 10px rgba(232,93,47,0.3)" }}>
             ← Go to MenuQR
           </Link>
           <Link href="/login" style={{ display: "inline-block", padding: "12px 24px", borderRadius: 10, border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 600, fontSize: 15, background: "var(--surface)" }}>

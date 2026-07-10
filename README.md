@@ -1,72 +1,88 @@
 # MenuQR
 
-Digital menu & table ordering system. Guests scan a QR code at their table and can browse the menu, order items, ask for the waiter, request the bill, and more — all without an app.
+Digital menu & table ordering for restaurants, cafés, and takeaways. Guests scan a QR code at their table and can browse the menu, order items, call the waiter, or request the bill — straight from their phone, no app and no login. Staff see every request live on a realtime dashboard.
+
+## Features
+
+- **QR code per table** — generate, download, and print-ready sheets
+- **Guest approval flow** — staff approve each scanning guest before they can order
+- **Live orders board** — realtime kanban (New / In progress) with sound alerts and keyboard shortcuts
+- **Menu builder** — categories, items, prices, images, availability toggles, drag reorder
+- **Analytics** — 7/30-day volumes, completion rate, request-type breakdown
+- **Multi-currency, custom accent color, light/dark theme, venue types** (table service / café / takeaway)
 
 ## Stack
 
-- **Next.js 15** + TypeScript + Tailwind v4
-- **Supabase** — Auth, Postgres, Realtime
-- **Vercel** — deployment
-
-## Project location
-
-`C:\Users\sargo\Documents\Project\menuqr\`
+- **Next.js 16** (App Router) + React 19 + TypeScript
+- **Supabase** — Auth (SSR cookies), Postgres with RLS, Realtime
+- Inline styles + CSS custom properties for theming (no UI library)
 
 ## Setup
 
 ### 1. Supabase
 
-1. Go to [supabase.com](https://supabase.com) → New project
-2. Once created, go to **SQL Editor** → paste and run `supabase-schema.sql`
-3. Go to **Project Settings → API** and copy:
-   - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
-   - anon key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - service_role key → `SUPABASE_SERVICE_ROLE_KEY`
-4. Go to **Authentication → URL Configuration**:
-   - Site URL: `https://your-app.vercel.app`
-   - Redirect URLs: `https://your-app.vercel.app/**` and `http://localhost:3000/**`
+1. [supabase.com](https://supabase.com) → New project
+2. **SQL Editor** → paste and run `supabase-schema.sql` (idempotent — safe to re-run on upgrades)
+3. **Project Settings → API** → copy the values into `.env.local` (see step 2)
+4. **Authentication → URL Configuration**:
+   - Site URL: your production URL
+   - Redirect URLs: `https://your-domain/**` and `http://localhost:3000/**`
 
 ### 2. Local dev
 
-Fill in `.env.local`, then:
-
 ```bash
+cp .env.example .env.local   # then fill in the Supabase values
 npm install
 npm run dev
 ```
 
-### 3. Deploy to Vercel
+### 3. Quality checks
 
 ```bash
-gh repo create Sheggyb/menuqr --public --source=. --push
+npm run typecheck   # TypeScript
+npm run build       # production build
 ```
 
-Then connect repo on vercel.com and add the 3 env vars before deploying.
+### 4. Deploy
+
+Any Next.js host works (Vercel recommended). Set the four env vars from `.env.example`, including `NEXT_PUBLIC_SITE_URL` (used for SEO metadata and the sitemap).
 
 ## How it works
 
-1. Owner signs up → creates restaurant → adds menu categories + items
-2. Owner adds tables → each gets a unique QR code (download PNG)
-3. Guest scans QR → sees live menu → taps to request waiter, bill, refill, or a specific item
-4. Owner dashboard shows live requests via Supabase Realtime — mark seen / done
+1. Owner signs up → creates a restaurant → builds the menu
+2. Owner adds tables → each gets a unique QR code
+3. Guest scans the QR → requests access → staff approve on the dashboard
+4. Guest orders items or taps quick actions (waiter / bill / refill)
+5. Requests stream to the Live Orders board via Supabase Realtime
+
+## Security model
+
+- The owner dashboard (`/app/*`) is gated by Supabase SSR auth middleware.
+- Guest API routes validate input, verify the approved session, and are rate limited.
+- Staff API routes (approve/decline sessions, clear/close tables, pending list) verify that the authenticated user owns the restaurant before acting.
+- The service-role key is used server-side only (`src/lib/supabase/admin.ts`); never expose it to the browser.
 
 ## File structure
 
 ```
-src/app/
-  page.tsx               # Landing page
-  login/                 # Auth
-  signup/
-  auth/callback/
-  auth/signout/
+src/
+  middleware.ts            # Auth gate for /app/*
   app/
-    page.tsx             # Server: load restaurant
-    AppShell.tsx         # Tab shell (orders/menu/tables)
-    SetupRestaurant.tsx  # First-time setup
-    LiveOrders.tsx       # Real-time orders dashboard
-    MenuBuilder.tsx      # Add/edit menu categories + items
-    TableManager.tsx     # Add tables, generate QR codes
-  menu/[token]/
-    page.tsx             # Server: load table + menu data
-    GuestMenuClient.tsx  # Guest mobile UI
+    page.tsx               # Landing page
+    privacy/  terms/       # Legal pages
+    login/  signup/  auth/ # Auth flows
+    robots.ts  sitemap.ts  opengraph-image.tsx
+    app/                   # Owner dashboard
+      AppShell.tsx         # Tab shell + realtime + mobile nav
+      LiveOrders.tsx       # Realtime orders kanban
+      MenuBuilder.tsx      # Menu CRUD
+      TableManager.tsx     # Tables, QR codes, guest sessions
+      Analytics.tsx  RequestHistory.tsx  SettingsPanel.tsx
+      SetupRestaurant.tsx  OnboardingChecklist.tsx
+      print-qr/            # Printable QR sheet
+    menu/[token]/          # Guest-facing menu (mobile-first)
+    api/                   # Guest + staff endpoints (validated, rate limited)
+  components/              # Toast, ConfirmDialog, Skeleton, ContextMenu, ErrorBoundary
+  lib/                     # supabase clients, auth-helpers, validate, ratelimit, constants, types
+supabase-schema.sql        # Complete idempotent database schema
 ```

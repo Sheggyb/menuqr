@@ -2,15 +2,9 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
+import { TYPE_LABEL } from "@/lib/constants";
 
 interface Props { restaurant: Restaurant }
-
-const TYPE_LABEL: Record<string, string> = {
-  waiter: "🙋 Waiter",
-  bill: "💳 Bill",
-  refill: "🔄 Refill",
-  item_request: "🍽️ Order",
-};
 
 function StatCard({ label, value, sub, color }: { label: string; value: number | string; sub?: string; color: string }) {
   return (

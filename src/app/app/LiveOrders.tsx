@@ -3,15 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { SkeletonList } from "@/components/Skeleton";
+import { TYPE_LABEL } from "@/lib/constants";
+import { useToast } from "@/components/Toast";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 interface Props { restaurant: Restaurant }
-
-const TYPE_LABEL: Record<string, string> = {
-  waiter: "🙋 Waiter",
-  bill: "💳 Bill",
-  refill: "🔄 Refill",
-  item_request: "🍽️ Order",
-};
 
 const TYPE_COLOR: Record<string, { bg: string; border: string; badge: string }> = {
   waiter:       { bg: "var(--card-waiter-bg)", border: "var(--card-waiter-border)", badge: "#f59e0b" },
@@ -181,6 +177,8 @@ const ALL_TYPES = ["waiter", "bill", "refill", "item_request"] as const;
 
 export default function LiveOrders({ restaurant }: Props) {
   const supabase = createClient();
+  const toast = useToast();
+  const confirm = useConfirm();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -231,19 +229,34 @@ export default function LiveOrders({ restaurant }: Props) {
   }, [restaurant.id, load, soundEnabled]);
 
   async function move(id: string, status: TableRequest["status"]) {
+    const { error } = await supabase.from("table_requests").update({ status }).eq("id", id);
+    if (error) {
+      toast.error("Could not update the request");
+      return;
+    }
     if (status === "done") {
-      await supabase.from("table_requests").update({ status }).eq("id", id);
       setRequests(r => r.filter(x => x.id !== id));
     } else {
-      await supabase.from("table_requests").update({ status }).eq("id", id);
       setRequests(r => r.map(x => x.id === id ? { ...x, status } : x));
     }
   }
 
   async function markAllDone() {
     const ids = pending.map(r => r.id);
-    await Promise.all(ids.map(id => supabase.from("table_requests").update({ status: "done" }).eq("id", id)));
+    const ok = await confirm({
+      title: "Mark all done?",
+      message: `This marks all ${ids.length} new request${ids.length !== 1 ? "s" : ""} as done.`,
+      confirmLabel: "Mark all done",
+    });
+    if (!ok) return;
+    const results = await Promise.all(ids.map(id => supabase.from("table_requests").update({ status: "done" }).eq("id", id)));
+    if (results.some(r => r.error)) {
+      toast.error("Some requests could not be updated");
+      load();
+      return;
+    }
     setRequests(r => r.filter(x => !ids.includes(x.id)));
+    toast.success("All requests marked done");
   }
 
   function applyFilters(list: TableRequest[]) {
@@ -324,7 +337,7 @@ export default function LiveOrders({ restaurant }: Props) {
         {[
           { label: "Today total", value: todayStats.total, color: "var(--accent)" },
           { label: "Completed", value: todayStats.done, color: "#22c55e" },
-          { label: "Waiting now", value: pendingCount, color: "#E85D2F", extra: estWaitMin > 0 ? `~${estWaitMin} min wait` : undefined },
+          { label: "Waiting now", value: pendingCount, color: "var(--accent)", extra: estWaitMin > 0 ? `~${estWaitMin} min wait` : undefined },
         ].map(s => (
           <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}`, borderRadius: 10, padding: "14px 18px", boxShadow: "var(--shadow-card)" }}>
             <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
@@ -383,7 +396,7 @@ export default function LiveOrders({ restaurant }: Props) {
       `}</style>
       <div className="kanban-board" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
         {/* NEW */}
-        <Column title="New" count={pending.length} color="#E85D2F" dotColor="#E85D2F">
+        <Column title="New" count={pending.length} color="var(--accent)" dotColor="var(--accent)">
           {pending.length === 0 ? (
             <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-muted)", fontSize: 13 }}>
               <div style={{ fontSize: 32, marginBottom: 6 }}>✅</div>

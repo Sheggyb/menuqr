@@ -1,10 +1,24 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import {
+  parseJson,
+  badRequest,
+  unauthorized,
+  tooManyRequests,
+  isUuid,
+} from "@/lib/validate";
+import { rateLimit, clientIp } from "@/lib/ratelimit";
+import { requireSessionOwner } from "@/lib/auth-helpers";
 
+// Guest polls their own session status (they hold the session_id)
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const session_id = searchParams.get("session_id");
-  if (!session_id) return NextResponse.json({ error: "missing session_id" }, { status: 400 });
+  if (!isUuid(session_id)) return badRequest("missing session_id");
+
+  if (!rateLimit(`session-check:${session_id}:${clientIp(req)}`, 60, 60_000)) {
+    return tooManyRequests();
+  }
 
   const supabase = createAdminClient();
   const { data } = await supabase
@@ -17,25 +31,26 @@ export async function GET(req: Request) {
   return NextResponse.json({ status: data.status });
 }
 
+// Staff approves/declines a session — requires restaurant ownership
 export async function PATCH(req: Request) {
-  const { session_id, action } = await req.json();
-  if (!session_id || !action) return NextResponse.json({ error: "missing params" }, { status: 400 });
+  const body = await parseJson(req);
+  if (!body) return badRequest("invalid body");
 
-  const supabase = createAdminClient();
-
-  if (action === "approve") {
-    // Approve ONLY this one person
-    await supabase
-      .from("table_sessions")
-      .update({ status: "active" })
-      .eq("session_id", session_id);
-
-  } else if (action === "decline") {
-    await supabase
-      .from("table_sessions")
-      .update({ status: "closed" })
-      .eq("session_id", session_id);
+  const { session_id, action } = body;
+  if (!isUuid(session_id)) return badRequest("missing session_id");
+  if (action !== "approve" && action !== "decline") {
+    return badRequest("invalid action");
   }
 
+  const owner = await requireSessionOwner(session_id);
+  if (!owner) return unauthorized();
+
+  const supabase = createAdminClient();
+  const { error } = await supabase
+    .from("table_sessions")
+    .update({ status: action === "approve" ? "active" : "closed" })
+    .eq("session_id", session_id);
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }
