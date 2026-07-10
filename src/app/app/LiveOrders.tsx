@@ -385,9 +385,10 @@ export default function LiveOrders({ restaurant }: Props) {
           style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 12, cursor: "pointer", flexShrink: 0 }}
         >
           <option value="all">All</option>
-          {ALL_TYPES.map(t => (
-            <option key={t} value={t}>{TYPE_LABEL[t]}</option>
-          ))}
+          <option value="waiter">Waiter</option>
+          <option value="bill">Bill</option>
+          <option value="refill">Refill</option>
+          <option value="item_request">Orders</option>
         </select>
 
         <button
