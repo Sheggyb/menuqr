@@ -6,6 +6,7 @@ import { SkeletonList } from "@/components/Skeleton";
 import { TYPE_LABEL } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
 
@@ -26,64 +27,74 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
   return { text, isLate };
 }
 
-function TableIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="6" width="18" height="3" rx="1"/>
-      <line x1="6" y1="9" x2="6" y2="18"/>
-      <line x1="18" y1="9" x2="18" y2="18"/>
-    </svg>
-  );
-}
-
 interface CardProps {
   req: TableRequest;
+  leaving?: boolean;
   onPickUp?: () => void;
   onDone?: () => void;
   onUndo?: () => void;
 }
 
-function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
+function RequestCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
   const colors = TYPE_COLOR[req.type] ?? { bg: "var(--surface)", border: "var(--border)", badge: "#6b7280" };
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
+  const itemLines = (req.item_name ?? "").split("\n").filter(l => l.trim().length > 0);
   return (
-    <div style={{
-      background: isLate ? "var(--card-late-bg)" : colors.bg,
-      border: `1px solid ${isLate ? "var(--card-late-border)" : colors.border}`,
+    <div className={leaving ? "card-leaving" : undefined} style={{
+      background: colors.bg,
+      border: `1px solid ${colors.border}`,
+      borderLeft: isLate ? "3px solid #f59e0b" : `1px solid ${colors.border}`,
       borderRadius: 12,
-      padding: "14px 16px",
+      padding: "16px 18px",
+      paddingLeft: isLate ? 16 : 18, // compensate 3px border so content doesn't shift
+
       display: "flex",
       flexDirection: "column",
-      gap: 10,
+      gap: 12,
       animation: "slideIn 0.2s ease-out",
+      transition: "transform 0.15s ease, opacity 0.15s ease",
     }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
           <span style={{
             display: "inline-flex", alignItems: "center", gap: 4,
-            background: colors.badge, color: "white",
-            fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+            background: "transparent", color: colors.badge,
+            border: `1px solid ${colors.badge}`,
+            fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 99,
             alignSelf: "flex-start",
           }}>
             {TYPE_LABEL[req.type] ?? req.type}
           </span>
-          {req.item_name && (
-            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "pre-line", lineHeight: 1.5 }}>{req.item_name}</span>
+          {itemLines.length > 0 && (
+            itemLines.length === 1 ? (
+              <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.5 }}>{itemLines[0]}</span>
+            ) : (
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column" }}>
+                {itemLines.map((line, i) => (
+                  <li key={i} style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.5, display: "flex", gap: 6 }}>
+                    <span aria-hidden="true" style={{ color: "var(--text-muted)" }}>&bull;</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            )
           )}
           {req.note && (
-            <span style={{ fontSize: 12, color: "var(--text-muted)" }}>📝 {req.note}</span>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <IconReceipt width={12} height={12} style={{ flexShrink: 0 }} /> {req.note}
+            </span>
           )}
         </div>
-        <span style={{ fontSize: 11, color: isLate ? "#dc2626" : "#9ca3af", whiteSpace: "nowrap", fontWeight: isLate ? 700 : 400 }}>
-          {isLate ? "⏱ " : ""}{timeText}
+        <span style={{ fontSize: 11, color: isLate ? "#d97706" : "var(--text-muted)", whiteSpace: "nowrap", fontWeight: isLate ? 700 : 400 }}>
+          {timeText}
         </span>
       </div>
 
       {/* Table */}
       <div style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--text-muted)", fontSize: 12 }}>
-        <TableIcon />
+        <IconTable width={12} height={12} />
         <span style={{ fontWeight: 600 }}>{tableName}</span>
       </div>
 
@@ -94,24 +105,26 @@ function RequestCard({ req, onPickUp, onDone, onUndo }: CardProps) {
             flex: 1, padding: "7px 0", borderRadius: 8, border: "none",
             background: "#3b82f6", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer",
           }}>
-            Pick up →
+            Pick up
           </button>
         )}
         {onDone && (
           <button onClick={onDone} style={{
             flex: 1, padding: "7px 0", borderRadius: 8, border: "none",
             background: "#22c55e", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer",
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
           }}>
-            ✓ Done
+            <IconCheck width={13} height={13} strokeWidth={2.5} /> Done
           </button>
         )}
         {onUndo && (
-          <button onClick={onUndo} style={{
+          <button onClick={onUndo} aria-label="Undo — move back to New" title="Move back to New" style={{
             padding: "7px 10px", borderRadius: 8,
             border: "1px solid var(--border)", background: "var(--surface)",
             color: "var(--text-muted)", fontSize: 12, cursor: "pointer",
+            display: "inline-flex", alignItems: "center",
           }}>
-            ↩
+            <IconHistory width={13} height={13} />
           </button>
         )}
       </div>
@@ -132,7 +145,7 @@ function Column({ title, count, color, dotColor, children }: ColumnProps) {
     <div style={{
       flex: 1, minWidth: 0,
       background: "var(--bg)",
-      borderRadius: 14,
+      borderRadius: 12,
       border: "1px solid var(--border)",
       display: "flex",
       flexDirection: "column",
@@ -159,10 +172,10 @@ function Column({ title, count, color, dotColor, children }: ColumnProps) {
       </div>
       {/* Cards */}
       <div style={{
-        padding: 12,
+        padding: 14,
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: 12,
         overflowY: "auto",
         flex: 1,
         minHeight: 120,
@@ -187,6 +200,14 @@ export default function LiveOrders({ restaurant }: Props) {
   });
   const [searchTable, setSearchTable] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
+  const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
+
+  // Single 30s tick so all relative timestamps stay fresh
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -228,6 +249,15 @@ export default function LiveOrders({ restaurant }: Props) {
     return () => { supabase.removeChannel(channel); };
   }, [restaurant.id, load, soundEnabled]);
 
+  // Brief scale-down on the card before it moves columns / disappears
+  function moveAnimated(id: string, status: TableRequest["status"]) {
+    setLeavingIds(prev => new Set(prev).add(id));
+    setTimeout(() => {
+      setLeavingIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+      move(id, status);
+    }, 150);
+  }
+
   async function move(id: string, status: TableRequest["status"]) {
     const { error } = await supabase.from("table_requests").update({ status }).eq("id", id);
     if (error) {
@@ -245,7 +275,7 @@ export default function LiveOrders({ restaurant }: Props) {
     const ids = pending.map(r => r.id);
     const ok = await confirm({
       title: "Mark all done?",
-      message: `This marks all ${ids.length} new request${ids.length !== 1 ? "s" : ""} as done.`,
+      message: `Mark all ${ids.length} as done?`,
       confirmLabel: "Mark all done",
     });
     if (!ok) return;
@@ -339,7 +369,7 @@ export default function LiveOrders({ restaurant }: Props) {
           { label: "Completed", value: todayStats.done, color: "#22c55e" },
           { label: "Waiting now", value: pendingCount, color: "var(--accent)", extra: estWaitMin > 0 ? `~${estWaitMin} min wait` : undefined },
         ].map(s => (
-          <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}`, borderRadius: 10, padding: "14px 18px", boxShadow: "var(--shadow-card)" }}>
+          <div key={s.label} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderLeft: `3px solid ${s.color}`, borderRadius: 12, padding: "14px 18px", boxShadow: "var(--shadow-card)" }}>
             <div style={{ fontSize: 26, fontWeight: 800, color: s.color }}>{s.value}</div>
             <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>{s.label}</div>
             {"extra" in s && s.extra && <div style={{ fontSize: 10, color: s.color, marginTop: 2, fontWeight: 600 }}>{s.extra}</div>}
@@ -351,7 +381,7 @@ export default function LiveOrders({ restaurant }: Props) {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input
           type="text"
-          placeholder="🔍 Filter by table..."
+          placeholder="Filter by table..."
           value={searchTable}
           onChange={e => setSearchTable(e.target.value)}
           style={{ flex: "1 1 140px", padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
@@ -367,18 +397,24 @@ export default function LiveOrders({ restaurant }: Props) {
           ))}
         </select>
         <button
+          role="switch"
+          aria-checked={soundEnabled}
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on — click to mute" : "Sound off — click to enable"}
-          style={{ padding: "7px 12px", borderRadius: 8, border: "1px solid var(--border)", background: soundEnabled ? "#f0fdf4" : "var(--surface)", color: soundEnabled ? "#16a34a" : "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: soundEnabled ? "var(--text)" : "var(--text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
         >
-          {soundEnabled ? "🔔 Sound on" : "🔕 Muted"}
+          <IconBell width={14} height={14} />
+          Sound
+          <span aria-hidden="true" style={{ width: 26, height: 15, borderRadius: 99, background: soundEnabled ? "#22c55e" : "var(--border)", position: "relative", flexShrink: 0, transition: "background 0.15s ease" }}>
+            <span style={{ position: "absolute", top: 2, left: soundEnabled ? 13 : 2, width: 11, height: 11, borderRadius: "50%", background: "white", transition: "left 0.15s ease", boxShadow: "0 1px 2px rgba(0,0,0,0.2)" }} />
+          </span>
         </button>
         {pendingCount > 0 && (
           <button
             onClick={markAllDone}
-            style={{ padding: "7px 12px", borderRadius: 8, border: "none", background: "#22c55e", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+            style={{ padding: "7px 12px", borderRadius: 8, border: "none", background: "#22c55e", color: "white", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
-            ✅ Mark all done
+            <IconCheckCircle width={14} height={14} strokeWidth={2} /> Mark all done
           </button>
         )}
       </div>
@@ -391,22 +427,24 @@ export default function LiveOrders({ restaurant }: Props) {
 
       {/* Kanban */}
       <style>{`
-        .kanban-board { display: flex; gap: 12px; align-items: flex-start; }
-        @media (max-width: 600px) { .kanban-board { flex-direction: column !important; } }
+        .kanban-board { display: flex; gap: 16px; align-items: flex-start; }
+        @media (max-width: 700px) { .kanban-board { flex-direction: column !important; } .kanban-board > div { width: 100%; } }
+        .card-leaving { transform: scale(0.94); opacity: 0.4; }
       `}</style>
-      <div className="kanban-board" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <div className="kanban-board" style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
         {/* NEW */}
         <Column title="New" count={pending.length} color="var(--accent)" dotColor="var(--accent)">
           {pending.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-muted)", fontSize: 13 }}>
-              <div style={{ fontSize: 32, marginBottom: 6 }}>✅</div>
-              {searchTable || filterType !== "all" ? "No matching requests" : "All clear!"}
+            <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <IconInbox width={24} height={24} />
+              {searchTable || filterType !== "all" ? "No matching requests" : "No new orders"}
             </div>
           ) : pending.map(req => (
             <RequestCard
               key={req.id}
               req={req}
-              onPickUp={() => move(req.id, "seen")}
+              leaving={leavingIds.has(req.id)}
+              onPickUp={() => moveAnimated(req.id, "seen")}
             />
           ))}
         </Column>
@@ -414,15 +452,16 @@ export default function LiveOrders({ restaurant }: Props) {
         {/* IN PROGRESS */}
         <Column title="In Progress" count={seen.length} color="#3b82f6" dotColor="#3b82f6">
           {seen.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--text-muted)", fontSize: 13 }}>
-              <div style={{ fontSize: 32, marginBottom: 6 }}>👋</div>
-              {searchTable || filterType !== "all" ? "No matching requests" : "Nothing picked up"}
+            <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", fontSize: 13, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <IconInbox width={24} height={24} />
+              {searchTable || filterType !== "all" ? "No matching requests" : "Nothing in progress"}
             </div>
           ) : seen.map(req => (
             <RequestCard
               key={req.id}
               req={req}
-              onDone={() => move(req.id, "done")}
+              leaving={leavingIds.has(req.id)}
+              onDone={() => moveAnimated(req.id, "done")}
               onUndo={() => move(req.id, "pending")}
             />
           ))}

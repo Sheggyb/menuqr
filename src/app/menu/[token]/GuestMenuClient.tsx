@@ -11,6 +11,17 @@ interface Props {
 }
 
 type RequestType = "waiter" | "bill" | "refill" | "item_request";
+type QuickType = "waiter" | "bill" | "refill";
+
+const QUICK_TYPES: QuickType[] = ["waiter", "bill", "refill"];
+const QUICK_TTL_MS = 10 * 60 * 1000; // re-enable after 10 min if we never learn the status
+const QUICK_DONE_LABEL: Record<QuickType, string> = {
+  waiter: "Waiter notified",
+  bill: "Bill requested",
+  refill: "Refill requested",
+};
+
+interface QuickDoneEntry { ts: number; id?: string }
 
 interface CartItem {
   item: MenuItem;
@@ -45,6 +56,7 @@ const IconRefresh = (size = 20) => icon(<><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"
 const IconReceipt = (size = 18) => icon(<><path d="M6 3.5h12v17l-2-1.3-2 1.3-2-1.3-2 1.3-2-1.3-2 1.3v-17Z" /><path d="M9 8.5h6" /><path d="M9 12h6" /></>, size);
 const IconChevron = (up: boolean, size = 14) => icon(up ? <path d="M6 14.5l6-6 6 6" /> : <path d="M6 9.5l6 6 6-6" />, size);
 const IconArrowUp = (size = 18) => icon(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>, size);
+const IconTick = (size = 18) => icon(<path d="M5 12.5l4.5 4.5L19 7.5" />, size);
 const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
 
 export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
@@ -79,6 +91,84 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
+
+  // Quick-action (waiter/bill/refill) "already requested" state — per table, survives reload
+  const quickStorageKey = `menuqr_qa_${table.id}`;
+  const [quickDone, setQuickDone] = useState<Partial<Record<QuickType, QuickDoneEntry>>>(() => {
+    try {
+      const raw = sessionStorage.getItem(`menuqr_qa_${table.id}`);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw) as Partial<Record<QuickType, QuickDoneEntry>>;
+      const now = Date.now();
+      const out: Partial<Record<QuickType, QuickDoneEntry>> = {};
+      for (const t of QUICK_TYPES) {
+        const e = parsed[t];
+        if (e && typeof e.ts === "number" && now - e.ts < QUICK_TTL_MS) out[t] = e;
+      }
+      return out;
+    } catch { return {}; }
+  });
+
+  function persistQuick(next: Partial<Record<QuickType, QuickDoneEntry>>) {
+    setQuickDone(next);
+    try { sessionStorage.setItem(quickStorageKey, JSON.stringify(next)); } catch { /* ignore */ }
+  }
+  function markQuickDone(type: QuickType, id?: string) {
+    persistQuick({ ...quickDone, [type]: { ts: Date.now(), id } });
+  }
+  function clearAllQuick() {
+    setQuickDone({});
+    try { sessionStorage.removeItem(quickStorageKey); } catch { /* ignore */ }
+  }
+
+  // Re-enable quick actions: when staff marks the request done (poll by id), after TTL, or on table close
+  useEffect(() => {
+    const entries = QUICK_TYPES.filter(t => quickDone[t]);
+    if (entries.length === 0) return;
+    let cancelled = false;
+    const check = async () => {
+      const now = Date.now();
+      let next = quickDone;
+      let changed = false;
+
+      // TTL expiry
+      for (const t of entries) {
+        const e = quickDone[t];
+        if (e && now - e.ts >= QUICK_TTL_MS) {
+          if (!changed) { next = { ...next }; changed = true; }
+          delete next[t];
+        }
+      }
+
+      // Status poll for entries where we know the request id
+      const withIds = entries.filter(t => quickDone[t]?.id && next[t]);
+      if (withIds.length > 0) {
+        try {
+          const ids = withIds.map(t => quickDone[t]!.id).join(",");
+          const res = await fetch(`/api/orders/status?ids=${ids}`);
+          const data = await res.json();
+          for (const t of withIds) {
+            const id = quickDone[t]!.id!;
+            if (data.statuses?.[id] === "done") {
+              if (!changed) { next = { ...next }; changed = true; }
+              delete next[t];
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      if (changed && !cancelled) persistQuick(next);
+    };
+    check();
+    const interval = setInterval(check, 10_000);
+    return () => { cancelled = true; clearInterval(interval); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickDone, table.id]);
+
+  useEffect(() => {
+    if (!tableActive) clearAllQuick();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableActive]);
 
   const accentColor = restaurant.accent_color || "#E85D2F";
 
@@ -147,6 +237,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     // Clear previous order history — fresh session for new guest
     sessionStorage.removeItem(`menuqr_session_${table.id}`);
     setSessionRequests([]);
+    clearAllQuick();
     try {
       const res = await fetch("/api/session/create", {
         method: "POST",
@@ -169,6 +260,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   }
 
   async function sendRequest(type: RequestType, item?: MenuItem, note?: string, quantity?: number) {
+    if (type !== "item_request" && quickDone[type as QuickType]) return;
     const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
     if (sending || !tableActive || !sid || sessionStatus !== "active") {
       if (!tableActive) showToast("Table is closed");
@@ -192,7 +284,16 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     const data = await res.json();
     setSending(false);
     if (data.ok) {
-      showToast("Request sent");
+      if (type !== "item_request") {
+        markQuickDone(type as QuickType, typeof data.id === "string" ? data.id : undefined);
+        showToast(QUICK_DONE_LABEL[type as QuickType]);
+      } else {
+        showToast("Request sent");
+      }
+    } else if (res.status === 409 && data.error === "duplicate_request" && type !== "item_request") {
+      // Someone at the table already asked — reflect the same "requested" state
+      markQuickDone(type as QuickType);
+      showToast(QUICK_DONE_LABEL[type as QuickType]);
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
@@ -475,15 +576,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             ["waiter", IconBell(22), "Call Waiter"],
             ["bill", IconCard(22), "Request Bill"],
             ["refill", IconRefresh(22), "Refill Drinks"],
-          ] as [string, React.ReactNode, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type as string)) as [RequestType, React.ReactNode, string][]).map(([type, iconEl, label]) => (
-            <button key={type} onClick={() => sendRequest(type)}
-              style={{ padding: "15px 8px", borderRadius: 14, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, WebkitTapHighlightColor: "transparent", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.12s ease" }}
-              onTouchStart={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
+          ] as [string, React.ReactNode, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type as string)) as [RequestType, React.ReactNode, string][]).map(([type, iconEl, label]) => {
+            const requested = type !== "item_request" && Boolean(quickDone[type as QuickType]);
+            return (
+            <button key={type} onClick={() => { if (!requested) sendRequest(type); }}
+              aria-disabled={requested}
+              style={{ padding: "15px 8px", borderRadius: 14, border: "1px solid var(--border)", background: requested ? "var(--surface-2)" : "var(--surface)", cursor: requested ? "default" : "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, WebkitTapHighlightColor: "transparent", boxShadow: requested ? "none" : "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.12s ease", opacity: requested ? 0.75 : 1 }}
+              onTouchStart={e => { if (!requested) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
               onTouchEnd={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}>
-              <span aria-hidden="true" style={{ color: accentColor, display: "inline-flex" }}>{iconEl}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text)", lineHeight: 1.2 }}>{label}</span>
+              <span aria-hidden="true" style={{ color: requested ? "var(--text-muted)" : accentColor, display: "inline-flex" }}>{requested ? IconTick(22) : iconEl}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: requested ? "var(--text-muted)" : "var(--text)", lineHeight: 1.2 }}>{requested ? QUICK_DONE_LABEL[type as QuickType] : label}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
       )}

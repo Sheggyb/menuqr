@@ -53,6 +53,20 @@ export async function POST(req: Request) {
 
   if (!table?.is_active) return forbidden("table_closed");
 
+  // Dedup quick actions: one open (pending/seen) request per type per table
+  if (type === "waiter" || type === "bill" || type === "refill") {
+    const { data: existing } = await supabase
+      .from("table_requests")
+      .select("id")
+      .eq("table_id", table_id)
+      .eq("type", type)
+      .in("status", ["pending", "seen"])
+      .limit(1);
+    if (existing && existing.length > 0) {
+      return NextResponse.json({ error: "duplicate_request", type }, { status: 409 });
+    }
+  }
+
   const { data: inserted, error } = await supabase
     .from("table_requests")
     .insert({

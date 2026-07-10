@@ -8,6 +8,7 @@ import { CURRENCIES } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
+import { IconSearch, IconDish, IconAlert } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
 
@@ -114,6 +115,9 @@ export default function MenuBuilder({ restaurant }: Props) {
   // Drag state — use ref to avoid re-renders during drag
   const dragItemRef = useRef<string | null>(null);
   const dragCatRef = useRef<string | null>(null);
+  // Visual drag feedback (elevation on the dragged card, insertion line on the target)
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
+  const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
 
   // Load data
   useEffect(() => {
@@ -297,13 +301,17 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   function handleItemDragStart(e: React.DragEvent, itemId: string) {
     dragItemRef.current = itemId;
+    setDraggingItemId(itemId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", itemId);
   }
 
-  function handleItemDragOver(e: React.DragEvent) {
+  function handleItemDragOver(e: React.DragEvent, itemId?: string) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
+    if (itemId && itemId !== dragItemRef.current) {
+      setDragOverItemId(prev => (prev === itemId ? prev : itemId));
+    }
   }
 
   async function handleItemDrop(e: React.DragEvent, targetItemId: string) {
@@ -311,6 +319,8 @@ export default function MenuBuilder({ restaurant }: Props) {
     e.stopPropagation();
     const draggedId = dragItemRef.current;
     dragItemRef.current = null;
+    setDraggingItemId(null);
+    setDragOverItemId(null);
     if (!draggedId || draggedId === targetItemId) return;
     const sourceItem = allItems.find(i => i.id === draggedId);
     if (!sourceItem) return;
@@ -351,6 +361,8 @@ export default function MenuBuilder({ restaurant }: Props) {
   function handleDragEnd() {
     dragItemRef.current = null;
     dragCatRef.current = null;
+    setDraggingItemId(null);
+    setDragOverItemId(null);
   }
 
   // ─── RENDER ───────────────────────────────────────────
@@ -384,14 +396,24 @@ export default function MenuBuilder({ restaurant }: Props) {
           .menu-sidebar-label { display: none; }
           .menu-main { padding-left: 0; padding-top: 16px; }
         }
+        .mb-edit-input {
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          background: var(--surface);
+          color: var(--text);
+          outline: none;
+          transition: border-color 0.12s, box-shadow 0.12s;
+        }
+        .mb-edit-input:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+        }
       `}</style>
       {/* SEARCH BAR */}
       <div style={{ padding: "0 0 20px" }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <div style={{ position: "relative", flex: 1 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" strokeLinecap="round" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+            <IconSearch width={16} height={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
             <input
               type="text"
               placeholder="Search items..."
@@ -467,7 +489,7 @@ export default function MenuBuilder({ restaurant }: Props) {
       {/* SIDEBAR + CONTENT LAYOUT */}
       {categories.length === 0 ? (
         <div style={{ textAlign: "center", padding: "64px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: 14, border: "2px dashed var(--border)" }}>
-          <div style={{ fontSize: 52, marginBottom: 12 }}>🍽️</div>
+          <div style={{ marginBottom: 12 }}><IconDish width={36} height={36} style={{ color: "var(--text-muted)", opacity: 0.7 }} /></div>
           <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>Your menu is empty</p>
           <p style={{ fontSize: 13 }}>Click <strong>+ Category</strong> above to get started</p>
         </div>
@@ -510,7 +532,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                         value={editCatName}
                         onChange={e => setEditCatName(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") saveEditCat(); if (e.key === "Escape") cancelEditCat(); }}
-                        style={{ flex: 1, fontSize: 12, padding: "3px 6px", minWidth: 0 }}
+                        className="mb-edit-input"
+                        style={{ flex: 1, fontSize: 13, padding: "3px 6px", minWidth: 0 }}
                       />
                       <button
                         onClick={saveEditCat}
@@ -551,13 +574,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                       onContextMenu={(e) => openCtxMenu(e, [
                         {
                           label: "Edit name & icon",
-                          icon: "✏️",
                           action: () => startEditCat(cat),
                         },
                         { separator: true },
                         {
                           label: "Delete category",
-                          icon: "🗑️",
                           danger: true,
                           action: () => setConfirmDeleteCat(cat.id),
                         },
@@ -603,8 +624,9 @@ export default function MenuBuilder({ restaurant }: Props) {
             {/* Category header */}
             {searchQuery ? (
               <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0 }}>
-                  🔍 &quot;{searchQuery}&quot;
+                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                  <IconSearch width={16} height={16} style={{ color: "var(--text-muted)" }} />
+                  &quot;{searchQuery}&quot;
                 </h3>
                 <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
                   {displayItems.length} result{displayItems.length !== 1 ? "s" : ""}
@@ -625,9 +647,9 @@ export default function MenuBuilder({ restaurant }: Props) {
                 {/* ⋮ category actions — works on desktop (right-click) and mobile (tap) */}
                 <button
                   onClick={(e) => openCtxMenu(e, [
-                    { label: "Edit name & icon", icon: "✏️", action: () => startEditCat(activeCat) },
+                    { label: "Edit name & icon", action: () => startEditCat(activeCat) },
                     { separator: true },
-                    { label: "Delete category", icon: "🗑️", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
+                    { label: "Delete category", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
                   ])}
                   style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 18, lineHeight: 1, fontWeight: 700 }}
                   title="Category options"
@@ -676,15 +698,23 @@ export default function MenuBuilder({ restaurant }: Props) {
 
             {/* Items list */}
             {displayItems.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: 14, border: "2px dashed var(--border)", flex: 1 }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>🍽️</div>
-                <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 4 }}>
-                  {searchQuery ? "No items match your search" : "No items in this category yet"}
-                </p>
-                <p style={{ fontSize: 13 }}>
-                  {searchQuery ? "Try a different search term" : "Use the quick-add below to add items"}
-                </p>
-              </div>
+              searchQuery ? (
+                <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", flex: 1 }}>
+                  <IconSearch width={24} height={24} style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 8 }} />
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 4 }}>
+                    No items match &quot;{searchQuery}&quot;
+                  </p>
+                  <p style={{ fontSize: 13, margin: 0 }}>Try a different search term</p>
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", flex: 1 }}>
+                  <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.8 }}>{activeCat?.icon}</div>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-muted)", marginBottom: 4 }}>
+                    Add your first item
+                  </p>
+                  <p style={{ fontSize: 13, margin: 0 }}>Use the + Add item button above to fill this category</p>
+                </div>
+              )
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
                 {displayItems.map((item) => {
@@ -696,7 +726,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                       data-item-id={item.id}
                       draggable={!isEditing && !searchQuery}
                       onDragStart={(e) => handleItemDragStart(e, item.id)}
-                      onDragOver={handleItemDragOver}
+                      onDragOver={(e) => handleItemDragOver(e, item.id)}
                       onDrop={(e) => handleItemDrop(e, item.id)}
                       onDragEnd={handleDragEnd}
                       onContextMenu={(e) => {
@@ -704,34 +734,28 @@ export default function MenuBuilder({ restaurant }: Props) {
                         openCtxMenu(e, [
                           {
                             label: "Edit name",
-                            icon: "✏️",
                             action: () => startEdit(item.id, "name", item.name),
                           },
                           {
                             label: "Edit description",
-                            icon: "📝",
                             action: () => startEdit(item.id, "description", item.description ?? ""),
                           },
                           {
                             label: "Edit price",
-                            icon: "💰",
                             action: () => startEdit(item.id, "price", item.price?.toString() ?? ""),
                           },
                           { separator: true },
                           {
                             label: item.is_available ? "Mark as hidden" : "Mark as available",
-                            icon: item.is_available ? "🙈" : "👁️",
                             action: () => toggleItem(item),
                           },
                           {
                             label: "Duplicate item",
-                            icon: "⧉",
                             action: () => duplicateItem(item),
                           },
                           { separator: true },
                           {
                             label: "Delete item",
-                            icon: "🗑️",
                             danger: true,
                             action: () => deleteItem(item),
                           },
@@ -743,6 +767,13 @@ export default function MenuBuilder({ restaurant }: Props) {
                         background: item.is_available ? "var(--surface)" : "var(--item-unavailable-bg)",
                         border: "1px solid var(--border)",
                         borderRadius: 10,
+                        boxShadow: draggingItemId === item.id
+                          ? "0 8px 24px rgba(0,0,0,0.12)"
+                          : dragOverItemId === item.id && draggingItemId
+                            ? "0 -2px 0 0 var(--accent)"
+                            : undefined,
+                        transform: draggingItemId === item.id ? "scale(1.02)" : undefined,
+                        transition: "box-shadow 0.12s, transform 0.12s",
                       }}
                     >
                       {/* Drag handle */}
@@ -760,7 +791,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onChange={e => setEditValue(e.target.value)}
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                            style={{ fontWeight: 600, fontSize: 14, padding: "4px 8px", width: "70%" }}
+                            className="mb-edit-input"
+                            style={{ fontWeight: 600, fontSize: 14, padding: "2px 8px", width: "70%" }}
                           />
                         ) : (
                           <span style={{ fontWeight: 600, fontSize: 14, display: "block" }}>
@@ -774,7 +806,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onChange={e => setEditValue(e.target.value)}
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                            style={{ fontSize: 12, padding: "4px 8px", width: "100%", marginTop: 2 }}
+                            className="mb-edit-input"
+                            style={{ fontSize: 12, padding: "2px 8px", width: "100%", marginTop: 2 }}
                             placeholder="Description…"
                           />
                         ) : (
@@ -797,7 +830,8 @@ export default function MenuBuilder({ restaurant }: Props) {
                           onChange={e => setEditValue(e.target.value)}
                           onBlur={saveEdit}
                           onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
-                          style={{ width: 80, padding: "4px 8px", fontSize: 14, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
+                          className="mb-edit-input"
+                          style={{ width: 80, padding: "2px 8px", fontSize: 14, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
                         />
                       ) : (
                         <span style={{
@@ -838,14 +872,14 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onClick={(e) => {
                               e.stopPropagation();
                               openCtxMenu(e, [
-                                { label: "Edit name", icon: "✏️", action: () => startEdit(item.id, "name", item.name) },
-                                { label: "Edit description", icon: "📝", action: () => startEdit(item.id, "description", item.description ?? "") },
-                                { label: "Edit price", icon: "💰", action: () => startEdit(item.id, "price", item.price?.toString() ?? "") },
+                                { label: "Edit name", action: () => startEdit(item.id, "name", item.name) },
+                                { label: "Edit description", action: () => startEdit(item.id, "description", item.description ?? "") },
+                                { label: "Edit price", action: () => startEdit(item.id, "price", item.price?.toString() ?? "") },
                                 { separator: true },
-                                { label: item.is_available ? "Mark as hidden" : "Mark as available", icon: item.is_available ? "🙈" : "👁️", action: () => toggleItem(item) },
-                                { label: "Duplicate item", icon: "⧉", action: () => duplicateItem(item) },
+                                { label: item.is_available ? "Mark as hidden" : "Mark as available", action: () => toggleItem(item) },
+                                { label: "Duplicate item", action: () => duplicateItem(item) },
                                 { separator: true },
-                                { label: "Delete item", icon: "🗑️", danger: true, action: () => deleteItem(item) },
+                                { label: "Delete item", danger: true, action: () => deleteItem(item) },
                               ]);
                             }}
                             style={{
@@ -891,7 +925,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 onClick={e => e.stopPropagation()}
                 style={{ background: "var(--surface)", borderRadius: 16, padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
               >
-                <div style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>🗑️</div>
+                <div style={{ textAlign: "center", marginBottom: 12 }}><IconAlert width={32} height={32} style={{ color: "#dc2626" }} /></div>
                 <h3 style={{ fontWeight: 800, fontSize: 18, textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
                   Delete &ldquo;{cat.icon} {cat.name}&rdquo;?
                 </h3>
