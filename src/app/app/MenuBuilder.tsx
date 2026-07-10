@@ -8,11 +8,30 @@ import { CURRENCIES } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
-import { IconSearch, IconDish, IconAlert } from "@/components/icons";
+import { IconSearch, IconDish, IconAlert, IconCopy } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
 
 const CATEGORY_EMOJIS = ["🍽️","🍕","🍔","🌮","🍣","🍜","🥗","🍰","🍩","🧁","☕","🥤","🍺","🍷","🥂","🍵","🥩","🍗","🥞","🥙","🌯","🥘","🍲","🥚","🧆","🦐","🦞","🦑","🧀","🥐","🥖","🥨","🧇","🍟","🌭","🥪"];
+
+// Small local line icons for chrome (no emojis in UI). currentColor-based.
+function IconGrip({ size = 16, ...p }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" aria-hidden {...p}>
+      {[4, 8, 12].flatMap(y => [5, 11].map(x => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={1.35} />
+      )))}
+    </svg>
+  );
+}
+function IconTrash({ size = 16, ...p }: { size?: number } & React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden {...p}>
+      <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}
 
 interface InlineEdit {
   itemId: string;
@@ -118,6 +137,8 @@ export default function MenuBuilder({ restaurant }: Props) {
   // Visual drag feedback (elevation on the dragged card, insertion line on the target)
   const [draggingItemId, setDraggingItemId] = useState<string | null>(null);
   const [dragOverItemId, setDragOverItemId] = useState<string | null>(null);
+  // Visual drag feedback for category reordering (thin accent line between rows)
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
   // Load data
   useEffect(() => {
@@ -380,20 +401,20 @@ export default function MenuBuilder({ restaurant }: Props) {
   );
 
   const activeCat = categories.find(c => c.id === selectedCatId);
-  const hasSearchResults = searchQuery && displayItems.length > 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 0, height: "100%" }}>
       <style>{`
         .menu-builder-layout { display: flex; gap: 0; flex: 1; min-height: 400px; }
-        .menu-sidebar { width: 200px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; padding-right: 12px; }
-        .menu-sidebar-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 8px 8px; }
-        .menu-main { flex: 1; padding-left: 24px; display: flex; flex-direction: column; gap: 0; }
+        .menu-sidebar { width: 220px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; padding-right: 16px; }
+        .menu-sidebar-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px 8px; }
+        .menu-main { flex: 1; min-width: 0; padding-left: 32px; display: flex; flex-direction: column; gap: 0; }
+        .menu-main-inner { width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; flex: 1; }
         @media (max-width: 700px) {
           .menu-builder-layout { flex-direction: column; }
-          .menu-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; overflow-x: auto; padding: 0 0 12px; gap: 4px; flex-shrink: 0; }
-          .menu-sidebar button { white-space: nowrap; flex-shrink: 0; width: auto; font-size: 12px; padding: 6px 10px; }
-          .menu-sidebar-label { display: none; }
+          .menu-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; overflow-x: auto; padding: 0 0 12px; gap: 6px; flex-shrink: 0; }
+          .menu-cat-row { white-space: nowrap; flex-shrink: 0; width: auto !important; border-left: none !important; }
+          .menu-sidebar-label, .menu-add-cat-btn { display: none; }
           .menu-main { padding-left: 0; padding-top: 16px; }
         }
         .mb-edit-input {
@@ -408,47 +429,53 @@ export default function MenuBuilder({ restaurant }: Props) {
           border-color: var(--accent);
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
         }
+        .mb-item-card { transition: box-shadow 0.14s, transform 0.12s, opacity 0.12s; }
+        .mb-item-card:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.10); }
+        .mb-icon-btn { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); cursor: pointer; border-radius: 7px; padding: 6px; transition: color 0.12s, border-color 0.12s, background 0.12s; }
+        .mb-icon-btn:hover { color: var(--text); border-color: var(--text-muted); }
+        .mb-icon-btn.danger:hover { color: #f43f5e; border-color: #f43f5e; }
+        .mb-text-link { background: none; border: none; cursor: pointer; font-size: 13px; font-weight: 600; padding: 2px 2px; }
+        @keyframes mbSlideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        .mb-additem-row { animation: mbSlideDown 0.16s ease; }
       `}</style>
       {/* SEARCH BAR */}
-      <div style={{ padding: "0 0 20px" }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <div style={{ position: "relative", flex: 1 }}>
-            <IconSearch width={16} height={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
-            <input
-              type="text"
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{ padding: "9px 14px 9px 38px", width: "100%" }}
-            />
-          </div>
-          {!addingCategory && (
-            <>
-              <select
-                value={currency}
-                onChange={async e => {
-                  const next = e.target.value;
-                  setCurrency(next);
-                  try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch { /* ignore */ }
-                  const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
-                  if (error) toast.error("Could not save the currency");
-                }}
-                style={{ padding: "7px 8px", fontSize: 12, fontWeight: 600, width: "auto", cursor: "pointer", borderRadius: 8 }}
-                title="Currency for prices"
-              >
-                {Object.entries(CURRENCIES).map(([code, sym]) => (
-                  <option key={code} value={code}>{sym} {code}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => setAddingCategory(true)}
-                style={{ padding: "9px 16px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
-              >
-                + Category
-              </button>
-            </>
-          )}
+      <div style={{ padding: "0 0 16px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ position: "relative", width: "100%" }}>
+          <IconSearch width={18} height={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
+          <input
+            type="text"
+            placeholder="Search menu..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            style={{ height: 48, padding: "0 16px 0 46px", width: "100%", fontSize: 15, borderRadius: 12, boxSizing: "border-box" }}
+          />
         </div>
+        {!addingCategory && (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", justifyContent: "flex-end" }}>
+            <select
+              value={currency}
+              onChange={async e => {
+                const next = e.target.value;
+                setCurrency(next);
+                try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch { /* ignore */ }
+                const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
+                if (error) toast.error("Could not save the currency");
+              }}
+              style={{ padding: "7px 8px", fontSize: 13, fontWeight: 600, width: "auto", cursor: "pointer", borderRadius: 8 }}
+              title="Currency for prices"
+            >
+              {Object.entries(CURRENCIES).map(([code, sym]) => (
+                <option key={code} value={code}>{sym} {code}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setAddingCategory(true)}
+              style={{ padding: "9px 16px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
+            >
+              + Category
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ADD CATEGORY FORM */}
@@ -505,13 +532,19 @@ export default function MenuBuilder({ restaurant }: Props) {
               const count = catItemCounts[cat.id] ?? 0;
               const isEditingThis = editingCatId === cat.id;
               return (
-                <div key={cat.id} style={{ position: "relative" }}>
+                <div
+                  key={cat.id}
+                  style={{
+                    position: "relative",
+                    borderTop: dragOverCatId === cat.id ? "2px solid var(--accent)" : "2px solid transparent",
+                  }}
+                >
                   {isEditingThis ? (
                     // ── Inline editor ──
                     <div style={{
                       display: "flex", alignItems: "center", gap: 4,
                       padding: "4px 6px", borderRadius: 8,
-                      background: "var(--surface2, #1a1a20)",
+                      background: "var(--surface-2)",
                       border: "1px solid var(--accent)",
                     }}>
                       {/* Emoji button */}
@@ -545,14 +578,18 @@ export default function MenuBuilder({ restaurant }: Props) {
                       >✕</button>
                     </div>
                   ) : (
-                    // ── Normal button ──
+                    // ── Category row (subtle active state, not a filled button) ──
                     <button
+                      className="menu-cat-row"
                       onClick={() => { setSelectedCatId(cat.id); setSearchQuery(""); }}
                       draggable
                       onDragStart={(e) => { dragCatRef.current = cat.id; e.dataTransfer.setData("text/cat", cat.id); }}
-                      onDragOver={(e) => e.preventDefault()}
+                      onDragOver={(e) => { e.preventDefault(); if (dragCatRef.current && dragCatRef.current !== cat.id) setDragOverCatId(cat.id); }}
+                      onDragLeave={() => setDragOverCatId(prev => (prev === cat.id ? null : prev))}
+                      onDragEnd={() => setDragOverCatId(null)}
                       onDrop={async (e) => {
                         e.preventDefault();
+                        setDragOverCatId(null);
                         const draggedCatId = dragCatRef.current;
                         dragCatRef.current = null;
                         if (!draggedCatId || draggedCatId === cat.id) return;
@@ -585,33 +622,39 @@ export default function MenuBuilder({ restaurant }: Props) {
                       ])}
                       style={{
                         display: "flex", alignItems: "center", gap: 8,
-                        padding: "8px 10px",
+                        padding: "10px 14px",
                         borderRadius: 8,
-                        border: "none",
-                        background: active ? "var(--accent)" : "transparent",
-                        color: active ? "white" : "var(--text)",
+                        borderLeft: active ? "3px solid var(--accent)" : "3px solid transparent",
+                        borderTop: "none", borderRight: "none", borderBottom: "none",
+                        background: active ? "color-mix(in srgb, var(--accent) 5%, transparent)" : "transparent",
+                        color: "var(--text)",
                         cursor: "pointer",
                         fontSize: 13,
-                        fontWeight: active ? 700 : 500,
+                        fontWeight: active ? 600 : 500,
                         textAlign: "left",
                         width: "100%",
-                        transition: "background 0.1s, color 0.1s",
+                        transition: "background 0.1s",
                       }}
                     >
-                      <span style={{ fontSize: 14, flexShrink: 0 }}>{cat.icon}</span>
+                      <span style={{ fontSize: 15, flexShrink: 0 }}>{cat.icon}</span>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{cat.name}</span>
-                      <span style={{ fontSize: 11, fontWeight: 600, opacity: active ? 0.8 : 0.5, flexShrink: 0 }}>{count}</span>
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, flexShrink: 0,
+                        color: "var(--text-muted)", background: "var(--surface-2)",
+                        padding: "1px 8px", borderRadius: 99, minWidth: 18, textAlign: "center",
+                      }}>{count}</span>
                     </button>
                   )}
                 </div>
               );
             })}
             <button
+              className="menu-add-cat-btn"
               onClick={() => setAddingCategory(true)}
               style={{
-                marginTop: 4, padding: "8px 10px", borderRadius: 8,
+                marginTop: 6, padding: "10px 14px", borderRadius: 8,
                 border: "1px dashed var(--border)", background: "none",
-                cursor: "pointer", color: "var(--text-muted)", fontSize: 12,
+                cursor: "pointer", color: "var(--text-muted)", fontSize: 13,
                 fontWeight: 500, textAlign: "left", width: "100%",
               }}
             >
@@ -621,11 +664,12 @@ export default function MenuBuilder({ restaurant }: Props) {
 
           {/* MAIN CONTENT */}
           <div className="menu-main">
+            <div className="menu-main-inner">
             {/* Category header */}
             {searchQuery ? (
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
                 <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                  <IconSearch width={16} height={16} style={{ color: "var(--text-muted)" }} />
+                  <IconSearch width={18} height={18} style={{ color: "var(--text-muted)" }} />
                   &quot;{searchQuery}&quot;
                 </h3>
                 <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
@@ -633,51 +677,58 @@ export default function MenuBuilder({ restaurant }: Props) {
                 </span>
                 <button
                   onClick={() => setSearchQuery("")}
-                  style={{ marginLeft: "auto", padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 12 }}
+                  className="mb-text-link"
+                  style={{ marginLeft: "auto", color: "var(--text-muted)" }}
                 >Clear</button>
               </div>
             ) : activeCat ? (
-              <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
-                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, flex: 1, display: "flex", alignItems: "center", gap: 8 }}>
-                  {activeCat.icon} {activeCat.name}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: 13 }}>
-                    ({filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""})
-                  </span>
-                </h3>
-                {/* ⋮ category actions — works on desktop (right-click) and mobile (tap) */}
-                <button
-                  onClick={(e) => openCtxMenu(e, [
+              <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <h3
+                  onContextMenu={(e) => openCtxMenu(e, [
                     { label: "Edit name & icon", action: () => startEditCat(activeCat) },
                     { separator: true },
                     { label: "Delete category", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
                   ])}
-                  style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 18, lineHeight: 1, fontWeight: 700 }}
-                  title="Category options"
-                >⋮</button>
-                <button
-                  onClick={() => setShowQuickAdd(s => !s)}
-                  style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--accent)", background: showQuickAdd ? "var(--accent)" : "var(--surface)", color: showQuickAdd ? "white" : "var(--accent)", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap" }}
+                  style={{ fontWeight: 700, fontSize: 18, margin: 0, flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}
                 >
-                  {showQuickAdd ? "✕ Close" : "+ Add item"}
-                </button>
+                  <span style={{ fontSize: 22, flexShrink: 0 }}>{activeCat.icon}</span>
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeCat.name}</span>
+                  <span style={{ fontWeight: 500, color: "var(--text-muted)", fontSize: 13, flexShrink: 0 }}>
+                    {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
+                  </span>
+                </h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
+                  <button
+                    onClick={() => setConfirmDeleteCat(activeCat.id)}
+                    className="mb-text-link"
+                    style={{ color: "var(--text-muted)", fontWeight: 500 }}
+                  >Delete category</button>
+                  <button
+                    onClick={() => setShowQuickAdd(s => !s)}
+                    className="mb-text-link"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    {showQuickAdd ? "Cancel" : "+ Add item"}
+                  </button>
+                </div>
               </div>
             ) : null}
 
-            {/* Quick-add row (above items) */}
+            {/* Add-item row (slides in above items) */}
             {!searchQuery && selectedCatId && showQuickAdd && (
-              <div style={{
-                marginBottom: 12, padding: "10px 14px",
-                background: "var(--surface)", border: "1px dashed var(--accent)", borderRadius: 10,
+              <div className="mb-additem-row" style={{
+                marginBottom: 12, padding: "0 6px 0 12px",
+                height: 48, background: "var(--surface)",
+                border: "1px solid var(--accent)", borderRadius: 10,
                 display: "flex", gap: 8, alignItems: "center",
               }}>
-                <span style={{ color: "var(--accent)", fontSize: 16, fontWeight: 700, flexShrink: 0 }}>+</span>
                 <input
                   autoFocus
                   placeholder="Item name"
                   value={quickAdds[selectedCatId]?.name ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], name: e.target.value } }))}
-                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
-                  style={{ flex: 1, padding: "6px 10px", fontSize: 13 }}
+                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
+                  style={{ flex: 1, height: 34, padding: "0 10px", fontSize: 13, minWidth: 0 }}
                 />
                 <input
                   type="number"
@@ -686,37 +737,45 @@ export default function MenuBuilder({ restaurant }: Props) {
                   placeholder={`Price (${currencySymbol})`}
                   value={quickAdds[selectedCatId]?.price ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], price: e.target.value } }))}
-                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); }}
-                  style={{ width: 110, padding: "6px 10px", fontSize: 13 }}
+                  onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
+                  style={{ width: 120, height: 34, padding: "0 10px", fontSize: 13 }}
                 />
                 <button
                   onClick={() => quickAddItem(selectedCatId)}
-                  style={{ padding: "6px 16px", borderRadius: 7, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}
+                  style={{ height: 34, padding: "0 16px", borderRadius: 7, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}
                 >Add</button>
+                <button
+                  onClick={() => setShowQuickAdd(false)}
+                  className="mb-text-link"
+                  style={{ color: "var(--text-muted)", padding: "0 6px" }}
+                >Cancel</button>
               </div>
             )}
 
             {/* Items list */}
             {displayItems.length === 0 ? (
               searchQuery ? (
-                <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", flex: 1 }}>
-                  <IconSearch width={24} height={24} style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 8 }} />
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", marginBottom: 4 }}>
+                <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
+                  <IconSearch width={24} height={24} style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 10 }} />
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", margin: 0 }}>
                     No items match &quot;{searchQuery}&quot;
                   </p>
-                  <p style={{ fontSize: 13, margin: 0 }}>Try a different search term</p>
                 </div>
               ) : (
-                <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)", flex: 1 }}>
-                  <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.8 }}>{activeCat?.icon}</div>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-muted)", marginBottom: 4 }}>
-                    Add your first item
+                <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
+                  <div style={{ fontSize: 24, marginBottom: 10, opacity: 0.8 }}>{activeCat?.icon}</div>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-muted)", margin: "0 0 6px" }}>
+                    No items yet
                   </p>
-                  <p style={{ fontSize: 13, margin: 0 }}>Use the + Add item button above to fill this category</p>
+                  <button
+                    onClick={() => setShowQuickAdd(true)}
+                    className="mb-text-link"
+                    style={{ color: "var(--accent)" }}
+                  >Add your first item</button>
                 </div>
               )
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: 1 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
                 {displayItems.map((item) => {
                   const isEditing = edit?.itemId === item.id;
                   const cat = categories.find(c => c.id === item.category_id);
@@ -724,6 +783,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                     <div
                       key={item.id}
                       data-item-id={item.id}
+                      className="mb-item-card"
                       draggable={!isEditing && !searchQuery}
                       onDragStart={(e) => handleItemDragStart(e, item.id)}
                       onDragOver={(e) => handleItemDragOver(e, item.id)}
@@ -762,25 +822,26 @@ export default function MenuBuilder({ restaurant }: Props) {
                         ]);
                       }}
                       style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        padding: "10px 14px",
-                        background: item.is_available ? "var(--surface)" : "var(--item-unavailable-bg)",
+                        display: "flex", alignItems: "center", gap: 12,
+                        padding: "12px 14px",
+                        background: "var(--surface)",
                         border: "1px solid var(--border)",
-                        borderRadius: 10,
+                        borderRadius: 12,
+                        opacity: item.is_available ? 1 : 0.5,
                         boxShadow: draggingItemId === item.id
-                          ? "0 8px 24px rgba(0,0,0,0.12)"
+                          ? "0 8px 24px rgba(0,0,0,0.16)"
                           : dragOverItemId === item.id && draggingItemId
                             ? "0 -2px 0 0 var(--accent)"
                             : undefined,
                         transform: draggingItemId === item.id ? "scale(1.02)" : undefined,
-                        transition: "box-shadow 0.12s, transform 0.12s",
                       }}
                     >
                       {/* Drag handle */}
-                      <span
-                        style={{ color: "var(--text-muted)", fontSize: 14, cursor: "grab", userSelect: "none", flexShrink: 0, lineHeight: 1 }}
-                        title="Drag to reorder"
-                      >⋮⋮</span>
+                      <IconGrip
+                        size={16}
+                        style={{ color: "var(--text-muted)", cursor: "grab", flexShrink: 0, opacity: 0.7 }}
+                        aria-label="Drag to reorder"
+                      />
 
                       {/* Item info */}
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -792,10 +853,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                             className="mb-edit-input"
-                            style={{ fontWeight: 600, fontSize: 14, padding: "2px 8px", width: "70%" }}
+                            style={{ fontWeight: 600, fontSize: 15, padding: "2px 8px", width: "70%" }}
                           />
                         ) : (
-                          <span style={{ fontWeight: 600, fontSize: 14, display: "block" }}>
+                          <span style={{ fontWeight: 600, fontSize: 15, display: "block" }}>
                             {item.name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Untitled</span>}
                           </span>
                         )}
@@ -807,12 +868,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                             className="mb-edit-input"
-                            style={{ fontSize: 12, padding: "2px 8px", width: "100%", marginTop: 2 }}
+                            style={{ fontSize: 13, padding: "2px 8px", width: "100%", marginTop: 4 }}
                             placeholder="Description…"
                           />
                         ) : (
                           item.description && (
-                            <span style={{ color: "var(--text-muted)", fontSize: 12, display: "block", lineHeight: 1.4 }}>
+                            <span style={{ color: "var(--text-muted)", fontSize: 13, display: "block", lineHeight: 1.4, marginTop: 2 }}>
                               {item.description}
                             </span>
                           )
@@ -831,14 +892,14 @@ export default function MenuBuilder({ restaurant }: Props) {
                           onBlur={saveEdit}
                           onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                           className="mb-edit-input"
-                          style={{ width: 80, padding: "2px 8px", fontSize: 14, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
+                          style={{ width: 90, padding: "2px 8px", fontSize: 16, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
                         />
                       ) : (
                         <span style={{
-                          fontWeight: 700, fontSize: 14, flexShrink: 0,
+                          fontWeight: 700, fontSize: 16, flexShrink: 0,
                           color: item.price ? "var(--accent)" : "var(--text-muted)",
                           opacity: item.price ? 1 : 0.4,
-                          minWidth: 50, textAlign: "right",
+                          minWidth: 54, textAlign: "right",
                         }}>
                           {item.price ? `${item.price} ${currencySymbol}` : "—"}
                         </span>
@@ -854,43 +915,34 @@ export default function MenuBuilder({ restaurant }: Props) {
                       {/* Actions */}
                       {!isEditing && (
                         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-                          {/* Availability toggle */}
+                          {/* Availability pill */}
                           <button
                             onClick={() => toggleItem(item)}
+                            title={item.is_available ? "Available — click to hide" : "Hidden — click to show"}
                             style={{
-                              fontSize: 11, padding: "3px 8px", borderRadius: 6,
-                              border: "1px solid var(--border)",
-                              background: item.is_available ? "var(--card-order-bg)" : "var(--card-bill-bg)",
+                              fontSize: 11, padding: "3px 10px", borderRadius: 99,
+                              border: "none",
+                              background: item.is_available
+                                ? "color-mix(in srgb, #22c55e 15%, transparent)"
+                                : "color-mix(in srgb, #f43f5e 15%, transparent)",
                               color: item.is_available ? "#22c55e" : "#f43f5e",
                               cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap",
                             }}
                           >
-                            {item.is_available ? "Live" : "Hidden"}
+                            {item.is_available ? "On" : "Off"}
                           </button>
-                          {/* ⋮ more actions — tap on mobile, right-click also works on desktop */}
+                          {/* Duplicate */}
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openCtxMenu(e, [
-                                { label: "Edit name", action: () => startEdit(item.id, "name", item.name) },
-                                { label: "Edit description", action: () => startEdit(item.id, "description", item.description ?? "") },
-                                { label: "Edit price", action: () => startEdit(item.id, "price", item.price?.toString() ?? "") },
-                                { separator: true },
-                                { label: item.is_available ? "Mark as hidden" : "Mark as available", action: () => toggleItem(item) },
-                                { label: "Duplicate item", action: () => duplicateItem(item) },
-                                { separator: true },
-                                { label: "Delete item", danger: true, action: () => deleteItem(item) },
-                              ]);
-                            }}
-                            style={{
-                              padding: "3px 7px", borderRadius: 6,
-                              border: "1px solid var(--border)",
-                              background: "var(--surface)",
-                              cursor: "pointer", color: "var(--text-muted)",
-                              fontSize: 16, fontWeight: 700, lineHeight: 1,
-                            }}
-                            title="More options"
-                          >⋮</button>
+                            className="mb-icon-btn"
+                            onClick={(e) => { e.stopPropagation(); duplicateItem(item); }}
+                            title="Duplicate item"
+                          ><IconCopy width={15} height={15} /></button>
+                          {/* Delete */}
+                          <button
+                            className="mb-icon-btn danger"
+                            onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
+                            title="Delete item"
+                          ><IconTrash size={15} /></button>
                         </div>
                       )}
                     </div>
@@ -898,6 +950,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 })}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}
