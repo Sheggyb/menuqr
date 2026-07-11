@@ -438,19 +438,6 @@ export default function MenuBuilder({ restaurant }: Props) {
         @keyframes mbSlideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .mb-additem-row { animation: mbSlideDown 0.16s ease; }
       `}</style>
-      {/* Search bar — centered alone at top */}
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
-          <IconSearch width={14} height={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
-          <input
-            type="text"
-            placeholder="Search menu..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box" }}
-          />
-        </div>
-      </div>
 
       {/* ADD CATEGORY FORM */}
       {addingCategory && (
@@ -662,6 +649,17 @@ export default function MenuBuilder({ restaurant }: Props) {
           {/* MAIN CONTENT */}
           <div className="menu-main">
             <div className="menu-main-inner">
+            {/* Search inside content column */}
+            <div style={{ position: "relative", marginBottom: 14 }}>
+              <IconSearch width={14} height={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
+              <input
+                type="text"
+                placeholder="Search menu..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box" }}
+              />
+            </div>
             {/* Category header */}
             {searchQuery ? (
               <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
