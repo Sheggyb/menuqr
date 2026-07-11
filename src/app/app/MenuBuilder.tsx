@@ -409,7 +409,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         .menu-sidebar { width: 220px; flex-shrink: 0; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 2px; padding-right: 16px; }
         .menu-sidebar-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 14px 8px; }
         .menu-main { flex: 1; min-width: 0; padding-left: 32px; display: flex; flex-direction: column; gap: 0; }
-        .menu-main-inner { width: 100%; max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; flex: 1; }
+        .menu-main-inner { width: 100%; display: flex; flex-direction: column; flex: 1; }
         @media (max-width: 700px) {
           .menu-builder-layout { flex-direction: column; }
           .menu-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; overflow-x: auto; padding: 0 0 12px; gap: 6px; flex-shrink: 0; }
