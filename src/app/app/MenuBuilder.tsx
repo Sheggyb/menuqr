@@ -438,44 +438,18 @@ export default function MenuBuilder({ restaurant }: Props) {
         @keyframes mbSlideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .mb-additem-row { animation: mbSlideDown 0.16s ease; }
       `}</style>
-      {/* Toolbar — compact one-line search + actions */}
-      <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
+      {/* Search bar — centered alone at top */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+        <div style={{ position: "relative", width: "100%", maxWidth: 400 }}>
           <IconSearch width={14} height={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
           <input
             type="text"
             placeholder="Search menu..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box", maxWidth: 300 }}
+            style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box" }}
           />
         </div>
-        {!addingCategory && (
-          <>
-            <select
-              value={currency}
-              onChange={async e => {
-                const next = e.target.value;
-                setCurrency(next);
-                try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch { /* ignore */ }
-                const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
-                if (error) toast.error("Could not save the currency");
-              }}
-              style={{ width: 90, padding: "6px 8px", fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 6, flexShrink: 0 }}
-              title="Currency for prices"
-            >
-              {Object.entries(CURRENCIES).map(([code, sym]) => (
-                <option key={code} value={code}>{sym} {code}</option>
-              ))}
-            </select>
-            <button
-              onClick={() => setAddingCategory(true)}
-              style={{ padding: "7px 14px", borderRadius: 6, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 13, whiteSpace: "nowrap", flexShrink: 0 }}
-            >
-              + Category
-            </button>
-          </>
-        )}
       </div>
 
       {/* ADD CATEGORY FORM */}
@@ -524,6 +498,29 @@ export default function MenuBuilder({ restaurant }: Props) {
         <div className="menu-builder-layout">
           {/* SIDEBAR */}
           <div className="menu-sidebar">
+            {!addingCategory && (
+              <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
+                <select
+                  value={currency}
+                  onChange={async e => {
+                    const next = e.target.value;
+                    setCurrency(next);
+                    try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch {}
+                    const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
+                    if (error) toast.error("Could not save the currency");
+                  }}
+                  style={{ flex: 1, padding: "5px 6px", fontSize: 11, fontWeight: 600, cursor: "pointer", borderRadius: 6, flexShrink: 0, height: 28 }}
+                >
+                  {Object.entries(CURRENCIES).map(([code, sym]) => (
+                    <option key={code} value={code}>{sym} {code}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setAddingCategory(true)}
+                  style={{ padding: "5px 10px", borderRadius: 6, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", flexShrink: 0, height: 28 }}
+                >+ Category</button>
+              </div>
+            )}
             <div className="menu-sidebar-label">
               Categories
             </div>
