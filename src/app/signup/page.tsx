@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
   const strength = getPasswordStrength(password);
 
@@ -31,7 +32,7 @@ export default function SignupPage() {
     setLoading(true);
     setError("");
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { full_name: name } },
@@ -39,9 +40,35 @@ export default function SignupPage() {
     if (error) {
       setError(error.message);
       setLoading(false);
-    } else {
+    } else if (data.session) {
+      // Email confirmations are disabled — user is immediately active
       router.push("/app");
+    } else {
+      // Email confirmation required — tell the user to check their inbox
+      setEmailSent(true);
+      setLoading(false);
     }
+  }
+
+  if (emailSent) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 16 }}>
+        <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "48px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)", textAlign: "center" }}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(34,197,94,0.12)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 30, marginBottom: 20 }}>✉️</div>
+          <h1 style={{ fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Check your email</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>
+            We sent a confirmation link to <strong style={{ color: "var(--text)" }}>{email}</strong>.<br />
+            Click it to activate your account and get started.
+          </p>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
+            Wrong address?{" "}
+            <button onClick={() => setEmailSent(false)} style={{ background: "none", border: "none", color: "var(--accent)", fontWeight: 600, cursor: "pointer", padding: 0, fontSize: 13 }}>
+              Go back
+            </button>
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
