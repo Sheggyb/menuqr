@@ -188,7 +188,7 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
         }}>{count}</span>
       </div>
       {isEmpty ? (
-        <div style={{
+        <div className="kd-empty" style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           gap: 12, padding: "64px 16px",
           background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 14,
@@ -368,10 +368,13 @@ export default function KitchenDisplay({ restaurant }: Props) {
         }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
-        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; align-items: start; }
-        .kd-columns { display: flex; gap: 28px; align-items: flex-start; }
-        .kd-columns > section { flex: 1; min-width: 0; }
-        @media (max-width: 900px) { .kd-grid { grid-template-columns: 1fr; } .kd-columns { flex-direction: column; } }
+        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; align-items: start; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
+        .kd-empty { flex: 1; min-height: 0; overflow-y: auto; }
+        .kd-columns { display: flex; gap: 28px; align-items: stretch; }
+        .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 170px); }
+        .kd-grid::-webkit-scrollbar, .kd-empty::-webkit-scrollbar { width: 8px; }
+        .kd-grid::-webkit-scrollbar-thumb, .kd-empty::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+        @media (max-width: 900px) { .kd-grid { grid-template-columns: 1fr; overflow: visible; } .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } }
       `}</style>
 
       {/* HEADER */}
