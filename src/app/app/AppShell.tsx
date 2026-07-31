@@ -76,6 +76,13 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {clock && <span style={{ fontSize: 12, color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
         <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <a
+            href="/kitchen"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open kitchen display in a new tab"
+            style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 10px", lineHeight: 1, textDecoration: "none" }}
+          >Kitchen</a>
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
