@@ -54,13 +54,13 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
 
 function bigBtn(variant: "outline" | "filled", color: string): React.CSSProperties {
   return {
-    height: 46, borderRadius: 10, padding: "0 22px",
-    display: "inline-flex", alignItems: "center", gap: 8,
+    height: 38, borderRadius: 9, padding: "0 14px",
+    display: "inline-flex", alignItems: "center", gap: 6,
     cursor: "pointer", flexShrink: 0,
     background: variant === "filled" ? color : "transparent",
     color: variant === "filled" ? "white" : color,
     border: variant === "filled" ? "none" : `1.5px solid ${color}`,
-    fontSize: 17, fontWeight: 700,
+    fontSize: 14, fontWeight: 700,
   };
 }
 
@@ -85,13 +85,13 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
       style={{
         background: "var(--surface-2)",
         border: "1px solid var(--border)",
-        borderLeft: `6px solid ${leftAccent}`,
-        borderRadius: 14,
-        padding: "18px 20px",
+        borderLeft: `4px solid ${leftAccent}`,
+        borderRadius: 12,
+        padding: "14px 16px",
         display: "flex",
         flexDirection: "column",
-        gap: 14,
-        animation: "kd-slideIn 0.25s ease-out, kd-flash 1.4s ease-out",
+        gap: 10,
+        animation: "kd-slideIn 0.18s ease-out",
         transition: "transform 0.15s ease, opacity 0.15s ease",
       }}
     >
@@ -101,7 +101,7 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
           display: "inline-flex", alignItems: "center",
           background: "transparent", color: accent,
           border: `1.5px solid ${accent}`,
-          fontSize: 12, fontWeight: 700, padding: "3px 12px", borderRadius: 99,
+          fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
           textTransform: "uppercase", letterSpacing: "0.03em",
         }}>
           {TYPE_LABEL[req.type] ?? req.type}
@@ -109,37 +109,37 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           background: "var(--bg)", color: "var(--text)",
-          fontSize: 16, fontWeight: 700, padding: "4px 12px", borderRadius: 99,
+          fontSize: 13, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
         }}>
-          <IconTable width={15} height={15} style={{ color: "var(--text-muted)" }} />
+          <IconTable width={12} height={12} style={{ color: "var(--text-muted)" }} />
           {tableName}
         </span>
         <span style={{
           marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6,
-          fontSize: 15, fontWeight: isLate ? 700 : 500,
+          fontSize: 13, fontWeight: isLate ? 700 : 500,
           color: isLate ? "#d97706" : "var(--text-muted)",
           whiteSpace: "nowrap",
         }}>
-          {isLate && <IconClock width={15} height={15} />}
+          {isLate && <IconClock width={12} height={12} />}
           {timeText}
         </span>
       </div>
 
-      {/* Items — large, readable from across the room */}
+      {/* Items */}
       {itemLines.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {itemLines.map((line, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
-              <span aria-hidden="true" style={{ color: accent, fontWeight: 800, fontSize: 22 }}>&bull;</span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: "var(--text)", lineHeight: 1.35, whiteSpace: "pre-line" }}>{line}</span>
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
+              <span aria-hidden="true" style={{ color: accent, fontWeight: 800, fontSize: 15 }}>&bull;</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.4, whiteSpace: "pre-line" }}>{line}</span>
             </div>
           ))}
         </div>
       )}
 
       {req.note && (
-        <div style={{ fontSize: 17, color: "var(--text-muted)", display: "inline-flex", alignItems: "flex-start", gap: 8, lineHeight: 1.5 }}>
-          <IconReceipt width={18} height={18} style={{ flexShrink: 0, marginTop: 3 }} />
+        <div style={{ fontSize: 13, color: "var(--text-muted)", display: "inline-flex", alignItems: "flex-start", gap: 7, lineHeight: 1.5 }}>
+          <IconReceipt width={14} height={14} style={{ flexShrink: 0, marginTop: 2 }} />
           <span>{req.note}</span>
         </div>
       )}
@@ -148,17 +148,17 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
       <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
         {onPickUp && (
           <button onClick={onPickUp} aria-label="Start preparing" title="Start preparing" style={bigBtn("outline", "#3b82f6")}>
-            <IconArrowRight width={18} height={18} /> Start
+            <IconArrowRight width={15} height={15} /> Start
           </button>
         )}
         {onDone && (
           <button onClick={onDone} aria-label="Mark done" title="Done" style={bigBtn("filled", "#22c55e")}>
-            <IconCheck width={20} height={20} strokeWidth={2.5} /> Done
+            <IconCheck width={16} height={16} strokeWidth={2.5} /> Done
           </button>
         )}
         {onUndo && (
           <button onClick={onUndo} aria-label="Move back to New" title="Move back to New" style={bigBtn("outline", "var(--text-muted)")}>
-            <IconHistory width={18} height={18} /> Back
+            <IconHistory width={15} height={15} /> Back
           </button>
         )}
       </div>
@@ -177,25 +177,25 @@ interface SectionProps {
 
 function Section({ title, count, icon, emptyText, isEmpty, children }: SectionProps) {
   return (
-    <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <span style={{ color: "var(--text-muted)", display: "inline-flex" }}>{icon}</span>
-        <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{title}</h2>
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text)" }}>{title}</h2>
         <span style={{
           background: "var(--surface-2)", color: "var(--text)",
-          fontSize: 16, fontWeight: 700,
-          padding: "2px 12px", borderRadius: 99, minWidth: 26, textAlign: "center",
+          fontSize: 13, fontWeight: 700,
+          padding: "1px 10px", borderRadius: 99, minWidth: 22, textAlign: "center",
         }}>{count}</span>
       </div>
       {isEmpty ? (
         <div className="kd-empty" style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: 12, padding: "64px 16px",
-          background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 14,
+          gap: 10, padding: "48px 16px",
+          background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 12,
           color: "var(--text-muted)",
         }}>
-          <IconInbox width={36} height={36} />
-          <span style={{ fontSize: 16 }}>{emptyText}</span>
+          <IconInbox width={26} height={26} />
+          <span style={{ fontSize: 13.5 }}>{emptyText}</span>
         </div>
       ) : (
         <div className="kd-grid">{children}</div>
@@ -361,17 +361,13 @@ export default function KitchenDisplay({ restaurant }: Props) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{`
-        @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes kd-flash {
-          0% { box-shadow: 0 0 0 3px var(--accent), 0 0 36px color-mix(in srgb, var(--accent) 45%, transparent); }
-          100% { box-shadow: 0 0 0 0 transparent; }
-        }
+        @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
-        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 18px; align-items: start; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
+        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-items: start; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
         .kd-empty { flex: 1; min-height: 0; overflow-y: auto; }
-        .kd-columns { display: flex; gap: 28px; align-items: stretch; }
-        .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 170px); }
+        .kd-columns { display: flex; gap: 22px; align-items: stretch; }
+        .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 165px); }
         .kd-grid::-webkit-scrollbar, .kd-empty::-webkit-scrollbar { width: 8px; }
         .kd-grid::-webkit-scrollbar-thumb, .kd-empty::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
         @media (max-width: 900px) { .kd-grid { grid-template-columns: 1fr; overflow: visible; } .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } }
@@ -386,8 +382,8 @@ export default function KitchenDisplay({ restaurant }: Props) {
         display: "flex", alignItems: "center", gap: 16,
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontWeight: 800, fontSize: 20, color: "var(--text)", letterSpacing: "-0.3px" }}>Kitchen</span>
-          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>{restaurant.name}</span>
+          <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text)", letterSpacing: "-0.3px" }}>Kitchen</span>
+          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{restaurant.name}</span>
         </div>
 
         <div style={{ flex: 1 }} />
@@ -399,14 +395,14 @@ export default function KitchenDisplay({ restaurant }: Props) {
               key={f}
               onClick={() => setFilter(f)}
               style={{
-                padding: "7px 16px", borderRadius: 7, border: "none", cursor: "pointer",
+                padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
                 background: filter === f ? "var(--accent)" : "transparent",
                 color: filter === f ? "white" : "var(--text-muted)",
-                fontSize: 13, fontWeight: filter === f ? 700 : 500,
+                fontSize: 12, fontWeight: filter === f ? 700 : 500,
                 display: "inline-flex", alignItems: "center", gap: 6,
               }}
             >
-              {f === "food" ? <IconDish width={14} height={14} /> : f === "drinks" ? <IconGlass width={14} height={14} /> : <IconBell width={14} height={14} />}
+              {f === "food" ? <IconDish width={13} height={13} /> : f === "drinks" ? <IconGlass width={13} height={13} /> : <IconBell width={13} height={13} />}
               {FILTER_LABEL[f]}
             </button>
           ))}
@@ -416,22 +412,22 @@ export default function KitchenDisplay({ restaurant }: Props) {
         <button
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on" : "Sound off"}
-          style={{ padding: "8px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: 18, lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
+          style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: 15, lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
         >{soundEnabled ? "🔔" : "🔕"}</button>
 
         {/* Live clock */}
-        <span style={{ fontSize: 22, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
+        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
       </header>
 
       {/* STATS BAR */}
       <div style={{ padding: "14px 24px 0", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 14, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
           Today: <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong>
         </span>
-        <span style={{ fontSize: 14, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
           Done: <strong style={{ color: "#22c55e", fontWeight: 700 }}>{todayStats.done}</strong>
         </span>
-        <span style={{ fontSize: 14, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
           Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{freshCount}</strong>
         </span>
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
@@ -447,7 +443,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
           <Section
             title="New"
             count={fresh.length}
-            icon={<IconBell width={22} height={22} />}
+            icon={<IconBell width={17} height={17} />}
             emptyText="No new orders"
             isEmpty={fresh.length === 0}
           >
@@ -464,7 +460,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
           <Section
             title="Cooking"
             count={cooking.length}
-            icon={<IconClock width={22} height={22} />}
+            icon={<IconClock width={17} height={17} />}
             emptyText="Nothing on the pass"
             isEmpty={cooking.length === 0}
           >

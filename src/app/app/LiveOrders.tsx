@@ -178,7 +178,7 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
       {isEmpty ? (
         <div style={{
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: 10, padding: "48px 16px",
+          gap: 10, padding: "48px 16px", flex: 1,
           background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 12,
           color: "var(--text-muted)",
         }}>
@@ -365,7 +365,7 @@ export default function LiveOrders({ restaurant }: Props) {
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
         .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
-        .lo-columns { display: flex; gap: 24px; align-items: flex-start; }
+        .lo-columns { display: flex; gap: 24px; align-items: stretch; }
         .lo-columns > section { flex: 1; min-width: 0; }
         @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; } .lo-columns { flex-direction: column; } }
       `}</style>
