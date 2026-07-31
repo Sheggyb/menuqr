@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/constants";
@@ -212,6 +212,10 @@ export default function KitchenDisplay({ restaurant }: Props) {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("menuqr_sound") !== "off";
   });
+  // Ref mirrors soundEnabled so the realtime channel never needs re-subscribing on toggle
+  const soundRef = useRef(soundEnabled);
+  useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [filter, setFilter] = useState<Filter>("food");
   const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
   const [clock, setClock] = useState("");
@@ -241,10 +245,11 @@ export default function KitchenDisplay({ restaurant }: Props) {
       .limit(100);
     setRequests((data as TableRequest[]) ?? []);
     setLoading(false);
+    setLastUpdated(Date.now());
   }, [restaurant.id]);
 
   function playPing() {
-    if (!soundEnabled) return;
+    if (!soundRef.current) return;
     try {
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -269,8 +274,13 @@ export default function KitchenDisplay({ restaurant }: Props) {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [restaurant.id, load, soundEnabled]);
+  }, [restaurant.id, load]);
+
+  // Polling fallback — guarantees fresh orders even if the realtime socket stalls
+  useEffect(() => {
+    const t = setInterval(load, 12_000);
+    return () => clearInterval(t);
+  }, [load]);
 
   // Brief scale-down before the card moves columns / disappears
   function moveAnimated(id: string, status: TableRequest["status"]) {
@@ -421,7 +431,11 @@ export default function KitchenDisplay({ restaurant }: Props) {
         <span style={{ fontSize: 14, color: "var(--text-muted)" }}>
           Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{freshCount}</strong>
         </span>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "var(--text-muted)" }}>P = start · D = done</span>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block", flexShrink: 0 }} />
+          Live · updated {lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "…"}
+        </span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>P = start · D = done</span>
       </div>
 
       {/* COLUMNS */}
