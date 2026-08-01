@@ -364,10 +364,12 @@ export default function LiveOrders({ restaurant }: Props) {
         @keyframes lo-slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
-        .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+        .lo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
         .lo-columns { display: flex; gap: 24px; align-items: stretch; }
-        .lo-columns > section { flex: 1; min-width: 0; }
-        @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; } .lo-columns { flex-direction: column; } }
+        .lo-columns > section { flex: 1; min-width: 0; height: calc(100vh - 240px); }
+        .lo-grid::-webkit-scrollbar { width: 8px; }
+        .lo-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+        @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; overflow: visible; } .lo-columns { flex-direction: column; } .lo-columns > section { height: auto; } }
       `}</style>
 
       {/* Toolbar — compact one-line filters + stats */}

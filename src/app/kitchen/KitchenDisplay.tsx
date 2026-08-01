@@ -54,13 +54,13 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
 
 function bigBtn(variant: "outline" | "filled", color: string): React.CSSProperties {
   return {
-    height: 38, borderRadius: 9, padding: "0 14px",
+    height: 32, borderRadius: 8, padding: "0 12px",
     display: "inline-flex", alignItems: "center", gap: 6,
     cursor: "pointer", flexShrink: 0,
     background: variant === "filled" ? color : "transparent",
     color: variant === "filled" ? "white" : color,
     border: variant === "filled" ? "none" : `1.5px solid ${color}`,
-    fontSize: 14, fontWeight: 700,
+    fontSize: 13, fontWeight: 700,
   };
 }
 
@@ -87,10 +87,10 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
         border: "1px solid var(--border)",
         borderLeft: `4px solid ${leftAccent}`,
         borderRadius: 12,
-        padding: "14px 16px",
+        padding: "10px 14px",
         display: "flex",
         flexDirection: "column",
-        gap: 10,
+        gap: 8,
         animation: "kd-slideIn 0.18s ease-out",
         transition: "transform 0.15s ease, opacity 0.15s ease",
       }}
@@ -131,7 +131,7 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
           {itemLines.map((line, i) => (
             <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
               <span aria-hidden="true" style={{ color: accent, fontWeight: 800, fontSize: 15 }}>&bull;</span>
-              <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.4, whiteSpace: "pre-line" }}>{line}</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.35, whiteSpace: "pre-line" }}>{line}</span>
             </div>
           ))}
         </div>
@@ -145,7 +145,7 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
       )}
 
       {/* Actions */}
-      <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+      <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
         {onPickUp && (
           <button onClick={onPickUp} aria-label="Start preparing" title="Start preparing" style={bigBtn("outline", "#3b82f6")}>
             <IconArrowRight width={15} height={15} /> Start
