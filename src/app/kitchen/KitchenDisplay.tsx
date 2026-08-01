@@ -95,14 +95,15 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
         transition: "transform 0.15s ease, opacity 0.15s ease",
       }}
     >
-      {/* Top row: type badge | table | time */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+      {/* Meta row — type | table ······ time, one organized line */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexWrap: "nowrap" }}>
         <span style={{
           display: "inline-flex", alignItems: "center",
           background: "transparent", color: accent,
           border: `1.5px solid ${accent}`,
           fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
           textTransform: "uppercase", letterSpacing: "0.03em",
+          flexShrink: 0,
         }}>
           {TYPE_LABEL[req.type] ?? req.type}
         </span>
@@ -110,15 +111,16 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
           display: "inline-flex", alignItems: "center", gap: 6,
           background: "var(--bg)", color: "var(--text)",
           fontSize: 13, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
+          minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 1,
         }}>
-          <IconTable width={12} height={12} style={{ color: "var(--text-muted)" }} />
-          {tableName}
+          <IconTable width={12} height={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tableName}</span>
         </span>
         <span style={{
           marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6,
           fontSize: 13, fontWeight: isLate ? 700 : 500,
           color: isLate ? "#d97706" : "var(--text-muted)",
-          whiteSpace: "nowrap",
+          whiteSpace: "nowrap", flexShrink: 0,
         }}>
           {isLate && <IconClock width={12} height={12} />}
           {timeText}

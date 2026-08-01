@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { SkeletonList } from "@/components/Skeleton";
@@ -71,17 +71,32 @@ function RequestCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
         transition: "transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease",
       }}
     >
-      {/* Type badge */}
-      <span style={{
-        display: "inline-flex", alignItems: "center",
-        alignSelf: "flex-start",
-        background: "transparent", color: accent,
-        border: `1px solid ${accent}`,
-        fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 99,
-        textTransform: "uppercase", letterSpacing: "0.03em",
-      }}>
-        {TYPE_LABEL[req.type] ?? req.type}
-      </span>
+      {/* Meta row — type | table ······ time, one organized line */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexWrap: "nowrap" }}>
+        <span style={{
+          display: "inline-flex", alignItems: "center",
+          background: "transparent", color: accent,
+          border: `1px solid ${accent}`,
+          fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 99,
+          textTransform: "uppercase", letterSpacing: "0.03em",
+          flexShrink: 0,
+        }}>
+          {TYPE_LABEL[req.type] ?? req.type}
+        </span>
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          background: "var(--bg)", color: "var(--text-muted)",
+          fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
+          minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 1,
+        }}>
+          <IconTable width={12} height={12} style={{ flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tableName}</span>
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: isLate ? "#d97706" : "var(--text-muted)", fontWeight: isLate ? 600 : 400, whiteSpace: "nowrap", flexShrink: 0, marginLeft: "auto" }}>
+          {isLate && <IconClock width={12} height={12} />}
+          {timeText}
+        </span>
+      </div>
 
       {/* Item details */}
       {itemLines.length > 0 && (
@@ -104,38 +119,23 @@ function RequestCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
         </span>
       )}
 
-      {/* Bottom row: table pill | time | actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-        <span style={{
-          display: "inline-flex", alignItems: "center", gap: 5,
-          background: "var(--bg)", color: "var(--text-muted)",
-          fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
-        }}>
-          <IconTable width={12} height={12} />
-          {tableName}
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: isLate ? "#d97706" : "var(--text-muted)", fontWeight: isLate ? 600 : 400, whiteSpace: "nowrap" }}>
-          {isLate && <IconClock width={12} height={12} />}
-          {timeText}
-        </span>
-
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          {onPickUp && (
-            <button onClick={onPickUp} aria-label="Pick up — move to In Progress" title="Pick up" style={circleBtn("outline", "#3b82f6")}>
-              <IconArrowRight width={16} height={16} />
-            </button>
-          )}
-          {onDone && (
-            <button onClick={onDone} aria-label="Mark done" title="Done" style={circleBtn("filled", "#22c55e")}>
-              <IconCheck width={16} height={16} strokeWidth={2.5} />
-            </button>
-          )}
-          {onUndo && (
-            <button onClick={onUndo} aria-label="Undo — move back to New" title="Move back to New" style={circleBtn("outline", "var(--text-muted)")}>
-              <IconHistory width={15} height={15} />
-            </button>
-          )}
-        </div>
+      {/* Actions */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 2 }}>
+        {onPickUp && (
+          <button onClick={onPickUp} aria-label="Pick up — move to In Progress" title="Pick up" style={circleBtn("outline", "#3b82f6")}>
+            <IconArrowRight width={16} height={16} />
+          </button>
+        )}
+        {onDone && (
+          <button onClick={onDone} aria-label="Mark done" title="Done" style={circleBtn("filled", "#22c55e")}>
+            <IconCheck width={16} height={16} strokeWidth={2.5} />
+          </button>
+        )}
+        {onUndo && (
+          <button onClick={onUndo} aria-label="Undo — move back to New" title="Move back to New" style={circleBtn("outline", "var(--text-muted)")}>
+            <IconHistory width={15} height={15} />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -202,6 +202,9 @@ export default function LiveOrders({ restaurant }: Props) {
     if (typeof window === "undefined") return true;
     return localStorage.getItem("menuqr_sound") !== "off";
   });
+  // Ref mirrors soundEnabled so the realtime channel never needs re-subscribing on toggle
+  const soundRef = useRef(soundEnabled);
+  useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
   const [searchTable, setSearchTable] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
@@ -226,7 +229,7 @@ export default function LiveOrders({ restaurant }: Props) {
   }, [restaurant.id]);
 
   function playPing() {
-    if (!soundEnabled) return;
+    if (!soundRef.current) return;
     try {
       const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
@@ -251,7 +254,13 @@ export default function LiveOrders({ restaurant }: Props) {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [restaurant.id, load, soundEnabled]);
+  }, [restaurant.id, load]);
+
+  // Polling fallback — guarantees fresh orders even if the realtime socket stalls
+  useEffect(() => {
+    const t = setInterval(load, 12_000);
+    return () => clearInterval(t);
+  }, [load]);
 
   // Brief scale-down on the card before it moves columns / disappears
   function moveAnimated(id: string, status: TableRequest["status"]) {
