@@ -187,19 +187,17 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
           padding: "1px 10px", borderRadius: 99, minWidth: 22, textAlign: "center",
         }}>{count}</span>
       </div>
-      {isEmpty ? (
-        <div className="kd-empty" style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: 10, padding: "48px 16px",
-          background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 12,
-          color: "var(--text-muted)",
-        }}>
-          <IconInbox width={26} height={26} />
-          <span style={{ fontSize: 13.5 }}>{emptyText}</span>
-        </div>
-      ) : (
-        <div className="kd-grid">{children}</div>
-      )}
+      {/* Permanent board frame — the empty-state box is always present, orders render inside it */}
+      <div className="kd-panel">
+        {isEmpty ? (
+          <div className="kd-empty">
+            <IconInbox width={26} height={26} />
+            <span>{emptyText}</span>
+          </div>
+        ) : (
+          <div className="kd-grid">{children}</div>
+        )}
+      </div>
     </section>
   );
 }
@@ -364,13 +362,14 @@ export default function KitchenDisplay({ restaurant }: Props) {
         @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
-        .kd-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
-        .kd-empty { flex: 1; min-height: 0; overflow-y: auto; }
+        .kd-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-content: start; }
+        .kd-panel { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; }
+        .kd-empty { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10; color: var(--text-muted); font-size: 13.5px; }
         .kd-columns { display: flex; gap: 22px; align-items: stretch; }
         .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 165px); }
-        .kd-grid::-webkit-scrollbar, .kd-empty::-webkit-scrollbar { width: 8px; }
-        .kd-grid::-webkit-scrollbar-thumb, .kd-empty::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-        @media (max-width: 900px) { .kd-grid { grid-template-columns: 1fr; overflow: visible; } .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } }
+        .kd-panel::-webkit-scrollbar { width: 8px; }
+        .kd-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+        @media (max-width: 900px) { .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } .kd-panel { overflow: visible; } }
       `}</style>
 
       {/* HEADER */}

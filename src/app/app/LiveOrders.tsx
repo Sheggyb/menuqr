@@ -175,19 +175,17 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
         }}>{count}</span>
       </div>
 
-      {isEmpty ? (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          gap: 10, padding: "48px 16px", flex: 1,
-          background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: 12,
-          color: "var(--text-muted)",
-        }}>
-          <IconInbox width={24} height={24} />
-          <span style={{ fontSize: 13 }}>{emptyText}</span>
-        </div>
-      ) : (
-        <div className="lo-grid">{children}</div>
-      )}
+      {/* Permanent board frame — the empty-state box is always present, orders render inside it */}
+      <div className="lo-panel">
+        {isEmpty ? (
+          <div className="lo-empty">
+            <IconInbox width={24} height={24} />
+            <span>{emptyText}</span>
+          </div>
+        ) : (
+          <div className="lo-grid">{children}</div>
+        )}
+      </div>
     </section>
   );
 }
@@ -364,12 +362,14 @@ export default function LiveOrders({ restaurant }: Props) {
         @keyframes lo-slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
-        .lo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
+        .lo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-content: start; }
+        .lo-panel { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; }
+        .lo-empty { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10; color: var(--text-muted); font-size: 13px; }
         .lo-columns { display: flex; gap: 24px; align-items: stretch; }
         .lo-columns > section { flex: 1; min-width: 0; height: calc(100vh - 240px); }
-        .lo-grid::-webkit-scrollbar { width: 8px; }
-        .lo-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-        @media (max-width: 640px) { .lo-grid { grid-template-columns: 1fr; overflow: visible; } .lo-columns { flex-direction: column; } .lo-columns > section { height: auto; } }
+        .lo-panel::-webkit-scrollbar { width: 8px; }
+        .lo-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+        @media (max-width: 640px) { .lo-columns { flex-direction: column; } .lo-columns > section { height: auto; } .lo-panel { overflow: visible; } }
       `}</style>
 
       {/* Toolbar — compact one-line filters + stats */}
