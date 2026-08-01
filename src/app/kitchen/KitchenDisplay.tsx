@@ -366,8 +366,8 @@ export default function KitchenDisplay({ restaurant }: Props) {
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
         .kd-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; align-content: start; flex: 1; min-height: 0; overflow-y: auto; }
         .kd-empty { flex: 1; min-height: 0; overflow-y: auto; }
-        .kd-columns { display: flex; gap: 22px; align-items: stretch; justify-content: center; }
-        .kd-columns > section { flex: 1; min-width: 0; max-width: 460px; height: calc(100vh - 165px); }
+        .kd-columns { display: flex; gap: 22px; align-items: stretch; }
+        .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 165px); }
         .kd-grid::-webkit-scrollbar, .kd-empty::-webkit-scrollbar { width: 8px; }
         .kd-grid::-webkit-scrollbar-thumb, .kd-empty::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
         @media (max-width: 900px) { .kd-grid { grid-template-columns: 1fr; overflow: visible; } .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } }

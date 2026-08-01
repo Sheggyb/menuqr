@@ -199,7 +199,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       `}</style>
 
       {/* CONTENT */}
-      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "28px 24px" }}>
+      <main style={{ padding: "28px 24px" }}>
         {tab === "orders" && <ErrorBoundary fallbackTitle="Failed to load orders"><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
         {tab === "menu" && <ErrorBoundary fallbackTitle="Failed to load menu"><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
         {tab === "tables" && <ErrorBoundary fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
