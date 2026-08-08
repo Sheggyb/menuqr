@@ -479,7 +479,12 @@ export default function MenuBuilder({ restaurant }: Props) {
         <div style={{ textAlign: "center", padding: "64px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: 14, border: "2px dashed var(--border)" }}>
           <div style={{ marginBottom: 12 }}><IconDish width={36} height={36} style={{ color: "var(--text-muted)", opacity: 0.7 }} /></div>
           <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>Your menu is empty</p>
-          <p style={{ fontSize: 13 }}>Click <strong>+ Category</strong> above to get started</p>
+          <p style={{ fontSize: 13, marginBottom: 16 }}>Start by adding your first category</p>
+          <button
+            className="btn-primary"
+            onClick={() => setAddingCategory(true)}
+            style={{ whiteSpace: "nowrap", fontSize: 13, padding: "8px 18px" }}
+          >+ Category</button>
         </div>
       ) : (
         <div className="menu-builder-layout">
