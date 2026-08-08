@@ -49,7 +49,6 @@ function icon(path: React.ReactNode, size = 20) {
 const IconDish = (size = 40) => icon(<><path d="M4 16a8 8 0 0 1 16 0" /><path d="M12 8V6" /><path d="M2.5 16h19" /><path d="M5 20h14" /></>, size);
 const IconClock = (size = 40) => icon(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>, size);
 const IconLock = (size = 40) => icon(<><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7.5a4 4 0 0 1 8 0V11" /></>, size);
-const IconCheck = (size = 40) => icon(<><circle cx="12" cy="12" r="8.5" /><path d="M8.5 12.2l2.4 2.4 4.6-5" /></>, size);
 const IconBell = (size = 20) => icon(<><path d="M18 9.5a6 6 0 0 0-12 0c0 5-2 6-2 6h16s-2-1-2-6" /><path d="M10.3 19.5a2 2 0 0 0 3.4 0" /></>, size);
 const IconCard = (size = 20) => icon(<><rect x="3" y="6" width="18" height="13" rx="2" /><path d="M3 10.5h18" /></>, size);
 const IconRefresh = (size = 20) => icon(<><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6" /><path d="M20.5 3.5v4h-4" /></>, size);
@@ -88,7 +87,6 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [noteFor, setNoteFor] = useState<{ item: MenuItem } | null>(null);
   const [noteText, setNoteText] = useState("");
   const [qty, setQty] = useState(1);
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
   const [sessionPanelOpen, setSessionPanelOpen] = useState(false);
 
@@ -337,7 +335,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
       saveSessionRequest(data.id ?? crypto.randomUUID(), combinedName, 1, totalPrice);
       setCart([]);
       setCartOpen(false);
-      setShowConfirmation(true);
+      showToast("Order sent");
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
@@ -475,29 +473,6 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         <h1 style={{ fontWeight: 700, fontSize: 26, color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>We&apos;re closed</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, lineHeight: 1.7 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
         <div style={{ marginTop: 32, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", borderTop: "1px solid var(--border)", paddingTop: 16 }}>{restaurant.name}</div>
-      </div>
-    );
-  }
-
-  // --- CONFIRMATION SCREEN ---
-  if (showConfirmation) {
-    return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
-        <style>{`
-          @keyframes gmScaleIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-          @keyframes gmFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        `}</style>
-        <div aria-hidden="true" style={{ animation: "gmScaleIn 0.45s cubic-bezier(0.32, 0.72, 0, 1)", color: accentColor, marginBottom: 28 }}>{IconCheck(52)}</div>
-        <h1 style={{ color: "var(--text)", fontWeight: 700, fontSize: 30, margin: "0 0 12px", fontFamily: "'Playfair Display', serif", animation: "gmFadeUp 0.4s ease 0.15s both" }}>Order sent</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: 16, marginBottom: 40, animation: "gmFadeUp 0.4s ease 0.28s both", maxWidth: 300, lineHeight: 1.7 }}>
-          Your order is with the kitchen. Sit back and relax.
-        </p>
-        <button
-          onClick={() => setShowConfirmation(false)}
-          style={{ padding: "14px 40px", borderRadius: 12, background: accentColor, color: "#fff", border: "none", fontWeight: 600, fontSize: 15, letterSpacing: "0.01em", cursor: "pointer", animation: "gmFadeUp 0.4s ease 0.4s both", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}
-        >
-          Back to menu
-        </button>
       </div>
     );
   }
