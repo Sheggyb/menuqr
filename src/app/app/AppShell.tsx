@@ -110,7 +110,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               src={restaurant.logo_url}
               alt=""
               referrerPolicy="no-referrer"
-              style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover", border: "1px solid var(--border)", flexShrink: 0 }}
+              style={{ height: 22, width: "auto", maxWidth: 120, objectFit: "contain", borderRadius: 4, border: "1px solid var(--border)", flexShrink: 0 }}
             />
           )}
           <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/ {restaurant.name}</span>

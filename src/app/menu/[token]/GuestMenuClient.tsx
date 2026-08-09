@@ -556,7 +556,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               src={restaurant.logo_url}
               alt={`${restaurant.name} logo`}
               referrerPolicy="no-referrer"
-              style={{ width: 46, height: 46, borderRadius: 12, objectFit: "cover", border: "1px solid var(--border)", flexShrink: 0, background: "var(--surface)" }}
+              style={{ height: 46, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, background: "var(--surface)", borderRadius: 8, border: "1px solid var(--border)" }}
             />
           )}
           <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14, minWidth: 0 }}>

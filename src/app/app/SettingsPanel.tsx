@@ -56,6 +56,7 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [error, setError] = useState("");
   const [accentError, setAccentError] = useState("");
   const [nameError, setNameError] = useState("");
+  const [logoError, setLogoError] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -259,11 +260,38 @@ export default function SettingsPanel({ restaurant }: Props) {
               <label style={labelStyle}>Logo URL</label>
               <input
                 value={logoUrl}
-                onChange={e => setLogoUrl(e.target.value)}
+                onChange={e => { setLogoUrl(e.target.value); setLogoError(false); }}
                 onBlur={() => persist()}
                 placeholder="https://…"
                 style={inputStyle}
               />
+              {logoUrl.trim() && (
+                <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      minHeight: 64, padding: "6px 10px",
+                      background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
+                    }}
+                  >
+                    <img
+                      src={logoUrl.trim()}
+                      alt="Logo preview"
+                      referrerPolicy="no-referrer"
+                      onLoad={() => setLogoError(false)}
+                      onError={() => setLogoError(true)}
+                      style={{ maxHeight: 56, maxWidth: 180, objectFit: "contain" }}
+                    />
+                  </div>
+                  {logoError ? (
+                    <span style={{ color: "#dc2626", fontSize: 12 }}>Couldn't load that image — check the URL</span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                      Preview — shown in the guest menu header and dashboard header. Height-capped, never cropped.
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </Section>
 
