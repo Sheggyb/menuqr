@@ -550,9 +550,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
       {/* HEADER */}
       <header style={{ background: "var(--bg)", padding: "22px 20px 18px", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14 }}>
-          <h1 style={{ fontWeight: 700, fontSize: 21, margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
-          <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: 12, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          {restaurant.logo_url && (
+            <img
+              src={restaurant.logo_url}
+              alt={`${restaurant.name} logo`}
+              referrerPolicy="no-referrer"
+              style={{ width: 46, height: 46, borderRadius: 12, objectFit: "cover", border: "1px solid var(--border)", flexShrink: 0, background: "var(--surface)" }}
+            />
+          )}
+          <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14, minWidth: 0 }}>
+            <h1 style={{ fontWeight: 700, fontSize: 21, margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
+            <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: 12, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
+          </div>
         </div>
       </header>
 

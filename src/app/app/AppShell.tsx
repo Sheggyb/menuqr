@@ -105,6 +105,14 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       <header style={{ background: resolvedTheme === "dark" ? "rgba(18,18,21,0.92)" : "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 20, color: resolvedTheme === "dark" ? "#d4a830" : "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
+          {restaurant.logo_url && (
+            <img
+              src={restaurant.logo_url}
+              alt=""
+              referrerPolicy="no-referrer"
+              style={{ width: 22, height: 22, borderRadius: 6, objectFit: "cover", border: "1px solid var(--border)", flexShrink: 0 }}
+            />
+          )}
           <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/ {restaurant.name}</span>
         </div>
         {clock && <span style={{ fontSize: 12, color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
