@@ -47,11 +47,15 @@ export async function POST(req: Request) {
   // Validate table is still open
   const { data: table } = await supabase
     .from("restaurant_tables")
-    .select("is_active")
+    .select("is_active, restaurant_id")
     .eq("id", table_id)
     .single();
 
   if (!table?.is_active) return forbidden("table_closed");
+
+  // Derive the restaurant server-side from the table — never trust the
+  // client-supplied restaurant_id (a guest could post to another restaurant).
+  const restaurantId = table.restaurant_id;
 
   // Dedup quick actions: one open (pending/seen) request per type per table
   if (type === "waiter" || type === "bill" || type === "refill") {
@@ -70,7 +74,7 @@ export async function POST(req: Request) {
   const { data: inserted, error } = await supabase
     .from("table_requests")
     .insert({
-      restaurant_id,
+      restaurant_id: restaurantId,
       table_id,
       type,
       item_id: item_id ?? null,

@@ -35,6 +35,7 @@ function Section({ title, first, children }: { title: string; first?: boolean; c
 }
 
 const ACCENT_PRESETS = ["#E85D2F", "#2563eb", "#059669", "#7c3aed", "#db2777"];
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 export default function SettingsPanel({ restaurant }: Props) {
   const supabase = createClient();
@@ -55,6 +56,7 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [accentError, setAccentError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -107,9 +109,17 @@ export default function SettingsPanel({ restaurant }: Props) {
     name: string; accent: string; logoUrl: string;
     quickActions: string[]; venueType: Restaurant["venue_type"]; currency: string;
   }> = {}) {
+    const finalAccent = (override.accent ?? accent).trim();
+    // Never persist an invalid accent color — the guest menu uses it raw as a CSS color
+    if (!HEX_RE.test(finalAccent)) {
+      setAccentError("Enter a valid hex color, e.g. #E85D2F");
+      toast.error("Invalid accent color — not saved");
+      return;
+    }
+    setAccentError("");
     const payload = {
       name: (override.name ?? name).trim(),
-      accent_color: override.accent ?? accent,
+      accent_color: finalAccent,
       logo_url: ((override.logoUrl ?? logoUrl).trim()) || null,
       quick_actions: override.quickActions ?? quickActions,
       venue_type: override.venueType ?? venueType,
@@ -146,11 +156,8 @@ export default function SettingsPanel({ restaurant }: Props) {
     }
     setDeleting(true);
     setDeleteError("");
-    // Delete related data first
-    await supabase.from("table_requests").delete().eq("restaurant_id", restaurant.id);
-    await supabase.from("menu_items").delete().eq("restaurant_id", restaurant.id);
-    await supabase.from("menu_categories").delete().eq("restaurant_id", restaurant.id);
-    await supabase.from("restaurant_tables").delete().eq("restaurant_id", restaurant.id);
+    // Child tables (table_requests, menu_items, menu_categories, restaurant_tables)
+    // cascade on delete in the schema — deleting the restaurant row removes everything.
     const { error: err } = await supabase.from("restaurants").delete().eq("id", restaurant.id);
     if (err) {
       setDeleteError(err.message);
@@ -211,10 +218,13 @@ export default function SettingsPanel({ restaurant }: Props) {
                 />
                 <input
                   value={accent}
-                  onChange={e => setAccent(e.target.value)}
+                  onChange={e => {
+                    setAccent(e.target.value);
+                    if (HEX_RE.test(e.target.value.trim())) setAccentError("");
+                  }}
                   onBlur={() => persist()}
                   placeholder="#E85D2F"
-                  style={{ ...inputStyle, width: 130, fontFamily: "monospace", fontSize: 13 }}
+                  style={{ ...inputStyle, width: 130, fontFamily: "monospace", fontSize: 13, border: accentError ? "1px solid #dc2626" : "1px solid var(--border)" }}
                 />
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -222,7 +232,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                   <button
                     key={c}
                     type="button"
-                    onClick={() => { setAccent(c); persist({ accent: c }); }}
+                    onClick={() => { setAccent(c); setAccentError(""); persist({ accent: c }); }}
                     aria-label={`Use ${c}`}
                     title={c}
                     style={{
@@ -235,6 +245,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                   />
                 ))}
               </div>
+              {accentError && <p style={{ color: "#dc2626", fontSize: 13, margin: "6px 0 0" }}>{accentError}</p>}
               <p style={metaStyle}>Used on guest menus as the brand color.</p>
             </div>
 

@@ -51,8 +51,8 @@ create policy "Owner manage tables" on restaurant_tables
   );
 -- Guests can read active tables by token (no auth)
 drop policy if exists "Public read tables by token" on restaurant_tables;
-create policy "Public read tables by token" on restaurant_tables
-  for select using (is_active = true);
+-- NOTE: public read of table tokens removed (2026-08 audit 1.2) — guest menu
+-- reads server-side via admin client, so no anon policy is needed.
 
 -- ------------------------------------------------------------
 -- MENU CATEGORIES
@@ -74,8 +74,7 @@ create policy "Owner manage categories" on menu_categories
     auth.uid() = (select owner_id from restaurants where id = restaurant_id)
   );
 drop policy if exists "Public read categories" on menu_categories;
-create policy "Public read categories" on menu_categories
-  for select using (true);
+-- NOTE: public read of categories removed (2026-08 audit 1.2).
 
 -- ------------------------------------------------------------
 -- MENU ITEMS
@@ -101,8 +100,7 @@ create policy "Owner manage items" on menu_items
     auth.uid() = (select owner_id from restaurants where id = restaurant_id)
   );
 drop policy if exists "Public read available items" on menu_items;
-create policy "Public read available items" on menu_items
-  for select using (is_available = true);
+-- NOTE: public read of menu items removed (2026-08 audit 1.2).
 
 -- ------------------------------------------------------------
 -- TABLE REQUESTS (orders / waiter / bill / refill)
@@ -128,8 +126,8 @@ create policy "Owner manage requests" on table_requests
   );
 -- Guests insert requests through the API (validated + rate limited server-side)
 drop policy if exists "Public insert requests" on table_requests;
-create policy "Public insert requests" on table_requests
-  for insert with check (true);
+-- NOTE: public insert of table_requests removed (2026-08 audit 1.1) — guests
+-- order via POST /api/order (admin client), never directly.
 
 -- ------------------------------------------------------------
 -- TABLE SESSIONS (guest approval flow)

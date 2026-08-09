@@ -39,7 +39,10 @@ function LoginForm() {
       } else {
         try { localStorage.removeItem("menuqr_remember_email"); } catch { /* ignore */ }
       }
-      router.push(searchParams.get("redirectTo") || "/app");
+      // Only allow same-origin relative paths — never an external redirect
+      const redirectTo = searchParams.get("redirectTo");
+      const safePath = redirectTo && /^\/(?!\/)/.test(redirectTo) ? redirectTo : "/app";
+      router.push(safePath);
     }
   }
 
