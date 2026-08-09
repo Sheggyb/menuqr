@@ -74,12 +74,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               )}
               <div style={{ display: "flex", gap: 10, marginTop: options.message ? 0 : 24 }}>
                 <button
-                  autoFocus={!options.danger}
+                  autoFocus={!!options.danger}
                   onClick={() => close(false)}
                   style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}
                 >Cancel</button>
                 <button
-                  autoFocus={!!options.danger}
+                  autoFocus={!options.danger}
                   onClick={() => close(true)}
                   style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: options.danger ? "#dc2626" : "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
                 >{options.confirmLabel ?? "Confirm"}</button>

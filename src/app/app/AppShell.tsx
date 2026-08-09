@@ -27,6 +27,10 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [tab, setTab] = useState<Tab>("orders");
   const [restaurantVersion, setRestaurantVersion] = useState(0);
+  // Signature of the last restaurant row we fetched — remounts only happen when
+  // the data actually CHANGED, not on every tab switch (avoids double-mounting
+  // every panel and tearing down LiveOrders' realtime channel for nothing)
+  const lastFetchedSig = useRef<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [clock, setClock] = useState("");
   const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -71,11 +75,19 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       .eq("id", restaurant.id)
       .single()
       .then(({ data }) => {
-        if (data) {
+        if (!data) return;
+        const sig = `${data.updated_at}|${data.name}|${data.currency}|${data.accent_color}|${data.venue_type}|${JSON.stringify(data.quick_actions)}|${data.logo_url ?? ""}`;
+        // First fetch: just sync the prop, no remount needed.
+        if (lastFetchedSig.current === null) {
+          lastFetchedSig.current = sig;
+          setRestaurant(data as Restaurant);
+          return;
+        }
+        if (sig !== lastFetchedSig.current) {
+          lastFetchedSig.current = sig;
           setRestaurant(data as Restaurant);
           // Bump the version so the ACTIVE panel remounts with the fresh prop —
-          // otherwise a panel mounted before the refetch lands keeps stale
-          // useState(restaurant.x) values until the next tab switch (audit 4)
+          // only when the data really changed (audit 4)
           setRestaurantVersion(v => v + 1);
         }
       });

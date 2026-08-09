@@ -136,7 +136,9 @@ export default function MenuBuilder({ restaurant }: Props) {
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
   // Load data — defined at component level so drag handlers can reload on
-  // failed reorder saves (audit 3.6)
+  // failed reorder saves (audit 3.6). Deps are [restaurant.id] ONLY — seeding
+  // selectedCatId must NOT be in here or every category click refetches all
+  // categories + items.
   const load = useCallback(async () => {
     const [{ data: cats }, { data: its }] = await Promise.all([
       supabase.from("menu_categories").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
@@ -146,11 +148,15 @@ export default function MenuBuilder({ restaurant }: Props) {
     const loadedItems = (its ?? []) as MenuItem[];
     setCategories(loadedCats);
     setItems(loadedItems);
-    if (loadedCats.length > 0 && !selectedCatId) setSelectedCatId(loadedCats[0].id);
     setLoading(false);
-  }, [restaurant.id, selectedCatId]);
+  }, [restaurant.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Seed the initially selected category once categories arrive
+  useEffect(() => {
+    if (!selectedCatId && categories.length > 0) setSelectedCatId(categories[0].id);
+  }, [selectedCatId, categories]);
 
   // Focus edit input when editing starts
   useEffect(() => {
@@ -357,10 +363,18 @@ export default function MenuBuilder({ restaurant }: Props) {
     setItems(updated);
 
     // One batched upsert = atomic — a partial failure can't leave a mixed
-    // order (audit 3.6)
+    // order (audit 3.6). NOTE: PostgREST upsert = INSERT…ON CONFLICT DO UPDATE,
+    // and Postgres enforces NOT NULL on the proposed row — so all NOT NULL
+    // columns (restaurant_id, category_id, name) must be included.
     const { error } = await supabase
       .from("menu_items")
-      .upsert(reordered.map((item, i) => ({ id: item.id, sort_order: i })));
+      .upsert(reordered.map((item, i) => ({
+        id: item.id,
+        restaurant_id: item.restaurant_id,
+        category_id: item.category_id,
+        name: item.name,
+        sort_order: i,
+      })));
     if (error) {
       toast.error("Could not save the new order");
       await load(); // reload from server — don't trust the local snapshot
@@ -562,10 +576,17 @@ export default function MenuBuilder({ restaurant }: Props) {
                         const [moved] = reordered.splice(sourceIdx, 1);
                         reordered.splice(targetIdx, 0, moved);
                         setCategories(reordered);
-                        // One batched upsert = atomic (audit 3.6)
+                        // One batched upsert = atomic (audit 3.6). Include all
+                        // NOT NULL columns — Postgres checks them on the
+                        // proposed row before ON CONFLICT resolves.
                         const { error } = await supabase
                           .from("menu_categories")
-                          .upsert(reordered.map((c, i) => ({ id: c.id, sort_order: i })));
+                          .upsert(reordered.map((c, i) => ({
+                            id: c.id,
+                            restaurant_id: c.restaurant_id,
+                            name: c.name,
+                            sort_order: i,
+                          })));
                         if (error) {
                           toast.error("Could not save the new order");
                           await load();
