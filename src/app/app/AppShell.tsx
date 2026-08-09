@@ -59,6 +59,19 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
     return () => { supabase.removeChannel(channel); };
   }, [restaurant?.id]);
 
+  // Re-fetch the restaurant whenever the tab changes so Settings / Menu Builder
+  // remount with freshly saved values (fixes changes appearing to "not stick"
+  // — e.g. currency reverting to SEK after switching tabs).
+  useEffect(() => {
+    if (!restaurant) return;
+    supabase
+      .from("restaurants")
+      .select("*")
+      .eq("id", restaurant.id)
+      .single()
+      .then(({ data }) => { if (data) setRestaurant(data as Restaurant); });
+  }, [tab, restaurant?.id]);
+
   if (!restaurant) {
     return <SetupRestaurant userId={user.id} onCreated={setRestaurant} />;
   }
