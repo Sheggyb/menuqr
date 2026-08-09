@@ -7,7 +7,7 @@ export interface Restaurant {
   accent_color: string;
   quick_actions: string[];
   venue_type: "table_service" | "cafe" | "takeaway";
-  currency?: string;
+  currency: string; // NOT NULL in schema, default 'SEK'
   created_at: string;
 }
 

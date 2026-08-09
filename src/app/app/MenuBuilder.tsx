@@ -49,7 +49,6 @@ export default function MenuBuilder({ restaurant }: Props) {
   const confirm = useConfirm();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
-  const [allItems, setAllItems] = useState<MenuItem[]>([]);
   const [selectedCatId, setSelectedCatId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,12 +75,8 @@ export default function MenuBuilder({ restaurant }: Props) {
     setCtxMenu({ x: e.clientX, y: e.clientY, items });
   }, []);
 
-  // Currency — restaurant.currency (DB, saved in Settings) is the source of truth;
-  // localStorage is only a fallback for restaurants that never saved settings.
-  const [currency, setCurrency] = useState(() => {
-    if (restaurant.currency) return restaurant.currency;
-    try { return localStorage.getItem(`menuqr_currency_${restaurant.id}`) || "SEK"; } catch { return "SEK"; }
-  });
+  // Currency — source of truth is Settings (restaurant.currency, DB); display-only here
+  const [currency] = useState(() => restaurant.currency || "SEK");
   const currencySymbol = CURRENCIES[currency] ?? currency;
 
   // Add category
@@ -140,23 +135,22 @@ export default function MenuBuilder({ restaurant }: Props) {
   // Visual drag feedback for category reordering (thin accent line between rows)
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
-  // Load data
-  useEffect(() => {
-    async function load() {
-      const [{ data: cats }, { data: its }] = await Promise.all([
-        supabase.from("menu_categories").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
-        supabase.from("menu_items").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
-      ]);
-      const loadedCats = (cats ?? []) as MenuCategory[];
-      const loadedItems = (its ?? []) as MenuItem[];
-      setCategories(loadedCats);
-      setAllItems(loadedItems);
-      setItems(loadedItems);
-      if (loadedCats.length > 0 && !selectedCatId) setSelectedCatId(loadedCats[0].id);
-      setLoading(false);
-    }
-    load();
-  }, [restaurant.id]);
+  // Load data — defined at component level so drag handlers can reload on
+  // failed reorder saves (audit 3.6)
+  const load = useCallback(async () => {
+    const [{ data: cats }, { data: its }] = await Promise.all([
+      supabase.from("menu_categories").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
+      supabase.from("menu_items").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
+    ]);
+    const loadedCats = (cats ?? []) as MenuCategory[];
+    const loadedItems = (its ?? []) as MenuItem[];
+    setCategories(loadedCats);
+    setItems(loadedItems);
+    if (loadedCats.length > 0 && !selectedCatId) setSelectedCatId(loadedCats[0].id);
+    setLoading(false);
+  }, [restaurant.id, selectedCatId]);
+
+  useEffect(() => { load(); }, [load]);
 
   // Focus edit input when editing starts
   useEffect(() => {
@@ -179,7 +173,7 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   // When searching, show items from all categories
   const displayItems = searchQuery
-    ? allItems.filter(item =>
+    ? items.filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
       )
@@ -187,7 +181,7 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   // Aggregate item count per category
   const catItemCounts: Record<string, number> = {};
-  for (const item of allItems) {
+  for (const item of items) {
     catItemCounts[item.category_id] = (catItemCounts[item.category_id] ?? 0) + 1;
   }
 
@@ -198,7 +192,6 @@ export default function MenuBuilder({ restaurant }: Props) {
     if (error) { toast.error("Could not delete the category"); return; }
     toast.success("Category deleted");
     setCategories(c => c.filter(x => x.id !== id));
-    setAllItems(i => i.filter(x => x.category_id !== id));
     setItems(i => i.filter(x => x.category_id !== id));
     if (selectedCatId === id) {
       const remaining = categories.filter(x => x.id !== id);
@@ -233,13 +226,12 @@ export default function MenuBuilder({ restaurant }: Props) {
         name: q.name.trim(),
         price: q.price ? parseFloat(q.price) : null,
         is_available: true,
-        sort_order: allItems.filter(i => i.category_id === catId).length,
+        sort_order: items.filter(i => i.category_id === catId).length,
       })
       .select().single();
     if (error) { toast.error("Could not add the item"); return; }
     if (data) {
       const item = data as MenuItem;
-      setAllItems(i => [...i, item]);
       setItems(i => [...i, item]);
       setQuickAdds(prev => ({ ...prev, [catId]: { name: "", price: "" } }));
       setShowQuickAdd(false);
@@ -255,13 +247,12 @@ export default function MenuBuilder({ restaurant }: Props) {
         description: item.description ?? null,
         price: item.price ?? null,
         is_available: item.is_available,
-        sort_order: allItems.filter(i => i.category_id === item.category_id).length,
+        sort_order: items.filter(i => i.category_id === item.category_id).length,
       })
       .select().single();
     if (error) { toast.error("Could not duplicate the item"); return; }
     if (data) {
       const newItem = data as MenuItem;
-      setAllItems(i => [...i, newItem]);
       setItems(i => [...i, newItem]);
     }
   }
@@ -270,7 +261,6 @@ export default function MenuBuilder({ restaurant }: Props) {
     const { error } = await supabase.from("menu_items").update({ is_available: !item.is_available }).eq("id", item.id);
     if (error) { toast.error("Could not update the item"); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === item.id ? { ...x, is_available: !x.is_available } : x);
-    setAllItems(updater);
     setItems(updater);
   }
 
@@ -285,7 +275,6 @@ export default function MenuBuilder({ restaurant }: Props) {
     const { error } = await supabase.from("menu_items").delete().eq("id", item.id);
     if (error) { toast.error("Could not delete the item"); return; }
     toast.success("Item deleted");
-    setAllItems(i => i.filter(x => x.id !== item.id));
     setItems(i => i.filter(x => x.id !== item.id));
   }
 
@@ -308,7 +297,6 @@ export default function MenuBuilder({ restaurant }: Props) {
     const { error } = await supabase.from("menu_items").update(update).eq("id", edit.itemId);
     if (error) { toast.error("Could not save changes"); setEdit(null); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === edit.itemId ? { ...x, ...update } as MenuItem : x);
-    setAllItems(updater);
     setItems(updater);
     setEdit(null);
   }
@@ -343,11 +331,11 @@ export default function MenuBuilder({ restaurant }: Props) {
     setDraggingItemId(null);
     setDragOverItemId(null);
     if (!draggedId || draggedId === targetItemId) return;
-    const sourceItem = allItems.find(i => i.id === draggedId);
+    const sourceItem = items.find(i => i.id === draggedId);
     if (!sourceItem) return;
 
     // Work from the already-sorted category slice
-    const catItems = allItems
+    const catItems = items
       .filter(i => i.category_id === sourceItem.category_id)
       .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
@@ -360,22 +348,22 @@ export default function MenuBuilder({ restaurant }: Props) {
     const [moved] = reordered.splice(sourceIdx, 1);
     reordered.splice(targetIdx, 0, moved);
 
-    // Stamp new sort_order values into allItems
-    const updated = allItems.map(item => {
+    // Stamp new sort_order values into items
+    const updated = items.map(item => {
       const newIdx = reordered.findIndex(r => r.id === item.id);
       return newIdx >= 0 ? { ...item, sort_order: newIdx } : item;
     });
 
-    setAllItems(updated);
     setItems(updated);
 
-    const results = await Promise.all(reordered.map((item, i) =>
-      supabase.from("menu_items").update({ sort_order: i }).eq("id", item.id)
-    ));
-    if (results.some(r => r.error)) {
+    // One batched upsert = atomic — a partial failure can't leave a mixed
+    // order (audit 3.6)
+    const { error } = await supabase
+      .from("menu_items")
+      .upsert(reordered.map((item, i) => ({ id: item.id, sort_order: i })));
+    if (error) {
       toast.error("Could not save the new order");
-      setAllItems(allItems);
-      setItems(allItems);
+      await load(); // reload from server — don't trust the local snapshot
     }
   }
 
@@ -492,21 +480,6 @@ export default function MenuBuilder({ restaurant }: Props) {
           <div className="menu-sidebar">
             {!addingCategory && (
               <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-                <select
-                  value={currency}
-                  onChange={async e => {
-                    const next = e.target.value;
-                    setCurrency(next);
-                    try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, next); } catch {}
-                    const { error } = await supabase.from("restaurants").update({ currency: next }).eq("id", restaurant.id);
-                    if (error) toast.error("Could not save the currency");
-                  }}
-                  style={{ flex: 1, padding: "5px 6px", fontSize: 11, fontWeight: 600, cursor: "pointer", borderRadius: 6, flexShrink: 0, height: 28 }}
-                >
-                  {Object.entries(CURRENCIES).map(([code, sym]) => (
-                    <option key={code} value={code}>{sym} {code}</option>
-                  ))}
-                </select>
                 <button
                   onClick={() => setAddingCategory(true)}
                   style={{ padding: "5px 10px", borderRadius: 6, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", flexShrink: 0, height: 28 }}
@@ -589,12 +562,13 @@ export default function MenuBuilder({ restaurant }: Props) {
                         const [moved] = reordered.splice(sourceIdx, 1);
                         reordered.splice(targetIdx, 0, moved);
                         setCategories(reordered);
-                        const results = await Promise.all(reordered.map((c, i) =>
-                          supabase.from("menu_categories").update({ sort_order: i }).eq("id", c.id)
-                        ));
-                        if (results.some(r => r.error)) {
+                        // One batched upsert = atomic (audit 3.6)
+                        const { error } = await supabase
+                          .from("menu_categories")
+                          .upsert(reordered.map((c, i) => ({ id: c.id, sort_order: i })));
+                        if (error) {
                           toast.error("Could not save the new order");
-                          setCategories(categories);
+                          await load();
                         }
                       }}
                       onContextMenu={(e) => openCtxMenu(e, [

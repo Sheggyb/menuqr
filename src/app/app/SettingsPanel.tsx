@@ -49,14 +49,13 @@ export default function SettingsPanel({ restaurant }: Props) {
   const [quickActions, setQuickActions] = useState<string[]>(
     restaurant.quick_actions ?? ["waiter", "bill", "refill"]
   );
-  const [currency, setCurrency] = useState(() => {
-    if (restaurant.currency) return restaurant.currency;
-    try { return localStorage.getItem(`menuqr_currency_${restaurant.id}`) || "SEK"; } catch { return "SEK"; }
-  });
+  // Currency — DB value is NOT NULL (default SEK), so it's the only source of truth
+  const [currency, setCurrency] = useState(() => restaurant.currency || "SEK");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
   const [accentError, setAccentError] = useState("");
+  const [nameError, setNameError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -125,7 +124,13 @@ export default function SettingsPanel({ restaurant }: Props) {
       venue_type: override.venueType ?? venueType,
       currency: override.currency ?? currency,
     };
-    if (!payload.name) return; // don't persist an empty required name
+    if (!payload.name) {
+      // Blanking the name saves nothing — say so instead of failing silently
+      setNameError("Restaurant name can't be empty");
+      toast.error("Restaurant name can't be empty");
+      return;
+    }
+    setNameError("");
     setSaving(true);
     setError("");
     const { error: err } = await supabase
@@ -198,11 +203,12 @@ export default function SettingsPanel({ restaurant }: Props) {
               <label style={labelStyle}>Restaurant name</label>
               <input
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => { setName(e.target.value); if (e.target.value.trim()) setNameError(""); }}
                 onBlur={() => persist()}
                 required
-                style={inputStyle}
+                style={{ ...inputStyle, border: nameError ? "1px solid #dc2626" : "1px solid var(--border)" }}
               />
+              {nameError && <p style={{ color: "#dc2626", fontSize: 13, margin: "6px 0 0" }}>{nameError}</p>}
             </div>
 
             <div>
@@ -329,7 +335,6 @@ export default function SettingsPanel({ restaurant }: Props) {
                 onChange={e => {
                   const v = e.target.value;
                   setCurrency(v);
-                  try { localStorage.setItem(`menuqr_currency_${restaurant.id}`, v); } catch { /* ignore */ }
                   persist({ currency: v });
                 }}
                 style={{ ...inputStyle, cursor: "pointer", maxWidth: 240 }}

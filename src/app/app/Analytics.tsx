@@ -58,16 +58,26 @@ export default function Analytics({ restaurant }: Props) {
     start.setDate(start.getDate() - 30);
     start.setHours(0, 0, 0, 0);
     setLoading(true);
-    supabase
-      .from("table_requests")
-      .select("*")
-      .eq("restaurant_id", restaurant.id)
-      .gte("created_at", start.toISOString())
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        setRequests((data as TableRequest[]) ?? []);
-        setLoading(false);
-      });
+    // Paginate past PostgREST's 1000-row cap so busy venues aren't silently
+    // undercounted (audit 2.1)
+    (async () => {
+      const all: TableRequest[] = [];
+      const PAGE = 1000;
+      for (let i = 0; i < 20; i++) {
+        const { data, error } = await supabase
+          .from("table_requests")
+          .select("*")
+          .eq("restaurant_id", restaurant.id)
+          .gte("created_at", start.toISOString())
+          .order("created_at", { ascending: true })
+          .range(i * PAGE, (i + 1) * PAGE - 1);
+        if (error || !data) break;
+        all.push(...(data as TableRequest[]));
+        if (data.length < PAGE) break;
+      }
+      setRequests(all);
+      setLoading(false);
+    })();
   }, [restaurant.id]);
 
   const days = range === "7d" ? 7 : 30;

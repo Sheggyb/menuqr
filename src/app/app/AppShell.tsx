@@ -26,6 +26,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [tab, setTab] = useState<Tab>("orders");
+  const [restaurantVersion, setRestaurantVersion] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
   const [clock, setClock] = useState("");
   const clockRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -69,7 +70,15 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       .select("*")
       .eq("id", restaurant.id)
       .single()
-      .then(({ data }) => { if (data) setRestaurant(data as Restaurant); });
+      .then(({ data }) => {
+        if (data) {
+          setRestaurant(data as Restaurant);
+          // Bump the version so the ACTIVE panel remounts with the fresh prop —
+          // otherwise a panel mounted before the refetch lands keeps stale
+          // useState(restaurant.x) values until the next tab switch (audit 4)
+          setRestaurantVersion(v => v + 1);
+        }
+      });
   }, [tab, restaurant?.id]);
 
   if (!restaurant) {
@@ -213,12 +222,12 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
 
       {/* CONTENT */}
       <main style={{ padding: "28px 24px" }}>
-        {tab === "orders" && <ErrorBoundary fallbackTitle="Failed to load orders"><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "menu" && <ErrorBoundary fallbackTitle="Failed to load menu"><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "tables" && <ErrorBoundary fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "analytics" && <ErrorBoundary fallbackTitle="Failed to load analytics"><Analytics restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "history" && <ErrorBoundary fallbackTitle="Failed to load history"><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "settings" && <ErrorBoundary fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "orders" && <ErrorBoundary key={`orders-${restaurantVersion}`} fallbackTitle="Failed to load orders"><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "menu" && <ErrorBoundary key={`menu-${restaurantVersion}`} fallbackTitle="Failed to load menu"><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "tables" && <ErrorBoundary key={`tables-${restaurantVersion}`} fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "analytics" && <ErrorBoundary key={`analytics-${restaurantVersion}`} fallbackTitle="Failed to load analytics"><Analytics restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "history" && <ErrorBoundary key={`history-${restaurantVersion}`} fallbackTitle="Failed to load history"><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "settings" && <ErrorBoundary key={`settings-${restaurantVersion}`} fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} /></ErrorBoundary>}
       </main>
     </div>
     </ConfirmProvider>

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import KitchenDisplay from "./KitchenDisplay";
+import { ToastProvider } from "@/components/Toast";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "Kitchen Display",
@@ -21,5 +23,13 @@ export default async function KitchenPage() {
 
   if (!restaurant) redirect("/app");
 
-  return <KitchenDisplay restaurant={restaurant} />;
+  // ToastProvider + ErrorBoundary so failed actions surface instead of
+  // silently reloading (audit 3.4 — kitchen had neither)
+  return (
+    <ErrorBoundary fallbackTitle="Failed to load kitchen">
+      <ToastProvider>
+        <KitchenDisplay restaurant={restaurant} />
+      </ToastProvider>
+    </ErrorBoundary>
+  );
 }

@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Restaurant, MenuCategory, MenuItem, TableRow } from "@/lib/types";
 
 interface Props {
@@ -59,7 +58,6 @@ const IconTick = (size = 18) => icon(<path d="M5 12.5l4.5 4.5L19 7.5" />, size);
 const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
 
 export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
-  const supabase = createClient();
   // Only show categories that actually have available items
   const itemCountByCategory: Record<string, number> = {};
   for (const item of items) {
@@ -70,17 +68,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [activeCategory, setActiveCategory] = useState(visibleCategories[0]?.id ?? "");
   const [toast, setToast] = useState("");
   const [tableActive, setTableActive] = useState(table.is_active);
-  const [sessionId, setSessionId] = useState<string | null>(() => {
-    try { return sessionStorage.getItem(`menuqr_sid_${table.id}`); } catch { return null; }
-  });
-  const [sessionStatus, setSessionStatus] = useState<"idle" | "pending" | "active" | "declined">(
-    () => {
-      try {
-        const stored = sessionStorage.getItem(`menuqr_sid_${table.id}`);
-        return stored ? "pending" : "idle"; // will be confirmed by poll
-      } catch { return "idle"; }
-    }
-  );
+  // Server-safe initial state; sessionStorage is read after mount (audit 2.7 —
+  // reading storage in state initializers causes hydration mismatches)
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionStatus, setSessionStatus] = useState<"idle" | "pending" | "active" | "declined">("idle");
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+      if (stored) {
+        setSessionId(stored);
+        setSessionStatus("pending"); // exact state confirmed by the poll
+      }
+    } catch { /* ignore */ }
+  }, [table.id]);
   const [sending, setSending] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
@@ -92,10 +92,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   // Quick-action (waiter/bill/refill) "already requested" state — per table, survives reload
   const quickStorageKey = `menuqr_qa_${table.id}`;
-  const [quickDone, setQuickDone] = useState<Partial<Record<QuickType, QuickDoneEntry>>>(() => {
+  const [quickDone, setQuickDone] = useState<Partial<Record<QuickType, QuickDoneEntry>>>({});
+  useEffect(() => {
     try {
       const raw = sessionStorage.getItem(`menuqr_qa_${table.id}`);
-      if (!raw) return {};
+      if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<Record<QuickType, QuickDoneEntry>>;
       const now = Date.now();
       const out: Partial<Record<QuickType, QuickDoneEntry>> = {};
@@ -103,9 +104,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
         const e = parsed[t];
         if (e && typeof e.ts === "number" && now - e.ts < QUICK_TTL_MS) out[t] = e;
       }
-      return out;
-    } catch { return {}; }
-  });
+      setQuickDone(out);
+    } catch { /* ignore */ }
+  }, [table.id]);
 
   function persistQuick(next: Partial<Record<QuickType, QuickDoneEntry>>) {
     setQuickDone(next);
@@ -170,15 +171,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
 
   const accentColor = restaurant.accent_color || "#E85D2F";
 
-  // Currency — prefer the value saved in restaurant settings, fall back to staff localStorage, then SEK
+  // Currency — DB value (NOT NULL, default SEK) is the only source of truth
   const currencySymbol = (() => {
     const map: Record<string, string> = { SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$" };
-    if (restaurant.currency) return map[restaurant.currency] ?? restaurant.currency;
-    try {
-      const stored = localStorage.getItem(`menuqr_currency_${restaurant.id}`);
-      return map[stored || "SEK"] ?? "kr";
-    } catch { return "kr"; }
+    return map[restaurant.currency] ?? restaurant.currency ?? "kr";
   })();
+  // Money — format consistently: no float artifacts (17.400000000000002),
+  // whole numbers stay "12", fractional show two decimals "12.50" (audit 2.2)
+  const fmtPrice = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
   const [readyBanner, setReadyBanner] = useState<string[]>([]); // item names that just became "done"
 
@@ -295,6 +295,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
+    } else if (res.status === 429) {
+      showToast("Too many requests — try again in a moment");
+    } else if (data.error === "table_closed") {
+      setTableActive(false);
+      showToast("Table is closed");
+    } else {
+      showToast("Something went wrong — please try again");
     }
   }
 
@@ -339,6 +346,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
+    } else if (res.status === 429) {
+      showToast("Too many requests — try again in a moment");
+    } else if (data.error === "table_closed") {
+      setTableActive(false);
+      showToast("Table is closed");
+    } else {
+      showToast("Something went wrong — please try again");
     }
   }
 
@@ -645,7 +659,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                   <div style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", lineHeight: 1.35 }}>{item.name}</div>
                   {item.price ? (
                     <span style={{ fontWeight: 600, color: accentColor, fontSize: 13, background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, borderRadius: 99, padding: "3px 10px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {item.price} {currencySymbol}
+                      {fmtPrice(item.price)} {currencySymbol}
                     </span>
                   ) : null}
                 </div>
@@ -669,7 +683,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: 99, padding: "14px 26px", fontWeight: 600, fontSize: 15, cursor: "pointer", zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: 10, animation: "gmFadeIn 0.2s ease", whiteSpace: "nowrap" }}>
           <span key={cartCount} style={{ background: "rgba(255,255,255,0.22)", borderRadius: "50%", width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, animation: "gmPulse 0.35s ease" }}>{cartCount}</span>
           View Order
-          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14, fontWeight: 500 }}>· {cartTotal} {currencySymbol}</span>}
+          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14, fontWeight: 500 }}>· {fmtPrice(cartTotal)} {currencySymbol}</span>}
         </button>
       )}
 
@@ -686,7 +700,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
                   {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{ci.quantity * ci.item.price} {currencySymbol}</div> : null}
+                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ci.item.price)} {currencySymbol}</div> : null}
                 </div>
                 <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, fontWeight: 600, padding: "0 4px" }}>×</button>
               </div>
@@ -694,7 +708,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
             {cartTotal > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 4px", fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
                 <span>Total</span>
-                <span style={{ color: accentColor }}>{cartTotal} {currencySymbol}</span>
+                <span style={{ color: accentColor }}>{fmtPrice(cartTotal)} {currencySymbol}</span>
               </div>
             )}
             <button onClick={submitCart}
@@ -712,7 +726,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)" }}>
             <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: 18, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{noteFor.item.price} {currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
             </h3>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
@@ -755,7 +769,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               My Bill
               {sessionRequests.some(r => r.price > 0) && (
                 <span style={{ color: accentColor, fontWeight: 700 }}>
-                  {sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}
+                  {fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}
                 </span>
               )}
             </span>
@@ -786,7 +800,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                           <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
+                          {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
                           <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99, background: pill.bg, color: pill.color, letterSpacing: "0.02em" }}>{pill.label}</span>
                         </div>
                       </div>
@@ -805,7 +819,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                         <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
                         <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
-                      {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{r.qty * r.price} {currencySymbol}</span>}
+                      {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
                     </div>
                   ))}
                 </div>
@@ -815,7 +829,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ padding: "13px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>My Total</span>
-                  <span style={{ fontWeight: 700, fontSize: 17, color: accentColor }}>{sessionRequests.reduce((s, r) => s + r.qty * r.price, 0)} {currencySymbol}</span>
+                  <span style={{ fontWeight: 700, fontSize: 17, color: accentColor }}>{fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}</span>
                 </div>
               )}
             </div>

@@ -179,7 +179,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
                 fontWeight: item.danger ? 600 : 400,
                 transition: "background 0.08s",
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = "var(--surface2, #1a1a20)")}
+              onMouseEnter={e => (e.currentTarget.style.background = "var(--surface-2)")}
               onMouseLeave={e => (e.currentTarget.style.background = "none")}
             >
               {item.icon && (

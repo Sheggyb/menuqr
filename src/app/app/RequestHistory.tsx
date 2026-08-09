@@ -66,13 +66,22 @@ export default function RequestHistory({ restaurant }: Props) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("table_requests")
-      .select("*, table:restaurant_tables(name)")
-      .eq("restaurant_id", restaurant.id)
-      .order("created_at", { ascending: false })
-      .limit(500);
-    setRequests((data as TableRequest[]) ?? []);
+    // Paginate past PostgREST's 1000-row cap so search/filters reach older
+    // rows instead of only the last 500 (audit 2.1)
+    const all: TableRequest[] = [];
+    const PAGE = 1000;
+    for (let i = 0; i < 20; i++) {
+      const { data, error } = await supabase
+        .from("table_requests")
+        .select("*, table:restaurant_tables(name)")
+        .eq("restaurant_id", restaurant.id)
+        .order("created_at", { ascending: false })
+        .range(i * PAGE, (i + 1) * PAGE - 1);
+      if (error || !data) break;
+      all.push(...(data as TableRequest[]));
+      if (data.length < PAGE) break;
+    }
+    setRequests(all);
     setLoading(false);
   }, [restaurant.id]);
 

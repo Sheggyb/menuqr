@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export interface ConfirmOptions {
@@ -38,6 +38,14 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     setOptions(null);
   }
 
+  // Escape closes the dialog; focus starts on Cancel for destructive actions
+  useEffect(() => {
+    if (!options) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [options]);
+
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
@@ -66,11 +74,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               )}
               <div style={{ display: "flex", gap: 10, marginTop: options.message ? 0 : 24 }}>
                 <button
+                  autoFocus={!options.danger}
                   onClick={() => close(false)}
                   style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}
                 >Cancel</button>
                 <button
-                  autoFocus
+                  autoFocus={!!options.danger}
                   onClick={() => close(true)}
                   style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: options.danger ? "#dc2626" : "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
                 >{options.confirmLabel ?? "Confirm"}</button>

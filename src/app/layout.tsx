@@ -48,6 +48,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Blocking theme script — stamps the saved/system theme class before
+            first paint so dark-mode users never see a light flash (audit 2.4).
+            Mirrors ThemeProvider's apply() logic. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("menuqr_theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.add(d?"dark":"light");}catch(e){document.documentElement.classList.add("light");}})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>

@@ -222,8 +222,7 @@ export default function LiveOrders({ restaurant }: Props) {
       .select("*, table:restaurant_tables(name)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
-      .order("created_at", { ascending: true })
-      .limit(100);
+      .order("created_at", { ascending: true });
     setRequests((data as TableRequest[]) ?? []);
     setLoading(false);
   }, [restaurant.id]);
@@ -341,20 +340,18 @@ export default function LiveOrders({ restaurant }: Props) {
     return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
   }, [pendingCount]);
 
-  // Today stats (fetch separately including done)
+  // Today stats — exact COUNT queries (no 1000-row cap, audit 2.1)
   const [todayStats, setTodayStats] = useState({ total: 0, done: 0 });
   useEffect(() => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
-    supabase.from("table_requests")
-      .select("status")
-      .eq("restaurant_id", restaurant.id)
-      .gte("created_at", start.toISOString())
-      .then(({ data }) => {
-        setTodayStats({
-          total: data?.length ?? 0,
-          done: data?.filter(r => r.status === "done").length ?? 0,
-        });
-      });
+    const iso = start.toISOString();
+    (async () => {
+      const [totalRes, doneRes] = await Promise.all([
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
+      ]);
+      setTodayStats({ total: totalRes.count ?? 0, done: doneRes.count ?? 0 });
+    })();
   }, [requests.length, restaurant.id]);
 
   if (loading) return (

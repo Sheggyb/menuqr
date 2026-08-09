@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL } from "@/lib/constants";
+import { useToast } from "@/components/Toast";
 import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable } from "@/components/icons";
 import type { SVGProps } from "react";
 
@@ -38,7 +39,10 @@ const FILTER_TYPES: Record<Filter, string[]> = {
 
 const FILTER_LABEL: Record<Filter, string> = {
   food: "Food",
-  drinks: "Drinks",
+  // "Drinks" would promise drink ORDERS, but drink orders are item_request rows
+  // (indistinguishable from food without a category flag) — this filter only
+  // shows refill requests, so the label says what it actually filters.
+  drinks: "Refills",
   all: "All",
 };
 
@@ -206,6 +210,7 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
 
 export default function KitchenDisplay({ restaurant }: Props) {
   const supabase = createClient();
+  const toast = useToast();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -241,8 +246,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
       .select("*, table:restaurant_tables(name)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
-      .order("created_at", { ascending: true })
-      .limit(100);
+      .order("created_at", { ascending: true });
     setRequests((data as TableRequest[]) ?? []);
     setLoading(false);
     setLastUpdated(Date.now());
@@ -294,6 +298,8 @@ export default function KitchenDisplay({ restaurant }: Props) {
   async function move(id: string, status: TableRequest["status"]) {
     const { error } = await supabase.from("table_requests").update({ status }).eq("id", id);
     if (error) {
+      // Never fail silently — the cook needs to know the tap didn't take (audit 3.4)
+      toast.error("Could not update the order — try again");
       load();
       return;
     }
@@ -307,7 +313,9 @@ export default function KitchenDisplay({ restaurant }: Props) {
   const filtered = requests.filter(r => FILTER_TYPES[filter].includes(r.type));
   const fresh = filtered.filter(r => r.status === "pending");
   const cooking = filtered.filter(r => r.status === "seen");
-  const freshCount = requests.filter(r => r.status === "pending").length;
+  // Count pending within the ACTIVE filter — the badge/tab title must match
+  // what the board actually shows (waiter/bill/refill stay out on Food view)
+  const freshCount = fresh.length;
 
   // Keyboard shortcuts: P = start first new, D = mark first cooking done
   useEffect(() => {
@@ -331,20 +339,18 @@ export default function KitchenDisplay({ restaurant }: Props) {
     return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
   }, [freshCount]);
 
-  // Today stats (fetch separately including done)
+  // Today stats — exact COUNT queries (no 1000-row cap, audit 2.1)
   const [todayStats, setTodayStats] = useState({ total: 0, done: 0 });
   useEffect(() => {
     const start = new Date(); start.setHours(0, 0, 0, 0);
-    supabase.from("table_requests")
-      .select("status")
-      .eq("restaurant_id", restaurant.id)
-      .gte("created_at", start.toISOString())
-      .then(({ data }) => {
-        setTodayStats({
-          total: data?.length ?? 0,
-          done: data?.filter(r => r.status === "done").length ?? 0,
-        });
-      });
+    const iso = start.toISOString();
+    (async () => {
+      const [totalRes, doneRes] = await Promise.all([
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
+      ]);
+      setTodayStats({ total: totalRes.count ?? 0, done: doneRes.count ?? 0 });
+    })();
   }, [requests.length, restaurant.id]);
 
   if (loading) return (

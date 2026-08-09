@@ -61,8 +61,11 @@ export default function TableManager({ restaurant }: Props) {
       });
   }, [restaurant.id]);
 
+  // Last-request times per table — only needs to run once tables are loaded;
+  // keyed on tablesLoaded so add/delete/toggle mutations don't refire it (audit 4)
+  const tablesLoaded = tables.length > 0;
   useEffect(() => {
-    if (tables.length === 0) return;
+    if (!tablesLoaded) return;
     supabase.from("table_requests")
       .select("table_id, created_at")
       .eq("restaurant_id", restaurant.id)
@@ -76,7 +79,7 @@ export default function TableManager({ restaurant }: Props) {
         }
         setLastRequests(map);
       });
-  }, [tables, restaurant.id]);
+  }, [restaurant.id, tablesLoaded]);
 
   useEffect(() => {
     if (tables.length === 0) return;
@@ -165,7 +168,11 @@ export default function TableManager({ restaurant }: Props) {
       .insert({ restaurant_id: restaurant.id, name: newName.trim(), token, is_active: true })
       .select().single();
     if (error) { toast.error("Could not add the table"); return; }
-    if (data) { setTables(t => [...t, data as TableRow]); setNewName(""); }
+    if (data) {
+      // Re-apply the same sort as load so a new table lands in the right spot
+      setTables(t => [...t, data as TableRow].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
+      setNewName("");
+    }
   }
 
   async function deleteTable(table: TableRow) {
@@ -187,6 +194,17 @@ export default function TableManager({ restaurant }: Props) {
     const newState = !anyActive;
     const { error } = await supabase.from("restaurant_tables").update({ is_active: newState }).eq("restaurant_id", restaurant.id);
     if (error) { toast.error("Could not update the tables"); return; }
+    // Closing all tables must also close their guest sessions — otherwise
+    // guests jump straight back in with no re-approval once tables reopen
+    if (!newState) {
+      await Promise.allSettled(tables.map(t =>
+        fetch("/api/session/close-table", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ table_id: t.id }),
+        })
+      ));
+    }
     setTables(tables.map(t => ({ ...t, is_active: newState })));
   }
 
@@ -246,7 +264,7 @@ export default function TableManager({ restaurant }: Props) {
     const items: ContextMenuAction[] = [];
     if (table.is_active) {
       items.push({
-        label: pending > 0 ? `Clear all orders (${pending} pending will be marked done)` : "Clear all orders",
+        label: pending > 0 ? `Clear all orders (${pending} pending marked done, guests signed out)` : "Clear all orders (guests signed out)",
         action: () => clearAndCloseTable(table),
       });
       items.push({

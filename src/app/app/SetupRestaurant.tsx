@@ -33,19 +33,30 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const finalSlug = slug || slugify(name);
+    const trimmedName = name.trim();
+    if (!trimmedName) { setError("Restaurant name is required"); setLoading(false); return; }
+    let base = slug || slugify(trimmedName);
+    // Non-Latin names slugify to "" — fall back to a generated slug
+    if (!base) base = `restaurant-${Math.random().toString(36).slice(2, 8)}`;
     const supabase = createClient();
-    const { data, error } = await supabase
-      .from("restaurants")
-      .insert({ owner_id: userId, name, slug: finalSlug, accent_color: "#E85D2F" })
-      .select()
-      .single();
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      onCreated(data as Restaurant);
+    // Retry on slug collision (unique constraint) with a short random suffix
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const candidate = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
+      const { data, error } = await supabase
+        .from("restaurants")
+        .insert({ owner_id: userId, name: trimmedName, slug: candidate, accent_color: "#E85D2F" })
+        .select()
+        .single();
+      if (!error) { onCreated(data as Restaurant); return; }
+      if (!/duplicate/i.test(error.message)) {
+        setError("Could not create the restaurant — please try again");
+        setLoading(false);
+        return;
+      }
+      // duplicate slug — loop and retry with a new suffix
     }
+    setError("That name is taken — try a different restaurant name or slug");
+    setLoading(false);
   }
 
   return (
@@ -78,7 +89,11 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
                 style={{ paddingLeft: 8 }}
               />
             </div>
-            {slug && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>Preview: menuqr.app/<strong>{slug}</strong></p>}
+            {slug && (
+              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+                Used for your public menu URL (not live yet).
+              </p>
+            )}
           </div>
           {error && <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>}
           <button type="submit" className="btn-primary" disabled={loading}>
