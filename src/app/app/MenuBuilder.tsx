@@ -40,13 +40,11 @@ interface InlineEdit {
 
 // Draft shape for the item options editor (local, unsaved)
 interface OptionDraft {
-  id: string; // real id or "new-<n>" for unsaved rows
+  id: string; // real uuid — new rows get crypto.randomUUID() so upserts stay homogeneous
   name: string;
   isRequired: boolean;
   choices: { id: string; label: string; price: string }[];
 }
-
-let optionIdCounter = 0;
 
 interface QuickAdd {
   name: string;
@@ -191,7 +189,7 @@ export default function MenuBuilder({ restaurant }: Props) {
   }
 
   function addOptionGroup() {
-    setOptionDrafts(d => [...d, { id: `new-${++optionIdCounter}`, name: "", isRequired: true, choices: [] }]);
+    setOptionDrafts(d => [...d, { id: crypto.randomUUID(), name: "", isRequired: true, choices: [] }]);
   }
 
   function patchGroup(idx: number, patch: Partial<OptionDraft>) {
@@ -200,7 +198,7 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   function addChoice(gIdx: number) {
     setOptionDrafts(d => d.map((g, i) => i === gIdx
-      ? { ...g, choices: [...g.choices, { id: `new-${++optionIdCounter}`, label: "", price: "" }] }
+      ? { ...g, choices: [...g.choices, { id: crypto.randomUUID(), label: "", price: "" }] }
       : g));
   }
 
@@ -221,41 +219,38 @@ export default function MenuBuilder({ restaurant }: Props) {
   async function saveOptions() {
     if (!optionsEditor) return;
     const itemId = optionsEditor.item.id;
-    const groups = optionDrafts.filter(g => g.name.trim().length > 0);
-    // 1) Upsert groups (include all NOT NULL columns — Postgres validates them
-    //    on the proposed row before ON CONFLICT resolves)
-    const groupRows: Record<string, unknown>[] = groups.map((g, i) => {
-      const row: Record<string, unknown> = {
-        restaurant_id: restaurant.id,
-        item_id: itemId,
-        name: g.name.trim(),
-        is_required: g.isRequired,
-        sort_order: i,
-      };
-      if (!g.id.startsWith("new-")) row.id = g.id;
-      return row;
-    });
-    const { data: savedGroups, error: gErr } = await supabase
-      .from("menu_item_options")
-      .upsert(groupRows)
-      .select("id, name");
+    const namedGroups = optionDrafts.filter(g => g.name.trim().length > 0);
+    const droppedEmpty = optionDrafts.length - namedGroups.length;
+    if (namedGroups.length === 0) {
+      toast.error("Enter a group name first");
+      return;
+    }
+    // 1) Upsert groups — every row carries a real id (new rows get a client
+    //    uuid), so the payload is homogeneous. Mixed id/no-id rows would make
+    //    PostgREST send NULL ids for the new ones (NOT NULL violation).
+    const groupRows: Record<string, unknown>[] = namedGroups.map((g, i) => ({
+      id: g.id,
+      restaurant_id: restaurant.id,
+      item_id: itemId,
+      name: g.name.trim(),
+      is_required: g.isRequired,
+      sort_order: i,
+    }));
+    const { error: gErr } = await supabase.from("menu_item_options").upsert(groupRows);
     if (gErr) { toast.error("Could not save the options"); return; }
-    const idByName = new Map<string, string>((savedGroups ?? []).map(r => [r.name, r.id]));
-    const groupsWithIds = groups.map(g => ({ ...g, id: idByName.get(g.name) ?? g.id }));
 
     // 2) Upsert choices
     const choiceRows: Record<string, unknown>[] = [];
-    groupsWithIds.forEach(g => {
+    namedGroups.forEach(g => {
       g.choices.filter(c => c.label.trim().length > 0).forEach((c, ci) => {
-        const row: Record<string, unknown> = {
+        choiceRows.push({
+          id: c.id,
           restaurant_id: restaurant.id,
           option_id: g.id,
           label: c.label.trim(),
           price_delta: parseFloat(c.price) || 0,
           sort_order: ci,
-        };
-        if (!c.id.startsWith("new-")) row.id = c.id;
-        choiceRows.push(row);
+        });
       });
     });
     if (choiceRows.length > 0) {
@@ -265,19 +260,20 @@ export default function MenuBuilder({ restaurant }: Props) {
 
     // 3) Delete removed groups (cascade removes their choices) + removed choices
     const existingGroups = itemOptions.filter(o => o.item_id === itemId);
-    const keptGroupIds = new Set(groupsWithIds.map(g => g.id));
+    const keptGroupIds = new Set(namedGroups.map(g => g.id));
     const removedGroups = existingGroups.filter(o => !keptGroupIds.has(o.id));
     if (removedGroups.length > 0) {
       await supabase.from("menu_item_options").delete().in("id", removedGroups.map(g => g.id));
     }
-    const keptChoiceIds = new Set(groupsWithIds.flatMap(g => g.choices).map(c => c.id));
+    const keptChoiceIds = new Set(namedGroups.flatMap(g => g.choices).map(c => c.id));
     const removedChoices = existingGroups.flatMap(o => o.choices).filter(c => !keptChoiceIds.has(c.id));
     if (removedChoices.length > 0) {
       await supabase.from("menu_item_option_choices").delete().in("id", removedChoices.map(c => c.id));
     }
 
     setOptionsEditor(null);
-    toast.success("Options saved");
+    if (droppedEmpty > 0) toast.success(`Options saved (${droppedEmpty} empty group${droppedEmpty > 1 ? "s" : ""} skipped — groups need a name)`);
+    else toast.success("Options saved");
     await load();
   }
 
