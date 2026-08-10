@@ -104,7 +104,12 @@ drop policy if exists "Public read available items" on menu_items;
 
 -- ------------------------------------------------------------
 -- MENU ITEM OPTIONS (choice groups per item — e.g. meat choice on kebabs)
+-- NOTE: drop+recreate — an earlier broken shape of these tables existed in
+-- some databases (missing restaurant_id); recreating guarantees the final
+-- state matches this file. Both tables are empty at migration time.
 -- ------------------------------------------------------------
+drop table if exists menu_item_option_choices;
+drop table if exists menu_item_options;
 create table if not exists menu_item_options (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid references restaurants(id) on delete cascade not null,
