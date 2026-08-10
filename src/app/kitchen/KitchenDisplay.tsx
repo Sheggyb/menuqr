@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL } from "@/lib/constants";
+import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable } from "@/components/icons";
 import type { SVGProps } from "react";
@@ -71,12 +71,13 @@ function bigBtn(variant: "outline" | "filled", color: string): React.CSSProperti
 interface CardProps {
   req: TableRequest;
   leaving?: boolean;
+  currencySym: string;
   onPickUp?: () => void;
   onDone?: () => void;
   onUndo?: () => void;
 }
 
-function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
+function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: CardProps) {
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
@@ -129,6 +130,11 @@ function KitchenCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
           {isLate && <IconClock width={12} height={12} />}
           {timeText}
         </span>
+        {req.total_price != null && req.total_price > 0 && (
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+            {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
+          </span>
+        )}
       </div>
 
       {/* Items */}
@@ -459,6 +465,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
                 key={req.id}
                 req={req}
                 leaving={leavingIds.has(req.id)}
+                currencySym={currencySymbol(restaurant.currency)}
                 onPickUp={() => moveAnimated(req.id, "seen")}
               />
             ))}
@@ -476,6 +483,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
                 key={req.id}
                 req={req}
                 leaving={leavingIds.has(req.id)}
+                currencySym={currencySymbol(restaurant.currency)}
                 onDone={() => moveAnimated(req.id, "done")}
                 onUndo={() => move(req.id, "pending")}
               />

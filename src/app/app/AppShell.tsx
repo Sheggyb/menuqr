@@ -110,6 +110,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               src={restaurant.logo_url}
               alt=""
               referrerPolicy="no-referrer"
+              onError={e => { e.currentTarget.style.display = "none"; }}
               style={{ height: 22, width: "auto", maxWidth: 120, objectFit: "contain", borderRadius: 4, border: "1px solid var(--border)", flexShrink: 0 }}
             />
           )}

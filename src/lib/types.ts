@@ -66,6 +66,7 @@ export interface TableRequest {
   item_id: string | null;
   item_name: string | null;
   note: string | null;
+  total_price: number | null;
   status: "pending" | "seen" | "done";
   created_at: string;
   table?: TableRow;

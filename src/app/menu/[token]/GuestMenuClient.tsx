@@ -70,6 +70,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   const [activeCategory, setActiveCategory] = useState(visibleCategories[0]?.id ?? "");
   const [toast, setToast] = useState("");
   const [tableActive, setTableActive] = useState(table.is_active);
+  // Broken logo URL → hide the image and fall back to the text wordmark
+  const [logoFailed, setLogoFailed] = useState(false);
   // Server-safe initial state; sessionStorage is read after mount (audit 2.7 —
   // reading storage in state initializers causes hydration mismatches)
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -340,6 +342,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         item_id: null,
         item_name: combinedName,
         note: combinedNote,
+        total_price: totalPrice,
       }),
     });
     const data = await res.json();
@@ -390,10 +393,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     const chosen: CartItem["options"] = [];
     for (const o of itemOptions) {
       if (o.type === "ingredients") {
-        // All ingredients on by default — removed ones become "utan X"
+        // All ingredients on by default — removed ones become "− X" (language-neutral)
         const kept = selIngredients[o.id] ?? o.choices.map(c => c.id);
         for (const c of o.choices) {
-          if (!kept.includes(c.id)) chosen.push({ label: `utan ${c.label}`, priceDelta: 0, kind: "ingredient" });
+          if (!kept.includes(c.id)) chosen.push({ label: `− ${c.label}`, priceDelta: 0, kind: "ingredient" });
         }
       } else if (selOptions[o.id]) {
         const c = o.choices.find(c => c.id === selOptions[o.id]);
@@ -588,11 +591,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {/* HEADER */}
       <header style={{ background: "var(--bg)", padding: "22px 20px 18px", borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {restaurant.logo_url && (
+          {restaurant.logo_url && !logoFailed && (
             <img
               src={restaurant.logo_url}
               alt={`${restaurant.name} logo`}
               referrerPolicy="no-referrer"
+              onError={() => setLogoFailed(true)}
               style={{ height: 46, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, background: "var(--surface)", borderRadius: 8, border: "1px solid var(--border)" }}
             />
           )}
@@ -831,7 +835,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                                 color: on ? accentColor : "var(--text)",
                               }}
                             >
-                              {c.label}{c.price_delta > 0 ? ` +${fmtPrice(c.price_delta)}` : ""}
+                              {c.label}{c.price_delta !== 0 ? ` ${c.price_delta > 0 ? "+" : "−"}${fmtPrice(Math.abs(c.price_delta))} ${currencySymbol}` : ""}
                             </button>
                           );
                         })}

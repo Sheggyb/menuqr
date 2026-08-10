@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { SkeletonList } from "@/components/Skeleton";
-import { TYPE_LABEL } from "@/lib/constants";
+import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock } from "@/components/icons";
@@ -43,12 +43,13 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
 interface CardProps {
   req: TableRequest;
   leaving?: boolean;
+  currencySym: string;
   onPickUp?: () => void;
   onDone?: () => void;
   onUndo?: () => void;
 }
 
-function RequestCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
+function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: CardProps) {
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
@@ -96,6 +97,11 @@ function RequestCard({ req, leaving, onPickUp, onDone, onUndo }: CardProps) {
           {isLate && <IconClock width={12} height={12} />}
           {timeText}
         </span>
+        {req.total_price != null && req.total_price > 0 && (
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+            {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
+          </span>
+        )}
       </div>
 
       {/* Item details */}
@@ -438,6 +444,7 @@ export default function LiveOrders({ restaurant }: Props) {
               key={req.id}
               req={req}
               leaving={leavingIds.has(req.id)}
+              currencySym={currencySymbol(restaurant.currency)}
               onPickUp={() => moveAnimated(req.id, "seen")}
             />
           ))}
@@ -456,6 +463,7 @@ export default function LiveOrders({ restaurant }: Props) {
               key={req.id}
               req={req}
               leaving={leavingIds.has(req.id)}
+              currencySym={currencySymbol(restaurant.currency)}
               onDone={() => moveAnimated(req.id, "done")}
               onUndo={() => move(req.id, "pending")}
             />

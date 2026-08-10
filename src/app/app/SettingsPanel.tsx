@@ -117,10 +117,17 @@ export default function SettingsPanel({ restaurant }: Props) {
       return;
     }
     setAccentError("");
+    const finalLogo = (override.logoUrl ?? logoUrl).trim();
+    // Logo URL must be an absolute http(s) URL — a relative path or javascript:
+    // would render a broken image (or worse) in the guest header
+    if (finalLogo && !/^https?:\/\/.+/.test(finalLogo)) {
+      toast.error("Logo URL must start with http:// or https:// — not saved");
+      return;
+    }
     const payload = {
       name: (override.name ?? name).trim(),
       accent_color: finalAccent,
-      logo_url: ((override.logoUrl ?? logoUrl).trim()) || null,
+      logo_url: finalLogo || null,
       quick_actions: override.quickActions ?? quickActions,
       venue_type: override.venueType ?? venueType,
       currency: override.currency ?? currency,

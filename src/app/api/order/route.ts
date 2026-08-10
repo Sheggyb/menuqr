@@ -27,8 +27,17 @@ export async function POST(req: Request) {
     return tooManyRequests();
   }
 
-  const item_name = cleanText(body.item_name, 200);
+  // Cap is generous: one cart = one row, one line per item, and choice/ingredient
+  // selections ride inside item_name ("x3 Kebab Brödet (Fläsk, − lök, − tomat)").
+  const item_name = cleanText(body.item_name, 1000);
   const note = cleanText(body.note, 500);
+  if (type === "item_request" && !item_name) return badRequest("missing item_name");
+
+  // Optional client-computed total (item_request only) — validated, never trusted blindly
+  const rawTotal = body.total_price;
+  const total_price = typeof rawTotal === "number" && Number.isFinite(rawTotal) && rawTotal >= 0 && rawTotal <= 1_000_000
+    ? Math.round(rawTotal * 100) / 100
+    : null;
 
   const supabase = createAdminClient();
 
@@ -80,6 +89,7 @@ export async function POST(req: Request) {
       item_id: item_id ?? null,
       item_name,
       note,
+      total_price: type === "item_request" ? total_price : null,
       status: "pending",
     })
     .select("id")

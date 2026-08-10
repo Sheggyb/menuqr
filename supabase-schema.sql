@@ -104,12 +104,7 @@ drop policy if exists "Public read available items" on menu_items;
 
 -- ------------------------------------------------------------
 -- MENU ITEM OPTIONS (choice groups per item — e.g. meat choice on kebabs)
--- NOTE: drop+recreate — an earlier broken shape of these tables existed in
--- some databases (missing restaurant_id); recreating guarantees the final
--- state matches this file. Both tables are empty at migration time.
 -- ------------------------------------------------------------
-drop table if exists menu_item_option_choices;
-drop table if exists menu_item_options;
 create table if not exists menu_item_options (
   id uuid primary key default gen_random_uuid(),
   restaurant_id uuid references restaurants(id) on delete cascade not null,
@@ -120,6 +115,8 @@ create table if not exists menu_item_options (
   sort_order int not null default 0,
   created_at timestamptz default now()
 );
+-- Upgrade path for databases created before the type column existed
+alter table menu_item_options add column if not exists type text not null default 'choice' check (type in ('choice','ingredients'));
 alter table menu_item_options enable row level security;
 drop policy if exists "Owner manage item options" on menu_item_options;
 create policy "Owner manage item options" on menu_item_options
@@ -158,9 +155,12 @@ create table if not exists table_requests (
   item_id uuid references menu_items(id) on delete set null,
   item_name text,
   note text,
+  total_price numeric(10,2),
   status text not null default 'pending' check (status in ('pending','seen','done')),
   created_at timestamptz default now()
 );
+-- Upgrade path for databases created before the total_price column existed
+alter table table_requests add column if not exists total_price numeric(10,2);
 alter table table_requests enable row level security;
 drop policy if exists "Owner manage requests" on table_requests;
 create policy "Owner manage requests" on table_requests
@@ -207,6 +207,8 @@ create index if not exists idx_table_sessions_table_id on table_sessions (table_
 create index if not exists idx_restaurant_tables_token on restaurant_tables (token);
 create index if not exists idx_menu_items_category on menu_items (category_id);
 create index if not exists idx_menu_categories_restaurant on menu_categories (restaurant_id);
+create index if not exists idx_menu_item_options_item on menu_item_options (item_id);
+create index if not exists idx_menu_item_option_choices_option on menu_item_option_choices (option_id);
 
 -- ------------------------------------------------------------
 -- REALTIME
