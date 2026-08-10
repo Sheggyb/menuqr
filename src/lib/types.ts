@@ -52,6 +52,7 @@ export interface MenuItemOption {
   restaurant_id: string;
   item_id: string;
   name: string;
+  type: "choice" | "ingredients";
   is_required: boolean;
   sort_order: number;
   choices: MenuItemOptionChoice[];

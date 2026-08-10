@@ -115,6 +115,7 @@ create table if not exists menu_item_options (
   restaurant_id uuid references restaurants(id) on delete cascade not null,
   item_id uuid references menu_items(id) on delete cascade not null,
   name text not null,
+  type text not null default 'choice' check (type in ('choice','ingredients')),
   is_required boolean not null default true,
   sort_order int not null default 0,
   created_at timestamptz default now()

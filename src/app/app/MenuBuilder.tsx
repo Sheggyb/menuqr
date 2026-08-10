@@ -42,6 +42,7 @@ interface InlineEdit {
 interface OptionDraft {
   id: string; // real uuid — new rows get crypto.randomUUID() so upserts stay homogeneous
   name: string;
+  type: "choice" | "ingredients";
   isRequired: boolean;
   choices: { id: string; label: string; price: string }[];
 }
@@ -182,6 +183,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     setOptionDrafts(existing.map(o => ({
       id: o.id,
       name: o.name,
+      type: o.type ?? "choice",
       isRequired: o.is_required,
       choices: o.choices.map(c => ({ id: c.id, label: c.label, price: c.price_delta > 0 ? String(c.price_delta) : "" })),
     })));
@@ -189,7 +191,7 @@ export default function MenuBuilder({ restaurant }: Props) {
   }
 
   function addOptionGroup() {
-    setOptionDrafts(d => [...d, { id: crypto.randomUUID(), name: "", isRequired: true, choices: [] }]);
+    setOptionDrafts(d => [...d, { id: crypto.randomUUID(), name: "", type: "choice", isRequired: true, choices: [] }]);
   }
 
   function patchGroup(idx: number, patch: Partial<OptionDraft>) {
@@ -233,7 +235,8 @@ export default function MenuBuilder({ restaurant }: Props) {
       restaurant_id: restaurant.id,
       item_id: itemId,
       name: g.name.trim(),
-      is_required: g.isRequired,
+      type: g.type,
+      is_required: g.type === "ingredients" ? false : g.isRequired,
       sort_order: i,
     }));
     const { error: gErr } = await supabase.from("menu_item_options").upsert(groupRows);
@@ -1181,14 +1184,26 @@ export default function MenuBuilder({ restaurant }: Props) {
                       <input
                         value={g.name}
                         onChange={e => patchGroup(gi, { name: e.target.value })}
-                        placeholder="Group name (e.g. Meat choice)"
+                        placeholder={g.type === "ingredients" ? "Group name (e.g. Ingredients)" : "Group name (e.g. Meat choice)"}
                         style={{ flex: 1, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
                       />
-                      <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
-                        Required
-                      </label>
                       <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 16, padding: "2px 4px" }}>×</button>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 2 }}>
+                        <button type="button" onClick={() => patchGroup(gi, { type: "choice" })}
+                          style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === "choice" ? "var(--accent)" : "transparent", color: g.type === "choice" ? "#fff" : "var(--text-muted)" }}>Choice</button>
+                        <button type="button" onClick={() => patchGroup(gi, { type: "ingredients" })}
+                          style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === "ingredients" ? "var(--accent)" : "transparent", color: g.type === "ingredients" ? "#fff" : "var(--text-muted)" }}>Ingredients (tap-to-remove)</button>
+                      </div>
+                      {g.type === "choice" ? (
+                        <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
+                          Required
+                        </label>
+                      ) : (
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Guests tap to remove what they don&apos;t want</span>
+                      )}
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {g.choices.map((c, ci) => (
@@ -1196,21 +1211,23 @@ export default function MenuBuilder({ restaurant }: Props) {
                           <input
                             value={c.label}
                             onChange={e => patchChoice(gi, ci, { label: e.target.value })}
-                            placeholder="Choice (e.g. Fläsk)"
+                            placeholder={g.type === "ingredients" ? "Ingredient (e.g. Lök)" : "Choice (e.g. Fläsk)"}
                             style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
                           />
-                          <input
-                            value={c.price}
-                            onChange={e => patchChoice(gi, ci, { price: e.target.value })}
-                            placeholder="+kr"
-                            inputMode="decimal"
-                            style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
-                          />
+                          {g.type === "choice" && (
+                            <input
+                              value={c.price}
+                              onChange={e => patchChoice(gi, ci, { price: e.target.value })}
+                              placeholder="+kr"
+                              inputMode="decimal"
+                              style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                            />
+                          )}
                           <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: "2px 4px" }}>×</button>
                         </div>
                       ))}
                       <button type="button" onClick={() => addChoice(gi)} style={{ alignSelf: "flex-start", padding: "5px 10px", borderRadius: 8, border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
-                        + Add choice
+                        + Add {g.type === "ingredients" ? "ingredient" : "choice"}
                       </button>
                     </div>
                   </div>

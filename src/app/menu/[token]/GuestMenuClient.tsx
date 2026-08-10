@@ -27,7 +27,7 @@ interface CartItem {
   item: MenuItem;
   quantity: number;
   note: string;
-  options: { label: string; priceDelta: number }[];
+  options: { label: string; priceDelta: number; kind: "choice" | "ingredient" }[];
 }
 
 interface SessionRequest {
@@ -89,6 +89,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   const [noteFor, setNoteFor] = useState<{ item: MenuItem } | null>(null);
   // optionId -> selected choiceId (per item sheet session)
   const [selOptions, setSelOptions] = useState<Record<string, string>>({});
+  // optionId -> KEPT ingredient choiceIds (ingredients groups; default = all)
+  const [selIngredients, setSelIngredients] = useState<Record<string, string[]>>({});
   const [noteText, setNoteText] = useState("");
   const [qty, setQty] = useState(1);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
@@ -365,24 +367,39 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     setQty(1);
     setNoteText("");
     setSelOptions({});
+    setSelIngredients({});
+  }
+
+  function toggleIngredient(oId: string, cId: string, allIds: string[]) {
+    setSelIngredients(s => {
+      const current = s[oId] ?? allIds;
+      return { ...s, [oId]: current.includes(cId) ? current.filter(x => x !== cId) : [...current, cId] };
+    });
   }
 
   function confirmAddToCart() {
     if (!noteFor) return;
     const itemOptions = options.filter(o => o.item_id === noteFor.item.id);
-    // Required option groups must have a selection
+    // Required choice groups must have a selection
     for (const o of itemOptions) {
-      if (o.is_required && !selOptions[o.id]) {
+      if (o.type === "choice" && o.is_required && !selOptions[o.id]) {
         showToast(`Please choose: ${o.name}`);
         return;
       }
     }
-    const chosen = itemOptions
-      .filter(o => selOptions[o.id])
-      .map(o => {
+    const chosen: CartItem["options"] = [];
+    for (const o of itemOptions) {
+      if (o.type === "ingredients") {
+        // All ingredients on by default — removed ones become "utan X"
+        const kept = selIngredients[o.id] ?? o.choices.map(c => c.id);
+        for (const c of o.choices) {
+          if (!kept.includes(c.id)) chosen.push({ label: `utan ${c.label}`, priceDelta: 0, kind: "ingredient" });
+        }
+      } else if (selOptions[o.id]) {
         const c = o.choices.find(c => c.id === selOptions[o.id]);
-        return { label: c?.label ?? "", priceDelta: c?.price_delta ?? 0 };
-      });
+        if (c) chosen.push({ label: c.label, priceDelta: c.price_delta, kind: "choice" });
+      }
+    }
     const optKey = chosen.map(c => c.label).join("|");
     setCart(prev => {
       const existing = prev.find(c => c.item.id === noteFor.item.id && c.note === noteText && c.options.map(o => o.label).join("|") === optKey);
@@ -775,10 +792,32 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                   {itemOptions.map(o => (
                     <div key={o.id}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
-                        {o.name}{o.is_required && <span style={{ color: accentColor, marginLeft: 4 }}>*</span>}
+                        {o.name}
+                        {o.type === "choice" && o.is_required && <span style={{ color: accentColor, marginLeft: 4 }}>*</span>}
+                        {o.type === "ingredients" && <span style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 500, marginLeft: 6 }}>— tap to remove</span>}
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {o.choices.map(c => {
+                        {o.type === "ingredients" ? o.choices.map(c => {
+                          const all = o.choices.map(x => x.id);
+                          const on = (selIngredients[o.id] ?? all).includes(c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => toggleIngredient(o.id, c.id, all)}
+                              style={{
+                                padding: "8px 14px", borderRadius: 99, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                                border: `1px solid ${on ? accentColor : "var(--border)"}`,
+                                background: on ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
+                                color: on ? accentColor : "var(--text-muted)",
+                                textDecoration: on ? "none" : "line-through",
+                                opacity: on ? 1 : 0.6,
+                              }}
+                            >
+                              {c.label}
+                            </button>
+                          );
+                        }) : o.choices.map(c => {
                           const on = selOptions[o.id] === c.id;
                           return (
                             <button
