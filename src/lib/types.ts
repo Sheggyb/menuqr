@@ -39,6 +39,24 @@ export interface MenuItem {
   sort_order: number;
 }
 
+export interface MenuItemOptionChoice {
+  id: string;
+  option_id: string;
+  label: string;
+  price_delta: number;
+  sort_order: number;
+}
+
+export interface MenuItemOption {
+  id: string;
+  restaurant_id: string;
+  item_id: string;
+  name: string;
+  is_required: boolean;
+  sort_order: number;
+  choices: MenuItemOptionChoice[];
+}
+
 export interface TableRequest {
   id: string;
   restaurant_id: string;

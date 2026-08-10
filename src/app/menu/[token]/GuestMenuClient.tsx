@@ -1,12 +1,13 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Restaurant, MenuCategory, MenuItem, TableRow } from "@/lib/types";
+import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, TableRow } from "@/lib/types";
 
 interface Props {
   table: TableRow & { restaurant: Restaurant };
   restaurant: Restaurant;
   categories: MenuCategory[];
   items: MenuItem[];
+  options: MenuItemOption[];
 }
 
 type RequestType = "waiter" | "bill" | "refill" | "item_request";
@@ -26,6 +27,7 @@ interface CartItem {
   item: MenuItem;
   quantity: number;
   note: string;
+  options: { label: string; priceDelta: number }[];
 }
 
 interface SessionRequest {
@@ -57,7 +59,7 @@ const IconArrowUp = (size = 18) => icon(<><path d="M12 19V5" /><path d="M6 11l6-
 const IconTick = (size = 18) => icon(<path d="M5 12.5l4.5 4.5L19 7.5" />, size);
 const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
 
-export default function GuestMenuClient({ table, restaurant, categories, items }: Props) {
+export default function GuestMenuClient({ table, restaurant, categories, items, options }: Props) {
   // Only show categories that actually have available items
   const itemCountByCategory: Record<string, number> = {};
   for (const item of items) {
@@ -85,6 +87,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
   const [noteFor, setNoteFor] = useState<{ item: MenuItem } | null>(null);
+  // optionId -> selected choiceId (per item sheet session)
+  const [selOptions, setSelOptions] = useState<Record<string, string>>({});
   const [noteText, setNoteText] = useState("");
   const [qty, setQty] = useState(1);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
@@ -316,12 +320,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     const snapshot = [...cart];
     // Merge all cart items into ONE order line
     const combinedName = snapshot.map(ci =>
-      `x${ci.quantity} ${ci.item.name}${ci.note ? ` (${ci.note})` : ""}`
+      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}${ci.note ? ` (${ci.note})` : ""}`
     ).join("\n");
     const combinedNote = snapshot.filter(ci => ci.note).length > 0
       ? snapshot.map(ci => `${ci.item.name}: ${ci.note}`).join("; ")
       : null;
-    const totalPrice = snapshot.reduce((s, ci) => s + ci.quantity * (ci.item.price ?? 0), 0);
+    const totalPrice = snapshot.reduce((s, ci) => s + ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((x, o) => x + o.priceDelta, 0)), 0);
 
     const res = await fetch("/api/order", {
       method: "POST",
@@ -360,16 +364,32 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
     setNoteFor({ item });
     setQty(1);
     setNoteText("");
+    setSelOptions({});
   }
 
   function confirmAddToCart() {
     if (!noteFor) return;
+    const itemOptions = options.filter(o => o.item_id === noteFor.item.id);
+    // Required option groups must have a selection
+    for (const o of itemOptions) {
+      if (o.is_required && !selOptions[o.id]) {
+        showToast(`Please choose: ${o.name}`);
+        return;
+      }
+    }
+    const chosen = itemOptions
+      .filter(o => selOptions[o.id])
+      .map(o => {
+        const c = o.choices.find(c => c.id === selOptions[o.id]);
+        return { label: c?.label ?? "", priceDelta: c?.price_delta ?? 0 };
+      });
+    const optKey = chosen.map(c => c.label).join("|");
     setCart(prev => {
-      const existing = prev.find(c => c.item.id === noteFor.item.id && c.note === noteText);
+      const existing = prev.find(c => c.item.id === noteFor.item.id && c.note === noteText && c.options.map(o => o.label).join("|") === optKey);
       if (existing) {
         return prev.map(c => c === existing ? { ...c, quantity: c.quantity + qty } : c);
       }
-      return [...prev, { item: noteFor.item, quantity: qty, note: noteText }];
+      return [...prev, { item: noteFor.item, quantity: qty, note: noteText, options: chosen }];
     });
     setNoteFor(null);
     showToast("Added to order");
@@ -385,7 +405,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
   }
 
   const visibleItems = items.filter(i => i.category_id === activeCategory);
-  const cartTotal = cart.reduce((sum, c) => sum + c.quantity * (c.item.price ?? 0), 0);
+  const cartTotal = cart.reduce((sum, c) => sum + c.quantity * ((c.item.price ?? 0) + c.options.reduce((s, o) => s + o.priceDelta, 0)), 0);
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
   // itemCountByCategory and visibleCategories computed at top of component
@@ -709,8 +729,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
               <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
+                  {ci.options.length > 0 && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>{ci.options.map(o => o.label).join(", ")}</div>}
                   {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ci.item.price)} {currencySymbol}</div> : null}
+                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((s, o) => s + o.priceDelta, 0)))} {currencySymbol}</div> : null}
                 </div>
                 <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, fontWeight: 600, padding: "0 4px" }}>×</button>
               </div>
@@ -746,6 +767,41 @@ export default function GuestMenuClient({ table, restaurant, categories, items }
                 <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${accentColor}`, background: accentColor, cursor: "pointer", fontSize: 18, fontWeight: 600, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
               </div>
             </div>
+            {(() => {
+              const itemOptions = options.filter(o => o.item_id === noteFor.item.id);
+              if (itemOptions.length === 0) return null;
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 14 }}>
+                  {itemOptions.map(o => (
+                    <div key={o.id}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
+                        {o.name}{o.is_required && <span style={{ color: accentColor, marginLeft: 4 }}>*</span>}
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {o.choices.map(c => {
+                          const on = selOptions[o.id] === c.id;
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => setSelOptions(s => ({ ...s, [o.id]: c.id }))}
+                              style={{
+                                padding: "8px 14px", borderRadius: 99, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                                border: `1px solid ${on ? accentColor : "var(--border)"}`,
+                                background: on ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
+                                color: on ? accentColor : "var(--text)",
+                              }}
+                            >
+                              {c.label}{c.price_delta > 0 ? ` +${fmtPrice(c.price_delta)}` : ""}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
             <textarea
               value={noteText}
               onChange={e => setNoteText(e.target.value)}

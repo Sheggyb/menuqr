@@ -103,6 +103,44 @@ drop policy if exists "Public read available items" on menu_items;
 -- NOTE: public read of menu items removed (2026-08 audit 1.2).
 
 -- ------------------------------------------------------------
+-- MENU ITEM OPTIONS (choice groups per item — e.g. meat choice on kebabs)
+-- ------------------------------------------------------------
+create table if not exists menu_item_options (
+  id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid references restaurants(id) on delete cascade not null,
+  item_id uuid references menu_items(id) on delete cascade not null,
+  name text not null,
+  is_required boolean not null default true,
+  sort_order int not null default 0,
+  created_at timestamptz default now()
+);
+alter table menu_item_options enable row level security;
+drop policy if exists "Owner manage item options" on menu_item_options;
+create policy "Owner manage item options" on menu_item_options
+  for all using (
+    auth.uid() = (select owner_id from restaurants where id = restaurant_id)
+  ) with check (
+    auth.uid() = (select owner_id from restaurants where id = restaurant_id)
+  );
+
+create table if not exists menu_item_option_choices (
+  id uuid primary key default gen_random_uuid(),
+  option_id uuid references menu_item_options(id) on delete cascade not null,
+  label text not null,
+  price_delta numeric(10,2) not null default 0,
+  sort_order int not null default 0,
+  created_at timestamptz default now()
+);
+alter table menu_item_option_choices enable row level security;
+drop policy if exists "Owner manage option choices" on menu_item_option_choices;
+create policy "Owner manage option choices" on menu_item_option_choices
+  for all using (
+    auth.uid() = (select owner_id from restaurants where id = restaurant_id)
+  ) with check (
+    auth.uid() = (select owner_id from restaurants where id = restaurant_id)
+  );
+
+-- ------------------------------------------------------------
 -- TABLE REQUESTS (orders / waiter / bill / refill)
 -- ------------------------------------------------------------
 create table if not exists table_requests (

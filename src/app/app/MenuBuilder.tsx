@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
-import type { Restaurant, MenuCategory, MenuItem } from "@/lib/types";
+import type { Restaurant, MenuCategory, MenuItem, MenuItemOption } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
 import { CURRENCIES } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
@@ -38,6 +38,16 @@ interface InlineEdit {
   field: "name" | "description" | "price";
 }
 
+// Draft shape for the item options editor (local, unsaved)
+interface OptionDraft {
+  id: string; // real id or "new-<n>" for unsaved rows
+  name: string;
+  isRequired: boolean;
+  choices: { id: string; label: string; price: string }[];
+}
+
+let optionIdCounter = 0;
+
 interface QuickAdd {
   name: string;
   price: string;
@@ -49,9 +59,14 @@ export default function MenuBuilder({ restaurant }: Props) {
   const confirm = useConfirm();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
+  const [itemOptions, setItemOptions] = useState<MenuItemOption[]>([]);
   const [selectedCatId, setSelectedCatId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Item options editor state
+  const [optionsEditor, setOptionsEditor] = useState<{ item: MenuItem } | null>(null);
+  const [optionDrafts, setOptionDrafts] = useState<OptionDraft[]>([]);
 
   // Inline editing state
   const [edit, setEdit] = useState<InlineEdit | null>(null);
@@ -140,14 +155,19 @@ export default function MenuBuilder({ restaurant }: Props) {
   // selectedCatId must NOT be in here or every category click refetches all
   // categories + items.
   const load = useCallback(async () => {
-    const [{ data: cats }, { data: its }] = await Promise.all([
+    const [{ data: cats }, { data: its }, { data: optRows }] = await Promise.all([
       supabase.from("menu_categories").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
       supabase.from("menu_items").select("*").eq("restaurant_id", restaurant.id).order("sort_order"),
+      supabase.from("menu_item_options").select("*, choices:menu_item_option_choices(*)").eq("restaurant_id", restaurant.id).order("sort_order"),
     ]);
     const loadedCats = (cats ?? []) as MenuCategory[];
     const loadedItems = (its ?? []) as MenuItem[];
     setCategories(loadedCats);
     setItems(loadedItems);
+    setItemOptions((optRows ?? []).map(o => ({
+      ...o,
+      choices: [...(o.choices ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+    })));
     setLoading(false);
   }, [restaurant.id]);
 
@@ -157,6 +177,108 @@ export default function MenuBuilder({ restaurant }: Props) {
   useEffect(() => {
     if (!selectedCatId && categories.length > 0) setSelectedCatId(categories[0].id);
   }, [selectedCatId, categories]);
+
+  // ─── Item options editor ────────────────────────────────
+  function openOptionsEditor(item: MenuItem) {
+    const existing = itemOptions.filter(o => o.item_id === item.id);
+    setOptionDrafts(existing.map(o => ({
+      id: o.id,
+      name: o.name,
+      isRequired: o.is_required,
+      choices: o.choices.map(c => ({ id: c.id, label: c.label, price: c.price_delta > 0 ? String(c.price_delta) : "" })),
+    })));
+    setOptionsEditor({ item });
+  }
+
+  function addOptionGroup() {
+    setOptionDrafts(d => [...d, { id: `new-${++optionIdCounter}`, name: "", isRequired: true, choices: [] }]);
+  }
+
+  function patchGroup(idx: number, patch: Partial<OptionDraft>) {
+    setOptionDrafts(d => d.map((g, i) => i === idx ? { ...g, ...patch } : g));
+  }
+
+  function addChoice(gIdx: number) {
+    setOptionDrafts(d => d.map((g, i) => i === gIdx
+      ? { ...g, choices: [...g.choices, { id: `new-${++optionIdCounter}`, label: "", price: "" }] }
+      : g));
+  }
+
+  function patchChoice(gIdx: number, cIdx: number, patch: Partial<{ label: string; price: string }>) {
+    setOptionDrafts(d => d.map((g, i) => i === gIdx
+      ? { ...g, choices: g.choices.map((c, j) => j === cIdx ? { ...c, ...patch } : c) }
+      : g));
+  }
+
+  function removeChoice(gIdx: number, cIdx: number) {
+    setOptionDrafts(d => d.map((g, i) => i === gIdx ? { ...g, choices: g.choices.filter((_, j) => j !== cIdx) } : g));
+  }
+
+  function removeOptionGroup(idx: number) {
+    setOptionDrafts(d => d.filter((_, i) => i !== idx));
+  }
+
+  async function saveOptions() {
+    if (!optionsEditor) return;
+    const itemId = optionsEditor.item.id;
+    const groups = optionDrafts.filter(g => g.name.trim().length > 0);
+    // 1) Upsert groups (include all NOT NULL columns — Postgres validates them
+    //    on the proposed row before ON CONFLICT resolves)
+    const groupRows: Record<string, unknown>[] = groups.map((g, i) => {
+      const row: Record<string, unknown> = {
+        restaurant_id: restaurant.id,
+        item_id: itemId,
+        name: g.name.trim(),
+        is_required: g.isRequired,
+        sort_order: i,
+      };
+      if (!g.id.startsWith("new-")) row.id = g.id;
+      return row;
+    });
+    const { data: savedGroups, error: gErr } = await supabase
+      .from("menu_item_options")
+      .upsert(groupRows)
+      .select("id, name");
+    if (gErr) { toast.error("Could not save the options"); return; }
+    const idByName = new Map<string, string>((savedGroups ?? []).map(r => [r.name, r.id]));
+    const groupsWithIds = groups.map(g => ({ ...g, id: idByName.get(g.name) ?? g.id }));
+
+    // 2) Upsert choices
+    const choiceRows: Record<string, unknown>[] = [];
+    groupsWithIds.forEach(g => {
+      g.choices.filter(c => c.label.trim().length > 0).forEach((c, ci) => {
+        const row: Record<string, unknown> = {
+          option_id: g.id,
+          label: c.label.trim(),
+          price_delta: parseFloat(c.price) || 0,
+          sort_order: ci,
+        };
+        if (!c.id.startsWith("new-")) row.id = c.id;
+        choiceRows.push(row);
+      });
+    });
+    if (choiceRows.length > 0) {
+      const { error: cErr } = await supabase.from("menu_item_option_choices").upsert(choiceRows);
+      if (cErr) { toast.error("Could not save the choices"); return; }
+    }
+
+    // 3) Delete removed groups (cascade removes their choices) + removed choices
+    const existingGroups = itemOptions.filter(o => o.item_id === itemId);
+    const keptGroupIds = new Set(groupsWithIds.map(g => g.id));
+    const removedGroups = existingGroups.filter(o => !keptGroupIds.has(o.id));
+    if (removedGroups.length > 0) {
+      await supabase.from("menu_item_options").delete().in("id", removedGroups.map(g => g.id));
+    }
+    const keptChoiceIds = new Set(groupsWithIds.flatMap(g => g.choices).map(c => c.id));
+    const removedChoices = existingGroups.flatMap(o => o.choices).filter(c => !keptChoiceIds.has(c.id));
+    if (removedChoices.length > 0) {
+      await supabase.from("menu_item_option_choices").delete().in("id", removedChoices.map(c => c.id));
+    }
+
+    setOptionsEditor(null);
+    toast.success("Options saved");
+    await load();
+  }
 
   // Focus edit input when editing starts
   useEffect(() => {
@@ -808,6 +930,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                             label: "Duplicate item",
                             action: () => duplicateItem(item),
                           },
+                          {
+                            label: "Options (choices)",
+                            action: () => openOptionsEditor(item),
+                          },
                           { separator: true },
                           {
                             label: "Delete item",
@@ -1035,6 +1161,72 @@ export default function MenuBuilder({ restaurant }: Props) {
                 {e}
               </button>
             ))}
+          </div>
+        </>,
+        document.body
+      )}
+      {/* Item options editor */}
+      {optionsEditor && typeof document !== "undefined" && createPortal(
+        <>
+          <div onClick={() => setOptionsEditor(null)} style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 16, padding: "24px", maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}>
+              <h3 style={{ fontWeight: 800, fontSize: 17, margin: "0 0 4px", color: "var(--text)" }}>Options — {optionsEditor.item.name}</h3>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
+                Guests must pick one choice from each required group (e.g. meat choice on kebabs).
+              </p>
+              {optionDrafts.length === 0 && (
+                <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 12px" }}>No options yet — add a group below.</p>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
+                {optionDrafts.map((g, gi) => (
+                  <div key={g.id} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px", background: "var(--surface-2)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <input
+                        value={g.name}
+                        onChange={e => patchGroup(gi, { name: e.target.value })}
+                        placeholder="Group name (e.g. Meat choice)"
+                        style={{ flex: 1, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                      />
+                      <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
+                        Required
+                      </label>
+                      <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 16, padding: "2px 4px" }}>×</button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      {g.choices.map((c, ci) => (
+                        <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                          <input
+                            value={c.label}
+                            onChange={e => patchChoice(gi, ci, { label: e.target.value })}
+                            placeholder="Choice (e.g. Fläsk)"
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                          />
+                          <input
+                            value={c.price}
+                            onChange={e => patchChoice(gi, ci, { price: e.target.value })}
+                            placeholder="+kr"
+                            inputMode="decimal"
+                            style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                          />
+                          <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: "2px 4px" }}>×</button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => addChoice(gi)} style={{ alignSelf: "flex-start", padding: "5px 10px", borderRadius: 8, border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
+                        + Add choice
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={addOptionGroup} style={{ width: "100%", padding: "9px", borderRadius: 10, border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer", marginBottom: 16 }}>
+                + Add option group
+              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setOptionsEditor(null)} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}>Cancel</button>
+                <button onClick={saveOptions} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>Save options</button>
+              </div>
+            </div>
           </div>
         </>,
         document.body

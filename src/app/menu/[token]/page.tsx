@@ -52,10 +52,15 @@ export default async function GuestMenuPage({ params }: Props) {
   );
 
   // Load menu
-  const [{ data: categories }, { data: items }] = await Promise.all([
+  const [{ data: categories }, { data: items }, { data: optionRows }] = await Promise.all([
     supabase.from("menu_categories").select("*").eq("restaurant_id", table.restaurant_id).order("sort_order"),
     supabase.from("menu_items").select("*").eq("restaurant_id", table.restaurant_id).eq("is_available", true).order("sort_order"),
+    supabase.from("menu_item_options").select("*, choices:menu_item_option_choices(*)").eq("restaurant_id", table.restaurant_id).order("sort_order"),
   ]);
+  const options = (optionRows ?? []).map(o => ({
+    ...o,
+    choices: [...(o.choices ?? [])].sort((a, b) => a.sort_order - b.sort_order),
+  }));
 
   return (
     <GuestMenuClient
@@ -63,6 +68,7 @@ export default async function GuestMenuPage({ params }: Props) {
       restaurant={table.restaurant}
       categories={categories ?? []}
       items={items ?? []}
+      options={options}
     />
   );
 }
