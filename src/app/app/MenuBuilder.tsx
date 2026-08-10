@@ -248,6 +248,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     groupsWithIds.forEach(g => {
       g.choices.filter(c => c.label.trim().length > 0).forEach((c, ci) => {
         const row: Record<string, unknown> = {
+          restaurant_id: restaurant.id,
           option_id: g.id,
           label: c.label.trim(),
           price_delta: parseFloat(c.price) || 0,

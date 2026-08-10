@@ -125,6 +125,7 @@ create policy "Owner manage item options" on menu_item_options
 
 create table if not exists menu_item_option_choices (
   id uuid primary key default gen_random_uuid(),
+  restaurant_id uuid references restaurants(id) on delete cascade not null,
   option_id uuid references menu_item_options(id) on delete cascade not null,
   label text not null,
   price_delta numeric(10,2) not null default 0,
