@@ -248,7 +248,12 @@ export default function MenuBuilder({ restaurant }: Props) {
   async function saveOptions() {
     if (!optionsEditor) return;
     const itemId = optionsEditor.item.id;
-    const namedGroups = optionDrafts.filter(g => g.name.trim().length > 0);
+    // Allergen groups don't need a name — the guest sheet renders a fixed
+    // "Contains" heading and never shows o.name, so requiring one silently
+    // discarded the whole group.
+    const namedGroups = optionDrafts.filter(g =>
+      g.name.trim().length > 0 || (g.type === "allergens" && g.choices.length > 0)
+    );
     const droppedEmpty = optionDrafts.length - namedGroups.length;
     const existingGroups = itemOptions.filter(o => o.item_id === itemId);
     // Saving zero named groups is only meaningful as "delete everything" — which
@@ -278,7 +283,7 @@ export default function MenuBuilder({ restaurant }: Props) {
       id: g.id,
       restaurant_id: restaurant.id,
       item_id: itemId,
-      name: g.name.trim(),
+      name: g.name.trim() || (g.type === "allergens" ? "Allergens" : ""),
       type: g.type,
       // Only 'choice' groups can be required — ingredients and allergens aren't picked
       is_required: g.type === "choice" ? g.isRequired : false,
@@ -1255,7 +1260,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                           ["ingredients", "Ingredients"],
                           ["allergens", "Allergens"],
                         ] as [MenuItemOptionType, string][]).map(([t, label]) => (
-                          <button key={t} type="button" onClick={() => patchGroup(gi, { type: t })}
+                          <button key={t} type="button" onClick={() => patchGroup(gi, {
+                            type: t,
+                            // Give the group a sensible name so it can't be dropped
+                            // for being unnamed
+                            ...(g.name.trim() ? {} : { name: t === "allergens" ? "Allergens" : t === "ingredients" ? "Ingredients" : "" }),
+                          })}
                             style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === t ? "var(--accent)" : "transparent", color: g.type === t ? "#fff" : "var(--text-muted)" }}>{label}</button>
                         ))}
                       </div>
