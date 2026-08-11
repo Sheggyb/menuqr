@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
+import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable } from "@/components/icons";
 import type { SVGProps } from "react";
@@ -82,7 +83,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
   const leftAccent = isLate ? LATE_ACCENT : accent;
-  const itemLines = (req.item_name ?? "").split("\n").filter(l => l.trim().length > 0);
+  const itemLines = parseOrderLines(req.item_name);
 
   return (
     <div
@@ -137,13 +138,42 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         )}
       </div>
 
-      {/* Items */}
+      {/* Items — sized for reading at arm's length off a wall screen.
+          Removals are the highest-risk part of a ticket, so they shout. */}
       {itemLines.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {itemLines.map((line, i) => (
-            <div key={i} style={{ display: "flex", gap: 8, alignItems: "baseline" }}>
-              <span aria-hidden="true" style={{ color: accent, fontWeight: 800, fontSize: 15 }}>&bull;</span>
-              <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.35, whiteSpace: "pre-line" }}>{line}</span>
+            <div key={i} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+              <span style={{
+                flexShrink: 0, minWidth: 30, textAlign: "right",
+                fontSize: 17, fontWeight: 800, color: accent,
+                fontVariantNumeric: "tabular-nums",
+              }}>{line.qty && line.qty > 1 ? `${line.qty}×` : "1×"}</span>
+              <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>
+                  {line.name}
+                  {line.choices.length > 0 && (
+                    <span style={{ fontWeight: 600, color: "var(--text-muted)" }}> · {line.choices.join(" · ")}</span>
+                  )}
+                </span>
+                {(line.removed.length > 0 || line.extra.length > 0) && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {line.removed.map((r, j) => (
+                      <span key={`r${j}`} style={{ fontSize: 13, fontWeight: 800, padding: "2px 9px", borderRadius: 6, background: "color-mix(in srgb, #dc2626 16%, transparent)", color: "#dc2626", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+                        NO {r.toUpperCase()}
+                      </span>
+                    ))}
+                    {line.extra.map((x, j) => (
+                      <span key={`x${j}`} style={{ fontSize: 13, fontWeight: 800, padding: "2px 9px", borderRadius: 6, background: "color-mix(in srgb, #16a34a 16%, transparent)", color: "#16a34a", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+                        EXTRA {x.toUpperCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {line.note && (
+                  <span style={{ fontSize: 13.5, color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
+                )}
+              </div>
             </div>
           ))}
         </div>

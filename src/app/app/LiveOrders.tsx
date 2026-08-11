@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { SkeletonList } from "@/components/Skeleton";
 import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
+import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock } from "@/components/icons";
@@ -54,7 +55,7 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
   const leftAccent = isLate ? LATE_ACCENT : accent;
-  const itemLines = (req.item_name ?? "").split("\n").filter(l => l.trim().length > 0);
+  const itemLines = parseOrderLines(req.item_name);
 
   return (
     <div
@@ -104,20 +105,45 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         )}
       </div>
 
-      {/* Item details */}
+      {/* Item details — quantity, dish, then modifiers. Removals are the
+          highest-risk part of a ticket, so they get their own colour. */}
       {itemLines.length > 0 && (
-        itemLines.length === 1 ? (
-          <span style={{ fontSize: 16, fontWeight: 600, color: "var(--text)", lineHeight: 1.4 }}>{itemLines[0]}</span>
-        ) : (
-          <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", whiteSpace: "pre-line" }}>
-            {itemLines.map((line, i) => (
-              <li key={i} style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", lineHeight: 1.6, display: "flex", gap: 6 }}>
-                <span aria-hidden="true" style={{ color: "var(--text-muted)" }}>&bull;</span>
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-        )
+        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
+          {itemLines.map((line, i) => (
+            <li key={i} style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
+              <span style={{
+                flexShrink: 0, minWidth: 24, textAlign: "right",
+                fontSize: 14, fontWeight: 700, color: "var(--text-muted)",
+                fontVariantNumeric: "tabular-nums",
+              }}>{line.qty && line.qty > 1 ? `${line.qty}×` : "1×"}</span>
+              <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>
+                  {line.name}
+                  {line.choices.length > 0 && (
+                    <span style={{ fontWeight: 500, color: "var(--text-muted)" }}> · {line.choices.join(" · ")}</span>
+                  )}
+                </span>
+                {(line.removed.length > 0 || line.extra.length > 0) && (
+                  <span style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                    {line.removed.map((r, j) => (
+                      <span key={`r${j}`} style={{ fontSize: 11.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5, background: "color-mix(in srgb, #dc2626 14%, transparent)", color: "#dc2626", whiteSpace: "nowrap" }}>
+                        NO {r}
+                      </span>
+                    ))}
+                    {line.extra.map((x, j) => (
+                      <span key={`x${j}`} style={{ fontSize: 11.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5, background: "color-mix(in srgb, #16a34a 14%, transparent)", color: "#16a34a", whiteSpace: "nowrap" }}>
+                        EXTRA {x}
+                      </span>
+                    ))}
+                  </span>
+                )}
+                {line.note && (
+                  <span style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
       {req.note && (
         <span style={{ fontSize: 13, color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5, lineHeight: 1.5 }}>
