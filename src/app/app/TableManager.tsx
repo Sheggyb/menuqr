@@ -31,6 +31,7 @@ export default function TableManager({ restaurant }: Props) {
   const [lastRequests, setLastRequests] = useState<Record<string, string>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [modalCopied, setModalCopied] = useState(false);
+  const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [pendingByTable, setPendingByTable] = useState<Record<string, number>>({});
   const [pendingSessions, setPendingSessions] = useState<Array<{ id: string; session_id: string; table: { name: string }; created_at: string }>>([]);
   const [now, setNow] = useState(() => Date.now());
@@ -175,6 +176,46 @@ export default function TableManager({ restaurant }: Props) {
     }
   }
 
+  function startRename(table: TableRow) {
+    setRenaming({ id: table.id, name: table.name });
+  }
+
+  async function saveRename() {
+    if (!renaming) return;
+    const name = renaming.name.trim();
+    if (!name) { toast.error("Table name can't be empty"); return; }
+    const { error } = await supabase.from("restaurant_tables").update({ name }).eq("id", renaming.id);
+    if (error) { toast.error("Could not rename the table"); return; }
+    setTables(t => t.map(x => x.id === renaming.id ? { ...x, name } : x)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
+    setRenaming(null);
+    toast.success("Table renamed");
+  }
+
+  /** Issue a fresh token — for a QR sheet that leaked or went missing. */
+  async function regenerateToken(table: TableRow) {
+    const ok = await confirm({
+      title: `New QR code for "${table.name}"?`,
+      message: "The current printed QR code stops working immediately and you'll need to print a new one. Orders and history are kept.",
+      confirmLabel: "Yes, generate a new code",
+      danger: true,
+    });
+    if (!ok) return;
+    const token = crypto.randomUUID();
+    const { error } = await supabase.from("restaurant_tables").update({ token }).eq("id", table.id);
+    if (error) { toast.error("Could not generate a new QR code"); return; }
+    // Any guest holding a session on the old code must request access again
+    try {
+      await fetch("/api/session/close-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table_id: table.id }),
+      });
+    } catch { /* token is already rotated; session cleanup is best-effort */ }
+    setTables(t => t.map(x => x.id === table.id ? { ...x, token } : x));
+    toast.success("New QR code generated — print it again");
+  }
+
   async function deleteTable(table: TableRow) {
     const ok = await confirm({
       title: `Delete "${table.name}"?`,
@@ -284,6 +325,15 @@ export default function TableManager({ restaurant }: Props) {
     items.push({
       label: "Copy link",
       action: () => copyLink(table),
+    });
+    items.push({ separator: true });
+    items.push({
+      label: "Rename table",
+      action: () => startRename(table),
+    });
+    items.push({
+      label: "Generate new QR code",
+      action: () => regenerateToken(table),
     });
     items.push({ separator: true });
     items.push({
@@ -448,7 +498,25 @@ export default function TableManager({ restaurant }: Props) {
                 }}
               >
                 <div>
-                  <span style={{ fontWeight: 700 }}>{table.name}</span>
+                  {renaming?.id === table.id ? (
+                    <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
+                      <input
+                        autoFocus
+                        value={renaming.name}
+                        onChange={e => setRenaming({ id: table.id, name: e.target.value })}
+                        onKeyDown={e => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") setRenaming(null); }}
+                        style={{ width: 160, padding: "5px 9px", fontSize: 14, fontWeight: 700, borderRadius: 6 }}
+                      />
+                      <button onClick={saveRename} style={{ padding: "5px 11px", borderRadius: 6, border: "none", background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save</button>
+                      <button onClick={() => setRenaming(null)} style={{ padding: "5px 9px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                    </span>
+                  ) : (
+                    <span
+                      onDoubleClick={() => startRename(table)}
+                      title="Double-click to rename"
+                      style={{ fontWeight: 700, cursor: "text" }}
+                    >{table.name}</span>
+                  )}
                   {pendingByTable[table.id] > 0 && (
                     <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, border: "1px solid var(--accent)", color: "var(--accent)", fontWeight: 700 }}>
                       {pendingByTable[table.id]} waiting

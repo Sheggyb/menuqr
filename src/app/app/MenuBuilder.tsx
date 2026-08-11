@@ -2,9 +2,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
-import type { Restaurant, MenuCategory, MenuItem, MenuItemOption } from "@/lib/types";
+import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, MenuItemOptionType } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
-import { CURRENCIES } from "@/lib/constants";
+import { CURRENCIES, EU_ALLERGENS } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
@@ -39,12 +39,20 @@ interface InlineEdit {
 }
 
 // Draft shape for the item options editor (local, unsaved)
+interface OptionDraftChoice {
+  id: string;
+  /** Allergen groups store an EU_ALLERGENS id here, not display text. */
+  label: string;
+  price: string;
+  isAvailable: boolean;
+}
+
 interface OptionDraft {
   id: string; // real uuid — new rows get crypto.randomUUID() so upserts stay homogeneous
   name: string;
-  type: "choice" | "ingredients";
+  type: MenuItemOptionType;
   isRequired: boolean;
-  choices: { id: string; label: string; price: string }[];
+  choices: OptionDraftChoice[];
 }
 
 interface QuickAdd {
@@ -185,7 +193,12 @@ export default function MenuBuilder({ restaurant }: Props) {
       name: o.name,
       type: o.type ?? "choice",
       isRequired: o.is_required,
-      choices: o.choices.map(c => ({ id: c.id, label: c.label, price: c.price_delta > 0 ? String(c.price_delta) : "" })),
+      choices: o.choices.map(c => ({
+        id: c.id,
+        label: c.label,
+        price: c.price_delta !== 0 ? String(c.price_delta) : "",
+        isAvailable: c.is_available ?? true,
+      })),
     })));
     setOptionsEditor({ item });
   }
@@ -194,17 +207,31 @@ export default function MenuBuilder({ restaurant }: Props) {
     setOptionDrafts(d => [...d, { id: crypto.randomUUID(), name: "", type: "choice", isRequired: true, choices: [] }]);
   }
 
+  /** Allergen groups are a fixed checklist — toggle one allergen on/off. */
+  function toggleAllergen(gIdx: number, allergenId: string) {
+    setOptionDrafts(d => d.map((g, i) => {
+      if (i !== gIdx) return g;
+      const has = g.choices.some(c => c.label === allergenId);
+      return {
+        ...g,
+        choices: has
+          ? g.choices.filter(c => c.label !== allergenId)
+          : [...g.choices, { id: crypto.randomUUID(), label: allergenId, price: "", isAvailable: true }],
+      };
+    }));
+  }
+
   function patchGroup(idx: number, patch: Partial<OptionDraft>) {
     setOptionDrafts(d => d.map((g, i) => i === idx ? { ...g, ...patch } : g));
   }
 
   function addChoice(gIdx: number) {
     setOptionDrafts(d => d.map((g, i) => i === gIdx
-      ? { ...g, choices: [...g.choices, { id: crypto.randomUUID(), label: "", price: "" }] }
+      ? { ...g, choices: [...g.choices, { id: crypto.randomUUID(), label: "", price: "", isAvailable: true }] }
       : g));
   }
 
-  function patchChoice(gIdx: number, cIdx: number, patch: Partial<{ label: string; price: string }>) {
+  function patchChoice(gIdx: number, cIdx: number, patch: Partial<OptionDraftChoice>) {
     setOptionDrafts(d => d.map((g, i) => i === gIdx
       ? { ...g, choices: g.choices.map((c, j) => j === cIdx ? { ...c, ...patch } : c) }
       : g));
@@ -223,10 +250,27 @@ export default function MenuBuilder({ restaurant }: Props) {
     const itemId = optionsEditor.item.id;
     const namedGroups = optionDrafts.filter(g => g.name.trim().length > 0);
     const droppedEmpty = optionDrafts.length - namedGroups.length;
-    if (namedGroups.length === 0) {
+    const existingGroups = itemOptions.filter(o => o.item_id === itemId);
+    // Saving zero named groups is only meaningful as "delete everything" — which
+    // is a legitimate action when the item already has groups.
+    if (namedGroups.length === 0 && existingGroups.length === 0) {
       toast.error("Enter a group name first");
       return;
     }
+
+    // Reject prices that aren't numbers rather than silently defaulting to 0 —
+    // a typo like "1o" would otherwise become a free add-on.
+    for (const g of namedGroups) {
+      if (g.type !== "choice") continue;
+      for (const c of g.choices) {
+        if (!c.label.trim() || !c.price.trim()) continue;
+        if (!Number.isFinite(Number(c.price.trim().replace(",", ".")))) {
+          toast.error(`"${c.price}" isn't a valid price`);
+          return;
+        }
+      }
+    }
+
     // 1) Upsert groups — every row carries a real id (new rows get a client
     //    uuid), so the payload is homogeneous. Mixed id/no-id rows would make
     //    PostgREST send NULL ids for the new ones (NOT NULL violation).
@@ -236,11 +280,14 @@ export default function MenuBuilder({ restaurant }: Props) {
       item_id: itemId,
       name: g.name.trim(),
       type: g.type,
-      is_required: g.type === "ingredients" ? false : g.isRequired,
+      // Only 'choice' groups can be required — ingredients and allergens aren't picked
+      is_required: g.type === "choice" ? g.isRequired : false,
       sort_order: i,
     }));
-    const { error: gErr } = await supabase.from("menu_item_options").upsert(groupRows);
-    if (gErr) { toast.error("Could not save the options"); return; }
+    if (groupRows.length > 0) {
+      const { error: gErr } = await supabase.from("menu_item_options").upsert(groupRows);
+      if (gErr) { toast.error("Could not save the options"); return; }
+    }
 
     // 2) Upsert choices
     const choiceRows: Record<string, unknown>[] = [];
@@ -251,7 +298,11 @@ export default function MenuBuilder({ restaurant }: Props) {
           restaurant_id: restaurant.id,
           option_id: g.id,
           label: c.label.trim(),
-          price_delta: parseFloat(c.price) || 0,
+          price_delta: g.type === "choice" && c.price.trim()
+            ? Number(c.price.trim().replace(",", "."))
+            : 0,
+          // Allergen tags are informational — never hidden by an availability flag
+          is_available: g.type === "allergens" ? true : c.isAvailable,
           sort_order: ci,
         });
       });
@@ -261,17 +312,23 @@ export default function MenuBuilder({ restaurant }: Props) {
       if (cErr) { toast.error("Could not save the choices"); return; }
     }
 
-    // 3) Delete removed groups (cascade removes their choices) + removed choices
-    const existingGroups = itemOptions.filter(o => o.item_id === itemId);
+    // 3) Delete removed groups (their choices cascade) then removed choices
     const keptGroupIds = new Set(namedGroups.map(g => g.id));
     const removedGroups = existingGroups.filter(o => !keptGroupIds.has(o.id));
     if (removedGroups.length > 0) {
-      await supabase.from("menu_item_options").delete().in("id", removedGroups.map(g => g.id));
+      const { error: dErr } = await supabase.from("menu_item_options").delete().in("id", removedGroups.map(g => g.id));
+      if (dErr) { toast.error("Could not remove a deleted group"); await load(); return; }
     }
+    // Only look at groups that still exist — choices under a deleted group are
+    // already gone via cascade, and including them would delete by luck.
     const keptChoiceIds = new Set(namedGroups.flatMap(g => g.choices).map(c => c.id));
-    const removedChoices = existingGroups.flatMap(o => o.choices).filter(c => !keptChoiceIds.has(c.id));
+    const removedChoices = existingGroups
+      .filter(o => keptGroupIds.has(o.id))
+      .flatMap(o => o.choices)
+      .filter(c => !keptChoiceIds.has(c.id));
     if (removedChoices.length > 0) {
-      await supabase.from("menu_item_option_choices").delete().in("id", removedChoices.map(c => c.id));
+      const { error: dcErr } = await supabase.from("menu_item_option_choices").delete().in("id", removedChoices.map(c => c.id));
+      if (dcErr) { toast.error("Could not remove a deleted choice"); await load(); return; }
     }
 
     setOptionsEditor(null);
@@ -1172,7 +1229,9 @@ export default function MenuBuilder({ restaurant }: Props) {
             <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 16, padding: "24px", maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}>
               <h3 style={{ fontWeight: 800, fontSize: 17, margin: "0 0 4px", color: "var(--text)" }}>Options — {optionsEditor.item.name}</h3>
               <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
-                Guests must pick one choice from each required group (e.g. meat choice on kebabs).
+                <strong>Choice</strong> — guest picks one (e.g. meat on kebabs).{" "}
+                <strong>Ingredients</strong> — all included, guest removes or adds extra.{" "}
+                <strong>Allergens</strong> — shown to guests; required by EU food-information rules.
               </p>
               {optionDrafts.length === 0 && (
                 <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 12px" }}>No options yet — add a group below.</p>
@@ -1184,27 +1243,56 @@ export default function MenuBuilder({ restaurant }: Props) {
                       <input
                         value={g.name}
                         onChange={e => patchGroup(gi, { name: e.target.value })}
-                        placeholder={g.type === "ingredients" ? "Group name (e.g. Ingredients)" : "Group name (e.g. Meat choice)"}
+                        placeholder={g.type === "ingredients" ? "Group name (e.g. Ingredients)" : g.type === "allergens" ? "Group name (e.g. Allergens)" : "Group name (e.g. Meat choice)"}
                         style={{ flex: 1, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
                       />
                       <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 16, padding: "2px 4px" }}>×</button>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 2 }}>
-                        <button type="button" onClick={() => patchGroup(gi, { type: "choice" })}
-                          style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === "choice" ? "var(--accent)" : "transparent", color: g.type === "choice" ? "#fff" : "var(--text-muted)" }}>Choice</button>
-                        <button type="button" onClick={() => patchGroup(gi, { type: "ingredients" })}
-                          style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === "ingredients" ? "var(--accent)" : "transparent", color: g.type === "ingredients" ? "#fff" : "var(--text-muted)" }}>Ingredients (tap-to-remove)</button>
+                        {([
+                          ["choice", "Choice"],
+                          ["ingredients", "Ingredients"],
+                          ["allergens", "Allergens"],
+                        ] as [MenuItemOptionType, string][]).map(([t, label]) => (
+                          <button key={t} type="button" onClick={() => patchGroup(gi, { type: t })}
+                            style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === t ? "var(--accent)" : "transparent", color: g.type === t ? "#fff" : "var(--text-muted)" }}>{label}</button>
+                        ))}
                       </div>
                       {g.type === "choice" ? (
                         <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
                           Required
                         </label>
+                      ) : g.type === "ingredients" ? (
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Guests tap to remove or add extra</span>
                       ) : (
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Guests tap to remove what they don&apos;t want</span>
+                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Shown to guests, not selectable</span>
                       )}
                     </div>
+                    {g.type === "allergens" ? (
+                      // Fixed EU Annex II checklist — free text would be inconsistent
+                      // across restaurants and untranslatable.
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {EU_ALLERGENS.map(a => {
+                          const on = g.choices.some(c => c.label === a.id);
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => toggleAllergen(gi, a.id)}
+                              aria-pressed={on}
+                              style={{
+                                padding: "5px 11px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                                border: `1px solid ${on ? "#dc2626" : "var(--border)"}`,
+                                background: on ? "color-mix(in srgb, #dc2626 12%, transparent)" : "var(--surface)",
+                                color: on ? "#dc2626" : "var(--text-muted)",
+                              }}
+                            >{a.label}</button>
+                          );
+                        })}
+                      </div>
+                    ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       {g.choices.map((c, ci) => (
                         <div key={c.id} style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -1212,7 +1300,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             value={c.label}
                             onChange={e => patchChoice(gi, ci, { label: e.target.value })}
                             placeholder={g.type === "ingredients" ? "Ingredient (e.g. Lök)" : "Choice (e.g. Fläsk)"}
-                            style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none", textDecoration: c.isAvailable ? "none" : "line-through", opacity: c.isAvailable ? 1 : 0.6 }}
                           />
                           {g.type === "choice" && (
                             <input
@@ -1223,6 +1311,19 @@ export default function MenuBuilder({ restaurant }: Props) {
                               style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
                             />
                           )}
+                          {/* Sold out today — hides it from guests without losing the row */}
+                          <button
+                            type="button"
+                            onClick={() => patchChoice(gi, ci, { isAvailable: !c.isAvailable })}
+                            title={c.isAvailable ? "Available — click to mark sold out" : "Sold out — click to make available"}
+                            aria-pressed={!c.isAvailable}
+                            style={{
+                              fontSize: 11, padding: "3px 9px", borderRadius: 99, border: "none", cursor: "pointer",
+                              fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
+                              background: c.isAvailable ? "color-mix(in srgb, #22c55e 15%, transparent)" : "color-mix(in srgb, #f43f5e 15%, transparent)",
+                              color: c.isAvailable ? "#22c55e" : "#f43f5e",
+                            }}
+                          >{c.isAvailable ? "On" : "Sold out"}</button>
                           <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: "2px 4px" }}>×</button>
                         </div>
                       ))}
@@ -1230,6 +1331,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                         + Add {g.type === "ingredients" ? "ingredient" : "choice"}
                       </button>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>

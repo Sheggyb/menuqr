@@ -110,13 +110,23 @@ create table if not exists menu_item_options (
   restaurant_id uuid references restaurants(id) on delete cascade not null,
   item_id uuid references menu_items(id) on delete cascade not null,
   name text not null,
-  type text not null default 'choice' check (type in ('choice','ingredients')),
+  -- 'choice'      → guest picks exactly one (optionally required)
+  -- 'ingredients' → all included by default, guest removes or asks for extra
+  -- 'allergens'   → display only; EU 1169/2011 requires allergen info at the
+  --                 point the guest chooses
+  type text not null default 'choice' check (type in ('choice','ingredients','allergens')),
   is_required boolean not null default true,
   sort_order int not null default 0,
   created_at timestamptz default now()
 );
 -- Upgrade path for databases created before the type column existed
-alter table menu_item_options add column if not exists type text not null default 'choice' check (type in ('choice','ingredients'));
+alter table menu_item_options add column if not exists type text not null default 'choice';
+-- Widen the type constraint on databases created before 'allergens' existed.
+-- Drop + re-add is the only way to extend an inline check; both the create-table
+-- and add-column forms produce this constraint name.
+alter table menu_item_options drop constraint if exists menu_item_options_type_check;
+alter table menu_item_options add constraint menu_item_options_type_check
+  check (type in ('choice','ingredients','allergens'));
 alter table menu_item_options enable row level security;
 drop policy if exists "Owner manage item options" on menu_item_options;
 create policy "Owner manage item options" on menu_item_options
@@ -132,9 +142,13 @@ create table if not exists menu_item_option_choices (
   option_id uuid references menu_item_options(id) on delete cascade not null,
   label text not null,
   price_delta numeric(10,2) not null default 0,
+  -- Sold out today (e.g. out of nöt) — hidden from guests without deleting the row
+  is_available boolean not null default true,
   sort_order int not null default 0,
   created_at timestamptz default now()
 );
+-- Upgrade path for databases created before per-choice availability existed
+alter table menu_item_option_choices add column if not exists is_available boolean not null default true;
 alter table menu_item_option_choices enable row level security;
 drop policy if exists "Owner manage option choices" on menu_item_option_choices;
 create policy "Owner manage option choices" on menu_item_option_choices

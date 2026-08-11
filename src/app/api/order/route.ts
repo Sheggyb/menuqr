@@ -66,6 +66,22 @@ export async function POST(req: Request) {
   // client-supplied restaurant_id (a guest could post to another restaurant).
   const restaurantId = table.restaurant_id;
 
+  // If an item is referenced, it must belong to THIS restaurant and be available.
+  // Without this, a guest could attach another restaurant's item_id to their order.
+  // NOTE: cart submissions send item_id: null and carry their contents in
+  // item_name, so per-option validation isn't possible until orders are stored
+  // structurally (see ROADMAP.md "Structured orders").
+  if (item_id != null) {
+    const { data: item } = await supabase
+      .from("menu_items")
+      .select("id, is_available")
+      .eq("id", item_id)
+      .eq("restaurant_id", restaurantId)
+      .single();
+    if (!item) return badRequest("invalid item_id");
+    if (!item.is_available) return forbidden("item_unavailable");
+  }
+
   // Dedup quick actions: one open (pending/seen) request per type per table
   if (type === "waiter" || type === "bill" || type === "refill") {
     const { data: existing } = await supabase

@@ -42,17 +42,21 @@ export interface MenuItem {
 export interface MenuItemOptionChoice {
   id: string;
   option_id: string;
+  /** For allergen groups this holds an EU_ALLERGENS id, not display text. */
   label: string;
   price_delta: number;
+  is_available: boolean;
   sort_order: number;
 }
+
+export type MenuItemOptionType = "choice" | "ingredients" | "allergens";
 
 export interface MenuItemOption {
   id: string;
   restaurant_id: string;
   item_id: string;
   name: string;
-  type: "choice" | "ingredients";
+  type: MenuItemOptionType;
   is_required: boolean;
   sort_order: number;
   choices: MenuItemOptionChoice[];

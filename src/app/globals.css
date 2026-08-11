@@ -198,3 +198,17 @@ input:focus, textarea:focus, select:focus {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* ── Reduced motion ───────────────────────────────────
+   The guest menu and both boards animate a lot (slide-ins, pulses, sheet
+   transitions). Honour the OS setting: keep transitions near-instant rather
+   than removing them, so state changes are still perceivable. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  html { scroll-behavior: auto; }
+}

@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, TableRow } from "@/lib/types";
+import { EU_ALLERGENS, allergenLabel } from "@/lib/constants";
 
 interface Props {
   table: TableRow & { restaurant: Restaurant };
@@ -58,16 +59,23 @@ const IconChevron = (up: boolean, size = 14) => icon(up ? <path d="M6 14.5l6-6 6
 const IconArrowUp = (size = 18) => icon(<><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></>, size);
 const IconTick = (size = 18) => icon(<path d="M5 12.5l4.5 4.5L19 7.5" />, size);
 const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
+const IconLeaf = (size = 18) => icon(<><path d="M4 20c0-7 5-12 12-12h4v4c0 7-5 12-12 12H4v-4Z" /><path d="M9 15c2-3 5-5 8-6" /></>, size);
+const IconSearch = (size = 16) => icon(<><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" /></>, size);
 
 export default function GuestMenuClient({ table, restaurant, categories, items, options }: Props) {
-  // Only show categories that actually have available items
-  const itemCountByCategory: Record<string, number> = {};
-  for (const item of items) {
-    itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
+  // itemId -> allergen ids declared on that item (EU 1169/2011 Annex II ids)
+  const allergensByItem: Record<string, string[]> = {};
+  for (const o of options) {
+    if (o.type !== "allergens") continue;
+    const ids = o.choices.map(c => c.label);
+    allergensByItem[o.item_id] = [...(allergensByItem[o.item_id] ?? []), ...ids];
   }
-  const visibleCategories = categories.filter(c => (itemCountByCategory[c.id] ?? 0) > 0);
+  // Every allergen actually used on this menu — drives the filter chips
+  const menuAllergens = EU_ALLERGENS.filter(a =>
+    Object.values(allergensByItem).some(ids => ids.includes(a.id))
+  );
 
-  const [activeCategory, setActiveCategory] = useState(visibleCategories[0]?.id ?? "");
+  const [activeCategory, setActiveCategory] = useState("");
   const [toast, setToast] = useState("");
   const [tableActive, setTableActive] = useState(table.is_active);
   // Broken logo URL → hide the image and fall back to the text wordmark
@@ -93,6 +101,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   const [selOptions, setSelOptions] = useState<Record<string, string>>({});
   // optionId -> KEPT ingredient choiceIds (ingredients groups; default = all)
   const [selIngredients, setSelIngredients] = useState<Record<string, string[]>>({});
+  // optionId -> choiceIds the guest asked for EXTRA of
+  const [extraIngredients, setExtraIngredients] = useState<Record<string, string[]>>({});
+  // Menu-wide allergen filter — allergen ids the guest wants hidden
+  const [hiddenAllergens, setHiddenAllergens] = useState<string[]>([]);
+  const [allergenFilterOpen, setAllergenFilterOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const [noteText, setNoteText] = useState("");
   const [qty, setQty] = useState(1);
   const [sessionRequests, setSessionRequests] = useState<SessionRequest[]>([]);
@@ -371,32 +385,58 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     setNoteText("");
     setSelOptions({});
     setSelIngredients({});
+    setExtraIngredients({});
   }
 
-  function toggleIngredient(oId: string, cId: string, allIds: string[]) {
-    setSelIngredients(s => {
-      const current = s[oId] ?? allIds;
-      return { ...s, [oId]: current.includes(cId) ? current.filter(x => x !== cId) : [...current, cId] };
-    });
+  /** Ingredient chips cycle: included → removed → extra → included. */
+  function cycleIngredient(oId: string, cId: string, allIds: string[]) {
+    const kept = selIngredients[oId] ?? allIds;
+    const extras = extraIngredients[oId] ?? [];
+    const isKept = kept.includes(cId);
+    const isExtra = extras.includes(cId);
+    if (isKept && !isExtra) {
+      // included → removed
+      setSelIngredients(s => ({ ...s, [oId]: (s[oId] ?? allIds).filter(x => x !== cId) }));
+    } else if (!isKept) {
+      // removed → extra (back in, and flagged as extra)
+      setSelIngredients(s => ({ ...s, [oId]: [...(s[oId] ?? allIds), cId] }));
+      setExtraIngredients(s => ({ ...s, [oId]: [...(s[oId] ?? []), cId] }));
+    } else {
+      // extra → included
+      setExtraIngredients(s => ({ ...s, [oId]: (s[oId] ?? []).filter(x => x !== cId) }));
+    }
+  }
+
+  function ingredientState(oId: string, cId: string, allIds: string[]): "included" | "removed" | "extra" {
+    const kept = selIngredients[oId] ?? allIds;
+    if (!kept.includes(cId)) return "removed";
+    return (extraIngredients[oId] ?? []).includes(cId) ? "extra" : "included";
   }
 
   function confirmAddToCart() {
     if (!noteFor) return;
     const itemOptions = options.filter(o => o.item_id === noteFor.item.id);
-    // Required choice groups must have a selection
+    // Required choice groups must have a selection — but a group whose choices
+    // are all sold out can't be answered, so don't trap the guest on it.
     for (const o of itemOptions) {
-      if (o.type === "choice" && o.is_required && !selOptions[o.id]) {
+      if (o.type !== "choice" || !o.is_required) continue;
+      if (o.choices.filter(c => c.is_available !== false).length === 0) continue;
+      if (!selOptions[o.id]) {
         showToast(`Please choose: ${o.name}`);
         return;
       }
     }
     const chosen: CartItem["options"] = [];
     for (const o of itemOptions) {
+      if (o.type === "allergens") continue; // informational only
       if (o.type === "ingredients") {
-        // All ingredients on by default — removed ones become "− X" (language-neutral)
-        const kept = selIngredients[o.id] ?? o.choices.map(c => c.id);
-        for (const c of o.choices) {
+        // All included by default — removals become "− X", extras "+ X" (language-neutral)
+        const available = o.choices.filter(c => c.is_available !== false);
+        const kept = selIngredients[o.id] ?? available.map(c => c.id);
+        const extras = extraIngredients[o.id] ?? [];
+        for (const c of available) {
           if (!kept.includes(c.id)) chosen.push({ label: `− ${c.label}`, priceDelta: 0, kind: "ingredient" });
+          else if (extras.includes(c.id)) chosen.push({ label: `+ ${c.label}`, priceDelta: 0, kind: "ingredient" });
         }
       } else if (selOptions[o.id]) {
         const c = o.choices.find(c => c.id === selOptions[o.id]);
@@ -424,7 +464,35 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     setTimeout(() => setToast(""), 3000);
   }
 
-  const visibleItems = items.filter(i => i.category_id === activeCategory);
+  // Hide items declaring an allergen the guest filtered out
+  const allergenFiltered = hiddenAllergens.length === 0
+    ? items
+    : items.filter(i => !(allergensByItem[i.id] ?? []).some(a => hiddenAllergens.includes(a)));
+
+  // Guest search — matches name and description, across all categories
+  const q = search.trim().toLowerCase();
+  const allowedItems = q
+    ? allergenFiltered.filter(i =>
+        i.name.toLowerCase().includes(q) || (i.description?.toLowerCase().includes(q) ?? false))
+    : allergenFiltered;
+
+  const itemCountByCategory: Record<string, number> = {};
+  for (const item of allowedItems) {
+    itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
+  }
+  const visibleCategories = categories.filter(c => (itemCountByCategory[c.id] ?? 0) > 0);
+  const hiddenCount = items.length - allowedItems.length;
+
+  // Keep the selected category valid as the filter changes
+  useEffect(() => {
+    if (visibleCategories.length === 0) return;
+    if (!visibleCategories.some(c => c.id === activeCategory)) {
+      setActiveCategory(visibleCategories[0].id);
+    }
+  }, [visibleCategories, activeCategory]);
+
+  // While searching, show every match rather than only the active category
+  const visibleItems = q ? allowedItems : allowedItems.filter(i => i.category_id === activeCategory);
   const cartTotal = cart.reduce((sum, c) => sum + c.quantity * ((c.item.price ?? 0) + c.options.reduce((s, o) => s + o.priceDelta, 0)), 0);
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
@@ -644,8 +712,95 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         </div>
       )}
 
-      {/* CATEGORY TABS */}
-      {visibleCategories.length > 0 && items.length > 0 && (
+      {/* SEARCH — worth it once a menu has more than a couple of screens of items */}
+      {items.length > 8 && (
+        <div style={{ padding: "18px 20px 0" }}>
+          <div style={{ position: "relative" }}>
+            <span aria-hidden="true" style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", pointerEvents: "none" }}>{IconSearch(16)}</span>
+            <input
+              type="search"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search the menu…"
+              aria-label="Search the menu"
+              style={{
+                width: "100%", boxSizing: "border-box", padding: "12px 14px 12px 38px",
+                borderRadius: 12, border: "1px solid var(--border)",
+                background: "var(--surface)", color: "var(--text)",
+                fontSize: 14, outline: "none", fontFamily: "inherit",
+              }}
+            />
+          </div>
+          {q && (
+            <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+              {visibleItems.length === 0
+                ? `Nothing matches “${search.trim()}”`
+                : `${visibleItems.length} match${visibleItems.length > 1 ? "es" : ""} for “${search.trim()}”`}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ALLERGEN FILTER — only when the menu actually declares allergens */}
+      {menuAllergens.length > 0 && items.length > 0 && (
+        <div style={{ padding: "18px 20px 0" }}>
+          <button
+            onClick={() => setAllergenFilterOpen(o => !o)}
+            aria-expanded={allergenFilterOpen}
+            style={{
+              display: "flex", alignItems: "center", gap: 8, width: "100%",
+              padding: "11px 14px", borderRadius: 12, cursor: "pointer",
+              border: `1px solid ${hiddenAllergens.length > 0 ? accentColor : "var(--border)"}`,
+              background: "var(--surface)", color: "var(--text)", fontSize: 13, fontWeight: 600,
+            }}
+          >
+            <span aria-hidden="true" style={{ color: hiddenAllergens.length > 0 ? accentColor : "var(--text-muted)", display: "inline-flex" }}>{IconLeaf(17)}</span>
+            {hiddenAllergens.length === 0
+              ? "Filter by allergen"
+              : `Hiding ${hiddenAllergens.length} allergen${hiddenAllergens.length > 1 ? "s" : ""}`}
+            <span style={{ marginLeft: "auto", display: "inline-flex", color: "var(--text-muted)" }}>{IconChevron(allergenFilterOpen)}</span>
+          </button>
+          {allergenFilterOpen && (
+            <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                Tap an allergen to hide every dish that contains it. Always tell your server about allergies.
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {menuAllergens.map(a => {
+                  const off = hiddenAllergens.includes(a.id);
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => setHiddenAllergens(h => off ? h.filter(x => x !== a.id) : [...h, a.id])}
+                      aria-pressed={off}
+                      style={{
+                        padding: "7px 13px", borderRadius: 99, cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                        border: `1px solid ${off ? accentColor : "var(--border)"}`,
+                        background: off ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
+                        color: off ? accentColor : "var(--text-muted)",
+                      }}
+                    >{off ? "✕ " : ""}{a.label}</button>
+                  );
+                })}
+              </div>
+              {hiddenAllergens.length > 0 && (
+                <button
+                  onClick={() => setHiddenAllergens([])}
+                  style={{ marginTop: 10, background: "none", border: "none", padding: 0, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                >Clear filter</button>
+              )}
+            </div>
+          )}
+          {hiddenCount > 0 && (
+            <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+              {hiddenCount} dish{hiddenCount > 1 ? "es" : ""} hidden by your filter.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* CATEGORY TABS — hidden while searching, since results span categories */}
+      {!q && visibleCategories.length > 0 && items.length > 0 && (
         <div style={{ paddingTop: 20 }}>
           <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 6, paddingLeft: 20 }}>Menu</p>
           <div
@@ -715,6 +870,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                   ) : null}
                 </div>
                 {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 5, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
+                {/* Allergens on the card, not just in the sheet — EU 1169/2011 wants
+                    this visible while the guest is choosing */}
+                {(allergensByItem[item.id] ?? []).length > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>
+                    {(allergensByItem[item.id] ?? []).map(a => (
+                      <span key={a} style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: "var(--surface-2)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        {allergenLabel(a)}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <button onClick={() => addToCart(item)}
                 data-gm-add=""
@@ -780,6 +946,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {noteFor.item.name}
               {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
             </h3>
+            {/* Full description — the card clamps it to two lines, so this is the
+                only place a guest can read all of it */}
+            {noteFor.item.description && (
+              <p style={{ margin: "-6px 0 14px", fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
+                {noteFor.item.description}
+              </p>
+            )}
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -793,35 +966,55 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               if (itemOptions.length === 0) return null;
               return (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 14 }}>
-                  {itemOptions.map(o => (
+                  {itemOptions.map(o => {
+                    // Sold-out choices are hidden from guests but kept in the DB
+                    const available = o.choices.filter(c => c.is_available !== false);
+                    if (o.type === "allergens") {
+                      if (o.choices.length === 0) return null;
+                      return (
+                        <div key={o.id} style={{ padding: "10px 12px", borderRadius: 10, background: "var(--bg)", border: "1px solid var(--border)" }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Contains</div>
+                          <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                            {o.choices.map(c => allergenLabel(c.label)).join(" · ")}
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (available.length === 0) return null;
+                    return (
                     <div key={o.id}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
                         {o.name}
                         {o.type === "choice" && o.is_required && <span style={{ color: accentColor, marginLeft: 4 }}>*</span>}
-                        {o.type === "ingredients" && <span style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 500, marginLeft: 6 }}>— tap to remove</span>}
+                        {o.type === "ingredients" && <span style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 500, marginLeft: 6 }}>— tap to remove, tap again for extra</span>}
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                        {o.type === "ingredients" ? o.choices.map(c => {
-                          const all = o.choices.map(x => x.id);
-                          const on = (selIngredients[o.id] ?? all).includes(c.id);
+                        {o.type === "ingredients" ? available.map(c => {
+                          const all = available.map(x => x.id);
+                          const state = ingredientState(o.id, c.id, all);
+                          const isRemoved = state === "removed";
+                          const isExtra = state === "extra";
                           return (
                             <button
                               key={c.id}
                               type="button"
-                              onClick={() => toggleIngredient(o.id, c.id, all)}
+                              onClick={() => cycleIngredient(o.id, c.id, all)}
+                              aria-label={`${c.label} — ${state}`}
                               style={{
                                 padding: "8px 14px", borderRadius: 99, cursor: "pointer", fontSize: 13, fontWeight: 600,
-                                border: `1px solid ${on ? accentColor : "var(--border)"}`,
-                                background: on ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
-                                color: on ? accentColor : "var(--text-muted)",
-                                textDecoration: on ? "none" : "line-through",
-                                opacity: on ? 1 : 0.6,
+                                border: `1px solid ${isRemoved ? "var(--border)" : accentColor}`,
+                                background: isExtra
+                                  ? `color-mix(in srgb, ${accentColor} 24%, transparent)`
+                                  : isRemoved ? "var(--bg)" : `color-mix(in srgb, ${accentColor} 12%, transparent)`,
+                                color: isRemoved ? "var(--text-muted)" : accentColor,
+                                textDecoration: isRemoved ? "line-through" : "none",
+                                opacity: isRemoved ? 0.6 : 1,
                               }}
                             >
-                              {c.label}
+                              {isExtra ? "+ " : ""}{c.label}
                             </button>
                           );
-                        }) : o.choices.map(c => {
+                        }) : available.map(c => {
                           const on = selOptions[o.id] === c.id;
                           return (
                             <button
@@ -841,7 +1034,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                         })}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
