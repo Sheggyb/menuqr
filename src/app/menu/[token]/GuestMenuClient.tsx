@@ -481,7 +481,6 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     itemCountByCategory[item.category_id] = (itemCountByCategory[item.category_id] ?? 0) + 1;
   }
   const visibleCategories = categories.filter(c => (itemCountByCategory[c.id] ?? 0) > 0);
-  const hiddenCount = items.length - allowedItems.length;
 
   // Keep the selected category valid as the filter changes
   useEffect(() => {
@@ -756,14 +755,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
           >
             <span aria-hidden="true" style={{ color: hiddenAllergens.length > 0 ? accentColor : "var(--text-muted)", display: "inline-flex" }}>{IconLeaf(17)}</span>
             {hiddenAllergens.length === 0
-              ? "Filter by allergen"
-              : `Hiding ${hiddenAllergens.length} allergen${hiddenAllergens.length > 1 ? "s" : ""}`}
+              ? "Any allergies?"
+              : /* count the allergen filter only — search narrows separately */
+                `Showing ${allergenFiltered.length} of ${items.length} dishes`}
             <span style={{ marginLeft: "auto", display: "inline-flex", color: "var(--text-muted)" }}>{IconChevron(allergenFilterOpen)}</span>
           </button>
           {allergenFilterOpen && (
             <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
               <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
-                Tap an allergen to hide every dish that contains it. Always tell your server about allergies.
+                Tap what you can&apos;t eat — we&apos;ll show you the rest.
+                <br />
+                <span style={{ fontWeight: 600 }}>Always tell your server about allergies.</span>
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {menuAllergens.map(a => {
@@ -787,14 +789,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                 <button
                   onClick={() => setHiddenAllergens([])}
                   style={{ marginTop: 10, background: "none", border: "none", padding: 0, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
-                >Clear filter</button>
+                >Show everything again</button>
               )}
             </div>
-          )}
-          {hiddenCount > 0 && (
-            <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
-              {hiddenCount} dish{hiddenCount > 1 ? "es" : ""} hidden by your filter.
-            </p>
           )}
         </div>
       )}
@@ -870,17 +867,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                   ) : null}
                 </div>
                 {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 5, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
-                {/* Allergens on the card, not just in the sheet — EU 1169/2011 wants
-                    this visible while the guest is choosing */}
-                {(allergensByItem[item.id] ?? []).length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 }}>
-                    {(allergensByItem[item.id] ?? []).map(a => (
-                      <span key={a} style={{ fontSize: 10.5, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: "var(--surface-2)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        {allergenLabel(a)}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                {/* Allergens are deliberately NOT shown on the card — they appear as
+                    a "Contains" block in the add sheet, where the guest is choosing. */}
               </div>
               <button onClick={() => addToCart(item)}
                 data-gm-add=""
