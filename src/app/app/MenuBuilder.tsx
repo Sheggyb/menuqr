@@ -263,6 +263,22 @@ export default function MenuBuilder({ restaurant }: Props) {
       return;
     }
 
+    // Kitchen tickets are rendered by parsing the order string: options are joined
+    // with "," and wrapped in "(...)" (see lib/order-lines.ts). A label containing
+    // any of those characters silently misrenders the ticket — "BBQ sauce, mild"
+    // splits into two options, and "sauce (mild)" mangles the dish name. Block them
+    // at the source; allergen labels are ids, not free text, so they're exempt.
+    for (const g of namedGroups) {
+      if (g.type === "allergens") continue;
+      for (const c of g.choices) {
+        const label = c.label.trim();
+        if (label && /[,()]/.test(label)) {
+          toast.error(`"${label}" can't contain , ( or ) — it would break kitchen tickets`);
+          return;
+        }
+      }
+    }
+
     // Reject prices that aren't numbers rather than silently defaulting to 0 —
     // a typo like "1o" would otherwise become a free add-on.
     for (const g of namedGroups) {
@@ -1316,7 +1332,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             <input
                               value={c.price}
                               onChange={e => patchChoice(gi, ci, { price: e.target.value })}
-                              placeholder="+kr"
+                              placeholder={`+${currencySymbol}`}
                               inputMode="decimal"
                               style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
                             />

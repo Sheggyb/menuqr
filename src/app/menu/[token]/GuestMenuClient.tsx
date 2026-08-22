@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, TableRow } from "@/lib/types";
-import { EU_ALLERGENS, allergenLabel } from "@/lib/constants";
+import { CURRENCIES, EU_ALLERGENS, allergenLabel } from "@/lib/constants";
 
 interface Props {
   table: TableRow & { restaurant: Restaurant };
@@ -193,11 +193,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
   const accentColor = restaurant.accent_color || "#E85D2F";
 
-  // Currency — DB value (NOT NULL, default SEK) is the only source of truth
-  const currencySymbol = (() => {
-    const map: Record<string, string> = { SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$" };
-    return map[restaurant.currency] ?? restaurant.currency ?? "kr";
-  })();
+  // Currency — DB value (NOT NULL, default SEK) is the only source of truth.
+  // CURRENCIES from lib/constants is the single map; an inline copy here drifted
+  // out of sync with the dashboard.
+  const currencySymbol = CURRENCIES[restaurant.currency] ?? restaurant.currency;
   // Money — format consistently: no float artifacts (17.400000000000002),
   // whole numbers stay "12", fractional show two decimals "12.50" (audit 2.2)
   const fmtPrice = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));

@@ -7,7 +7,7 @@ import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock } from "@/components/icons";
+import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock, IconAlert } from "@/components/icons";
 import type { SVGProps } from "react";
 
 interface Props { restaurant: Restaurant }
@@ -237,6 +237,10 @@ export default function LiveOrders({ restaurant }: Props) {
   // Ref mirrors soundEnabled so the realtime channel never needs re-subscribing on toggle
   const soundRef = useRef(soundEnabled);
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
+  // Connection health — the board must never silently show a stale/empty list
+  const [fetchOk, setFetchOk] = useState(true);
+  const [realtimeOk, setRealtimeOk] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [searchTable, setSearchTable] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
@@ -249,13 +253,23 @@ export default function LiveOrders({ restaurant }: Props) {
   }, []);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("table_requests")
       .select("*, table:restaurant_tables(name)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
       .order("created_at", { ascending: true });
+    if (error) {
+      // NEVER turn a failed fetch into "no new orders" — that reads as "all
+      // clear" to staff when the truth is "we can't see anything". Keep the
+      // last known list and let the warning strip say the board is stale.
+      setFetchOk(false);
+      setLoading(false);
+      return;
+    }
     setRequests((data as TableRequest[]) ?? []);
+    setFetchOk(true);
+    setLastUpdated(Date.now());
     setLoading(false);
   }, [restaurant.id]);
 
@@ -283,7 +297,13 @@ export default function LiveOrders({ restaurant }: Props) {
         if (payload.eventType === "INSERT") playPing();
         load();
       })
-      .subscribe();
+      // Track channel health — a dead socket still polls every 12s, but the
+      // sound ping only fires from this callback, so staff would stop being
+      // alerted with no visible sign anything changed.
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setRealtimeOk(true);
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeOk(false);
+      });
     return () => { supabase.removeChannel(channel); };
   }, [restaurant.id, load]);
 
@@ -382,6 +402,8 @@ export default function LiveOrders({ restaurant }: Props) {
         supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
         supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
       ]);
+      // Keep the previous figures on failure rather than flashing 0 / 0
+      if (totalRes.error || doneRes.error) return;
       setTodayStats({ total: totalRes.count ?? 0, done: doneRes.count ?? 0 });
     })();
   }, [requests.length, restaurant.id]);
@@ -409,6 +431,24 @@ export default function LiveOrders({ restaurant }: Props) {
         .lo-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
         @media (max-width: 640px) { .lo-columns { flex-direction: column; } .lo-columns > section { height: auto; } .lo-panel { overflow: visible; } }
       `}</style>
+
+      {/* Connection warning — an empty board and a broken board look identical
+          without this, and "no new orders" is the most dangerous thing to show
+          when the truth is "we can't reach the server". */}
+      {(!fetchOk || !realtimeOk) && (
+        <div role="status" style={{
+          display: "flex", alignItems: "center", gap: 9,
+          padding: "10px 14px", borderRadius: 10,
+          background: "color-mix(in srgb, #f59e0b 12%, transparent)",
+          border: "1px solid color-mix(in srgb, #f59e0b 45%, transparent)",
+          color: "#b45309", fontSize: 13, fontWeight: 600,
+        }}>
+          <IconAlert width={16} height={16} style={{ flexShrink: 0 }} />
+          {!fetchOk
+            ? <span>Can&apos;t reach the server — showing the last orders received{lastUpdated ? ` (${Math.round((Date.now() - lastUpdated) / 1000)}s ago)` : ""}. Retrying every 12s.</span>
+            : <span>Live updates interrupted — still refreshing every 12s, but new orders won&apos;t play a sound.</span>}
+        </div>
+      )}
 
       {/* Toolbar — compact one-line filters + stats */}
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>

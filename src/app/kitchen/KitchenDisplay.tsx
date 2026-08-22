@@ -5,7 +5,7 @@ import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
-import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable } from "@/components/icons";
+import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable, IconAlert } from "@/components/icons";
 import type { SVGProps } from "react";
 
 interface Props {
@@ -257,6 +257,9 @@ export default function KitchenDisplay({ restaurant }: Props) {
   const soundRef = useRef(soundEnabled);
   useEffect(() => { soundRef.current = soundEnabled; }, [soundEnabled]);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  // Connection health — a blank board and a broken board must not look alike
+  const [fetchOk, setFetchOk] = useState(true);
+  const [realtimeOk, setRealtimeOk] = useState(true);
   const [filter, setFilter] = useState<Filter>("food");
   const [leavingIds, setLeavingIds] = useState<Set<string>>(new Set());
   const [clock, setClock] = useState("");
@@ -277,13 +280,22 @@ export default function KitchenDisplay({ restaurant }: Props) {
   }, []);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("table_requests")
       .select("*, table:restaurant_tables(name)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
       .order("created_at", { ascending: true });
+    if (error) {
+      // Keep the last known tickets. An empty board reads as "all done" to a
+      // cook — the worst possible lie during an outage. Also do NOT stamp
+      // lastUpdated, or the header would claim "Live · updated 0s ago".
+      setFetchOk(false);
+      setLoading(false);
+      return;
+    }
     setRequests((data as TableRequest[]) ?? []);
+    setFetchOk(true);
     setLoading(false);
     setLastUpdated(Date.now());
   }, [restaurant.id]);
@@ -312,7 +324,12 @@ export default function KitchenDisplay({ restaurant }: Props) {
         if (payload.eventType === "INSERT") playPing();
         load();
       })
-      .subscribe();
+      // A dead socket still polls every 12s, but the ping only fires here — so
+      // orders would arrive silently with nothing on screen to say why.
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setRealtimeOk(true);
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeOk(false);
+      });
     return () => { supabase.removeChannel(channel); };
   }, [restaurant.id, load]);
 
@@ -385,6 +402,8 @@ export default function KitchenDisplay({ restaurant }: Props) {
         supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
         supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
       ]);
+      // Keep the previous figures on failure rather than flashing 0 / 0
+      if (totalRes.error || doneRes.error) return;
       setTodayStats({ total: totalRes.count ?? 0, done: doneRes.count ?? 0 });
     })();
   }, [requests.length, restaurant.id]);
@@ -462,6 +481,33 @@ export default function KitchenDisplay({ restaurant }: Props) {
         <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
       </header>
 
+      {/* Connection warning — sized to be readable from across the kitchen,
+          because the failure mode is an empty board that looks like "all done" */}
+      {!fetchOk && (
+        <div role="status" style={{
+          margin: "14px 24px 0", padding: "12px 16px", borderRadius: 10,
+          display: "flex", alignItems: "center", gap: 10,
+          background: "color-mix(in srgb, #dc2626 12%, transparent)",
+          border: "1px solid color-mix(in srgb, #dc2626 50%, transparent)",
+          color: "#dc2626", fontSize: 15, fontWeight: 700,
+        }}>
+          <IconAlert width={18} height={18} style={{ flexShrink: 0 }} />
+          Can&apos;t reach the server — these tickets may be out of date. Retrying every 12s.
+        </div>
+      )}
+      {fetchOk && !realtimeOk && (
+        <div role="status" style={{
+          margin: "14px 24px 0", padding: "10px 16px", borderRadius: 10,
+          display: "flex", alignItems: "center", gap: 10,
+          background: "color-mix(in srgb, #f59e0b 12%, transparent)",
+          border: "1px solid color-mix(in srgb, #f59e0b 45%, transparent)",
+          color: "#b45309", fontSize: 14, fontWeight: 600,
+        }}>
+          <IconAlert width={17} height={17} style={{ flexShrink: 0 }} />
+          Live updates interrupted — refreshing every 12s, no sound on new orders.
+        </div>
+      )}
+
       {/* STATS BAR */}
       <div style={{ padding: "14px 24px 0", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
@@ -473,9 +519,12 @@ export default function KitchenDisplay({ restaurant }: Props) {
         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
           Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{freshCount}</strong>
         </span>
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
-          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", display: "inline-block", flexShrink: 0 }} />
-          Live · updated {lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "…"}
+        {/* The dot must reflect reality — it used to stay green during an outage */}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: fetchOk ? "var(--text-muted)" : "#b45309", fontWeight: fetchOk ? 400 : 700 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: fetchOk ? (realtimeOk ? "#22c55e" : "#f59e0b") : "#dc2626", display: "inline-block", flexShrink: 0 }} />
+          {fetchOk
+            ? `${realtimeOk ? "Live" : "Polling"} · updated ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "…"}`
+            : `Offline · last update ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "unknown"}`}
         </span>
         <span style={{ fontSize: 12, color: "var(--text-muted)" }}>P = start · D = done</span>
       </div>
