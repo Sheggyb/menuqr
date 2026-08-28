@@ -341,13 +341,15 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     // break inside one used to split into fake extra order lines on the boards,
     // and a ")" broke the dish name. Flatten before it enters that string.
     const flat = (t: string) => t.replace(/[()\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-    // Merge all cart items into ONE order line
-    const combinedName = snapshot.map(ci => {
-      const n = flat(ci.note);
-      return `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}${n ? ` (${n})` : ""}`;
-    }).join("\n");
-    // Kept for Request History search and as a fallback if a line ever fails to
-    // parse. The boards only render it when the parsed lines carry no note.
+    // Merge all cart items into ONE order line.
+    // The note is deliberately NOT embedded here. With a single parenthetical the
+    // parser cannot tell "(no onion)" from "(Fläsk)" — a note has no − or + marker,
+    // so it was rendered as a chosen option AND again in the note row below.
+    // It travels in `note` instead, prefixed with the dish name.
+    const combinedName = snapshot.map(ci =>
+      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}`
+    ).join("\n");
+    // Per-item notes, each tagged with its dish so the association survives.
     const withNotes = snapshot.filter(ci => flat(ci.note));
     const combinedNote = withNotes.length > 0
       ? withNotes.map(ci => `${ci.item.name}: ${flat(ci.note)}`).join("; ")
