@@ -153,7 +153,7 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
 
       {/* Actions — kept tight under the content so a one-line order does not
           produce a card full of air */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: "auto", paddingTop: 2 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 2 }}>
         {onPickUp && (
           <button onClick={onPickUp} aria-label="Pick up — move to In Progress" title="Pick up" style={circleBtn("outline", "#3b82f6")}>
             <IconArrowRight width={16} height={16} />
@@ -423,7 +423,10 @@ export default function LiveOrders({ restaurant }: Props) {
         @keyframes lo-slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
-        .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-content: start; }
+        /* align-items: start — without it every card stretches to the tallest in
+           its row, so a one-line order next to a seven-item order becomes a tall
+           box of empty space. */
+        .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-content: start; align-items: start; }
         .lo-panel { flex: 1; min-height: 200px; max-height: calc(100vh - 250px); overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); padding: 14px; }
         .lo-empty { min-height: 172px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: var(--fs-sm); }
         .lo-columns { display: flex; gap: 24px; align-items: stretch; }

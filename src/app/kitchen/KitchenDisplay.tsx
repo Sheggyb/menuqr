@@ -425,7 +425,9 @@ export default function KitchenDisplay({ restaurant }: Props) {
         @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
-        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-content: start; }
+        /* align-items: start — cards hug their own content instead of stretching
+           to match the tallest ticket in the row. */
+        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-content: start; align-items: start; }
         .kd-panel { flex: 1; min-height: 220px; max-height: calc(100vh - 200px); overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); padding: 14px; }
         .kd-empty { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: var(--fs-k-sm); }
         .kd-columns { display: flex; gap: 22px; align-items: stretch; }
