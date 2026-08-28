@@ -425,14 +425,14 @@ export default function KitchenDisplay({ restaurant }: Props) {
         @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }
         .kd-card-leaving { transform: scale(0.95); opacity: 0.4; }
-        .kd-grid { display: grid; grid-template-columns: 1fr; gap: 14px; align-content: start; }
-        .kd-panel { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; }
-        .kd-empty { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10; color: var(--text-muted); font-size: 13.5px; }
+        .kd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px; align-content: start; }
+        .kd-panel { flex: 1; min-height: 220px; max-height: calc(100vh - 200px); overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); padding: 14px; }
+        .kd-empty { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: var(--fs-k-sm); }
         .kd-columns { display: flex; gap: 22px; align-items: stretch; }
-        .kd-columns > section { flex: 1; min-width: 0; height: calc(100vh - 165px); }
+        .kd-columns > section { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .kd-panel::-webkit-scrollbar { width: 8px; }
         .kd-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-        @media (max-width: 900px) { .kd-columns { flex-direction: column; } .kd-columns > section { height: auto; } .kd-panel { overflow: visible; } }
+        @media (max-width: 900px) { .kd-columns { flex-direction: column; } .kd-panel { max-height: none; overflow: visible; } }
       `}</style>
 
       {/* HEADER */}

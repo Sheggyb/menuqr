@@ -64,11 +64,11 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         background: "var(--surface-2)",
         border: "1px solid var(--border)",
         borderLeft: `4px solid ${leftAccent}`,
-        borderRadius: 12,
-        padding: "14px 16px",
+        borderRadius: "var(--radius-lg)",
+        padding: "13px 15px",
         display: "flex",
         flexDirection: "column",
-        gap: 12,
+        gap: 10,
         animation: "lo-slideIn 0.2s ease-out",
         transition: "transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease",
       }}
@@ -151,8 +151,9 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </span>
       )}
 
-      {/* Actions */}
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 2 }}>
+      {/* Actions — kept tight under the content so a one-line order does not
+          produce a card full of air */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: "auto", paddingTop: 2 }}>
         {onPickUp && (
           <button onClick={onPickUp} aria-label="Pick up — move to In Progress" title="Pick up" style={circleBtn("outline", "#3b82f6")}>
             <IconArrowRight width={16} height={16} />
@@ -422,14 +423,14 @@ export default function LiveOrders({ restaurant }: Props) {
         @keyframes lo-slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .lo-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .lo-card-leaving { transform: scale(0.94); opacity: 0.4; }
-        .lo-grid { display: grid; grid-template-columns: 1fr; gap: 16px; align-content: start; }
-        .lo-panel { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: 12px; padding: 14px; }
-        .lo-empty { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10; color: var(--text-muted); font-size: 13px; }
+        .lo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; align-content: start; }
+        .lo-panel { flex: 1; min-height: 200px; max-height: calc(100vh - 250px); overflow-y: auto; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); padding: 14px; }
+        .lo-empty { min-height: 172px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text-muted); font-size: var(--fs-sm); }
         .lo-columns { display: flex; gap: 24px; align-items: stretch; }
-        .lo-columns > section { flex: 1; min-width: 0; height: calc(100vh - 240px); }
+        .lo-columns > section { flex: 1; min-width: 0; display: flex; flex-direction: column; }
         .lo-panel::-webkit-scrollbar { width: 8px; }
         .lo-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-        @media (max-width: 640px) { .lo-columns { flex-direction: column; } .lo-columns > section { height: auto; } .lo-panel { overflow: visible; } }
+        @media (max-width: 640px) { .lo-columns { flex-direction: column; } .lo-panel { max-height: none; overflow: visible; } }
       `}</style>
 
       {/* Connection warning — an empty board and a broken board look identical
@@ -490,7 +491,7 @@ export default function LiveOrders({ restaurant }: Props) {
         {pendingCount > 0 && (
           <button
             onClick={markAllDone}
-            style={{ padding: "6px 10px", borderRadius: 6, border: "none", background: "#22c55e", color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: "var(--radius-sm)", border: "1px solid var(--success-border)", background: "transparent", color: "var(--success)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
           ><IconCheck width={14} height={14} strokeWidth={2.5} /> Done ({pendingCount})</button>
         )}
       </div>
