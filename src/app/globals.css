@@ -8,69 +8,116 @@ ul, ol { padding: 0; }
 a { color: inherit; text-decoration: inherit; }
 button { font: inherit; }
 
-/* ── Light theme ───────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+
+   Three surfaces share one token layer, at different densities:
+     - Guest menu  (src/app/menu)    editorial, brand-led, phone-first
+     - Dashboard   (src/app/app)     neutral tool, dense, all-day use
+     - Kitchen     (src/app/kitchen) signage, read at 2-3 metres
+
+   Rules:
+     - Type: SIX steps only (--fs-*), plus a larger kitchen set (--fs-k-*).
+       No ad-hoc or half-pixel sizes.
+     - Radius: FOUR steps (--radius-*) plus --radius-pill.
+     - Colour: never hardcode a hex in a component. Brand is var(--accent)
+       on the dashboard, restaurant.accent_color on the guest surface.
+       Status is --danger / --success / --warning / --info.
+     - Soft tints derive from the semantic base with color-mix, so they follow
+       the active theme automatically. Do not define them per theme.
+   ════════════════════════════════════════════════════════════════════ */
+
 :root {
+  /* Brand */
   --accent: #E85D2F;
-  --accent-light: #fbeee9;
+
+  /* Surfaces and text (light) */
   --bg: #FAFAF8;
   --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --surface-3: #e9eaec;
   --text: #111111;
   --text-muted: #6b7280;
   --border: #e5e7eb;
-  --radius: 12px;
-  --card-waiter-bg: #fffbeb;
-  --card-waiter-border: #fde68a;
-  --card-bill-bg: #fff1f2;
-  --card-bill-border: #fecdd3;
-  --card-refill-bg: #eff6ff;
-  --card-refill-border: #bfdbfe;
-  --card-order-bg: #f0fdf4;
-  --card-order-border: #bbf7d0;
-  --card-late-bg: #fff5f5;
-  --card-late-border: #fecaca;
-  --item-available-bg: #f9fafb;
-  --item-unavailable-bg: #fef2f2;
+
+  /* Semantic colour (light) */
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warning: #d97706;
+  --info: #2563eb;
+
+  /* Elevation */
   --shadow-card: 0 1px 4px rgba(0,0,0,0.06);
   --shadow-float: 0 4px 32px rgba(0,0,0,0.08);
-  --surface-2: #f3f4f6;
-  --surface-3: #e9eaec;
+
+  /* Dark-mode ambient glow — see the note at the bottom of this file */
+  --dark-glow: 184, 138, 30;
+
+  /* Type scale: six steps, dashboard + guest */
+  --fs-xs: 12px;    /* meta, pills, timestamps  */
+  --fs-sm: 13px;    /* secondary text, dense UI */
+  --fs-md: 15px;    /* body, inputs, item names */
+  --fs-lg: 18px;    /* section headings         */
+  --fs-xl: 22px;    /* page headings            */
+  --fs-2xl: 28px;   /* hero and stat figures    */
+
+  /* Type scale: kitchen, read at distance */
+  --fs-k-sm: 14px;
+  --fs-k-md: 17px;
+  --fs-k-lg: 21px;
+  --fs-k-xl: 26px;
+
+  /* Radius: four steps + pill */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 99px;
+
+  /* Fonts */
   --font-display: "Playfair Display", serif;
+  --font-body: "Inter", system-ui, sans-serif;
 }
 
-/* ── Dark theme ────────────────────────────────────── */
+/* Soft tints and borders derived from the semantic bases. Custom properties
+   resolve at use time, so these pick up the dark-theme values below on their
+   own — define once, never per theme. */
+:root {
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 45%, transparent);
+  --danger-soft: color-mix(in srgb, var(--danger) 13%, transparent);
+  --danger-border: color-mix(in srgb, var(--danger) 45%, transparent);
+  --success-soft: color-mix(in srgb, var(--success) 14%, transparent);
+  --success-border: color-mix(in srgb, var(--success) 45%, transparent);
+  --warning-soft: color-mix(in srgb, var(--warning) 13%, transparent);
+  --warning-border: color-mix(in srgb, var(--warning) 45%, transparent);
+  --info-soft: color-mix(in srgb, var(--info) 13%, transparent);
+  --info-border: color-mix(in srgb, var(--info) 45%, transparent);
+}
+
+/* ── Dark theme ────────────────────────────────────────
+   Only what must change. Semantic hues lighten so they stay legible as text
+   on a near-black background. */
 .dark,
 [data-theme="dark"] {
-  /* Deep near-black backgrounds */
   --bg: #0a0a0b;
   --surface: #121215;
   --surface-2: #1a1a20;
   --surface-3: #25252e;
-
   --text: #e8e8f0;
   --text-muted: #a0a0b5;
   --border: rgba(255,255,255,0.07);
 
-  --accent-light: #2a1508;
-
-  /* Status cards — dark tinted, muted palette */
-  --card-waiter-bg: #1e1a0a;
-  --card-waiter-border: #5a4a0f;
-  --card-bill-bg: #1e0d10;
-  --card-bill-border: #6b1f2a;
-  --card-refill-bg: #0a1220;
-  --card-refill-border: #1a3a6a;
-  --card-order-bg: #0a1810;
-  --card-order-border: #1a4a25;
-  --card-late-bg: #1e0a0a;
-  --card-late-border: #6b1a1a;
-  --item-available-bg: #121215;
-  --item-unavailable-bg: #1e0d10;
+  --danger: #f87171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --info: #60a5fa;
 
   --shadow-card: 0 1px 4px rgba(0,0,0,0.5);
   --shadow-float: 0 4px 32px rgba(0,0,0,0.6);
 }
 
-/* Auto dark via OS preference */
+/* Auto dark via OS preference — mirrors the block above */
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not([data-theme="light"]) {
     --bg: #0a0a0b;
@@ -80,19 +127,12 @@ button { font: inherit; }
     --text: #e8e8f0;
     --text-muted: #a0a0b5;
     --border: rgba(255,255,255,0.07);
-    --accent-light: #2a1508;
-    --card-waiter-bg: #1e1a0a;
-    --card-waiter-border: #5a4a0f;
-    --card-bill-bg: #1e0d10;
-    --card-bill-border: #6b1f2a;
-    --card-refill-bg: #0a1220;
-    --card-refill-border: #1a3a6a;
-    --card-order-bg: #0a1810;
-    --card-order-border: #1a4a25;
-    --card-late-bg: #1e0a0a;
-    --card-late-border: #6b1a1a;
-    --item-available-bg: #121215;
-    --item-unavailable-bg: #1e0d10;
+
+    --danger: #f87171;
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --info: #60a5fa;
+
     --shadow-card: 0 1px 4px rgba(0,0,0,0.5);
     --shadow-float: 0 4px 32px rgba(0,0,0,0.6);
   }
@@ -106,7 +146,7 @@ html { scroll-behavior: smooth; }
 body {
   background-color: var(--bg);
   color: var(--text);
-  font-family: "Inter", system-ui, sans-serif;
+  font-family: var(--font-body);
   margin: 0;
 }
 
@@ -115,14 +155,14 @@ body {
 .dark body {
   background-color: var(--bg);
   background-image:
-    radial-gradient(ellipse at 50% 0%, rgba(184,138,30,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 0%, rgba(var(--dark-glow), 0.06) 0%, transparent 60%),
     repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not([data-theme="light"]) body {
     background-image:
-      radial-gradient(ellipse at 50% 0%, rgba(184,138,30,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 0%, rgba(var(--dark-glow), 0.06) 0%, transparent 60%),
       repeating-linear-gradient(45deg, transparent, transparent 2px, rgba(255,255,255,0.008) 2px, rgba(255,255,255,0.008) 4px);
   }
 }
@@ -130,13 +170,13 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-pill); }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* Selection */
 [data-theme="dark"] ::selection,
 .dark ::selection {
-  background: rgba(184,138,30,0.25);
+  background: rgba(var(--dark-glow), 0.25);
   color: #e8e8f0;
 }
 
@@ -145,7 +185,7 @@ body {
   background-color: var(--accent);
   color: white;
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
   font-weight: 600;
@@ -157,7 +197,7 @@ body {
   background-color: var(--surface);
   color: var(--text);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border);
   cursor: pointer;
   font-weight: 500;
@@ -168,7 +208,7 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding: 20px;
   box-shadow: var(--shadow-card);
 }
@@ -177,21 +217,23 @@ input, textarea, select {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-md);
   outline: none;
   background: var(--surface);
   color: var(--text);
   font-family: inherit;
 }
+/* Focus ring follows the restaurant's accent instead of a hardcoded orange */
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(232,93,47,0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 [data-theme="dark"] input:focus,
 [data-theme="dark"] textarea:focus,
-[data-theme="dark"] select:focus {
-  box-shadow: 0 0 0 3px rgba(232,93,47,0.25);
+[data-theme="dark"] select:focus,
+.dark input:focus, .dark textarea:focus, .dark select:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 @keyframes skeleton-shimmer {
@@ -212,3 +254,20 @@ input:focus, textarea:focus, select:focus {
   }
   html { scroll-behavior: auto; }
 }
+
+/* ── Note for whoever picks this up next ───────────────
+   --dark-glow (gold) is a second brand hue that exists only in dark mode: the
+   body glow, ::selection, and (until step 2) the AppShell wordmark. It is
+   tokenised here rather than removed, because deciding whether MenuQR has a
+   gold-in-dark identity or should just use --accent is a brand call, not a
+   refactor.
+
+   Deleted as unreferenced: --accent-light, --card-refill-bg/-border,
+   --card-order-bg/-border, --card-late-bg/-border, --card-waiter-border,
+   --item-unavailable-bg, and --radius (superseded by --radius-lg).
+
+   Renamed to say what they are: --card-bill-bg/-border were the login/signup
+   error box (now --danger-soft/--danger-border), --card-waiter-bg was the
+   emoji-picker highlight (now --accent-soft), --item-available-bg was a
+   skeleton fill (now --surface-2).
+   ──────────────────────────────────────────────────── */

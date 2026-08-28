@@ -1214,7 +1214,7 @@ export default function MenuBuilder({ restaurant }: Props) {
           }}>
             {CATEGORY_EMOJIS.map(e => (
               <button key={e} type="button" onClick={() => { setNewCatIcon(e); setShowEmojiPicker(false); }}
-                style={{ fontSize: 20, background: newCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 4, lineHeight: 1 }}>
+                style={{ fontSize: 20, background: newCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 4, lineHeight: 1 }}>
                 {e}
               </button>
             ))}
@@ -1235,7 +1235,7 @@ export default function MenuBuilder({ restaurant }: Props) {
             {CATEGORY_EMOJIS.map(e => (
               <button key={e} type="button"
                 onClick={() => { setEditCatIcon(e); setShowEditEmojiPicker(false); }}
-                style={{ fontSize: 18, background: editCatIcon === e ? "var(--card-waiter-bg)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
+                style={{ fontSize: 18, background: editCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
                 {e}
               </button>
             ))}

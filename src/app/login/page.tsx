@@ -92,7 +92,7 @@ function LoginForm() {
             />
           </div>
           {error && (
-            <div style={{ padding: "10px 14px", background: "var(--card-bill-bg)", border: "1px solid var(--card-bill-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ padding: "10px 14px", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
               ⚠️ {error}
             </div>
           )}
