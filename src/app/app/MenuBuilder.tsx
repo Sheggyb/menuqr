@@ -264,16 +264,17 @@ export default function MenuBuilder({ restaurant }: Props) {
     }
 
     // Kitchen tickets are rendered by parsing the order string: options are joined
-    // with "," and wrapped in "(...)" (see lib/order-lines.ts). A label containing
-    // any of those characters silently misrenders the ticket — "BBQ sauce, mild"
-    // splits into two options, and "sauce (mild)" mangles the dish name. Block them
-    // at the source; allergen labels are ids, not free text, so they're exempt.
+    // with "," inside a trailing "[...]" group (see lib/order-lines.ts). A label
+    // containing a comma or a square bracket would misrender the ticket.
+    // Parentheses are fine — the dish name may contain them, which is exactly why
+    // the options delimiter is square brackets. Allergen labels are ids, not free
+    // text, so they are exempt.
     for (const g of namedGroups) {
       if (g.type === "allergens") continue;
       for (const c of g.choices) {
         const label = c.label.trim();
-        if (label && /[,()]/.test(label)) {
-          toast.error(`"${label}" can't contain , ( or ) — it would break kitchen tickets`);
+        if (label && /[,[\]]/.test(label)) {
+          toast.error(`"${label}" can't contain , [ or ] — it would break kitchen tickets`);
           return;
         }
       }

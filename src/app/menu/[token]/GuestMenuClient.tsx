@@ -346,8 +346,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     // parser cannot tell "(no onion)" from "(Fläsk)" — a note has no − or + marker,
     // so it was rendered as a chosen option AND again in the note row below.
     // It travels in `note` instead, prefixed with the dish name.
+    // Options go in SQUARE brackets, not parentheses: dish names legitimately
+    // contain parentheses ("Sharing (1 pizza för 2 personer)") and were being
+    // parsed as a chosen option. Square brackets don't occur in dish names.
     const combinedName = snapshot.map(ci =>
-      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}`
+      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` [${ci.options.map(o => o.label).join(", ")}]` : ""}`
     ).join("\n");
     // Per-item notes, each tagged with its dish so the association survives.
     const withNotes = snapshot.filter(ci => flat(ci.note));

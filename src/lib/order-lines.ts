@@ -32,8 +32,11 @@ export interface OrderLine {
 }
 
 const QTY_RE = /^x(\d{1,3})\s+/i;
-// Trailing "(...)" groups, innermost-last: options then optional note
-const TRAILING_PARENS_RE = /\s*\(([^()]*)\)\s*$/;
+// Options ride in a trailing "[...]" group. Square brackets specifically, because
+// dish names legitimately contain parentheses — "Sharing (1 pizza för 2 personer)"
+// was being read as a chosen option, and with a real choice present the choice
+// was demoted to a note. Nothing else in a dish name uses square brackets.
+const TRAILING_OPTS_RE = /\s*\[([^\][]*)\]\s*$/;
 
 function emptyLine(raw: string): OrderLine {
   return { qty: null, name: raw, choices: [], removed: [], extra: [], note: null, raw };
@@ -46,13 +49,13 @@ export function parseOrderLine(raw: string): OrderLine {
 
   let rest = line;
 
-  // Peel trailing parentheticals off the end (at most two: options, note)
-  const groups: string[] = [];
-  for (let i = 0; i < 2; i++) {
-    const m = rest.match(TRAILING_PARENS_RE);
-    if (!m || m.index === undefined) break;
-    groups.unshift(m[1]);
-    rest = rest.slice(0, m.index).trimEnd();
+  // Peel the trailing "[...]" options group, if present. Everything left is the
+  // dish name — including any parentheses it contains.
+  let optionBlob = "";
+  const om = rest.match(TRAILING_OPTS_RE);
+  if (om && om.index !== undefined) {
+    optionBlob = om[1];
+    rest = rest.slice(0, om.index).trimEnd();
   }
 
   // Quantity prefix
@@ -71,10 +74,10 @@ export function parseOrderLine(raw: string): OrderLine {
   // show it verbatim rather than guessing.
   if (!name) return emptyLine(raw);
 
-  // Two groups → first is options, second is the note.
-  // One group → options (notes only ever appear after an options group).
-  const optionBlob = groups.length > 0 ? groups[0] : "";
-  const note = groups.length > 1 ? groups[1].trim() || null : null;
+  // Notes are no longer embedded in this string — they travel in the request's
+  // `note` field, tagged with their dish. Kept on the type so the boards keep a
+  // single shape to render.
+  const note: string | null = null;
 
   const choices: string[] = [];
   const removed: string[] = [];
