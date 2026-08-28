@@ -179,7 +179,9 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </div>
       )}
 
-      {req.note && (
+      {/* Suppressed when the lines already show their own notes — the
+          same text was rendering twice */}
+      {req.note && !itemLines.some(l => l.note) && (
         <div style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)", display: "inline-flex", alignItems: "flex-start", gap: 7, lineHeight: 1.5 }}>
           <IconReceipt width={14} height={14} style={{ flexShrink: 0, marginTop: 2 }} />
           <span>{req.note}</span>

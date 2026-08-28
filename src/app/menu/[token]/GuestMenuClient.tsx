@@ -336,12 +336,21 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     }
     setSending(true);
     const snapshot = [...cart];
+    // The ticket format separates cart items with newlines and wraps modifiers in
+    // parentheses (see lib/order-lines.ts). A guest note is free text, so a line
+    // break inside one used to split into fake extra order lines on the boards,
+    // and a ")" broke the dish name. Flatten before it enters that string.
+    const flat = (t: string) => t.replace(/[()\r\n]+/g, " ").replace(/\s+/g, " ").trim();
     // Merge all cart items into ONE order line
-    const combinedName = snapshot.map(ci =>
-      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}${ci.note ? ` (${ci.note})` : ""}`
-    ).join("\n");
-    const combinedNote = snapshot.filter(ci => ci.note).length > 0
-      ? snapshot.map(ci => `${ci.item.name}: ${ci.note}`).join("; ")
+    const combinedName = snapshot.map(ci => {
+      const n = flat(ci.note);
+      return `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` (${ci.options.map(o => o.label).join(", ")})` : ""}${n ? ` (${n})` : ""}`;
+    }).join("\n");
+    // Kept for Request History search and as a fallback if a line ever fails to
+    // parse. The boards only render it when the parsed lines carry no note.
+    const withNotes = snapshot.filter(ci => flat(ci.note));
+    const combinedNote = withNotes.length > 0
+      ? withNotes.map(ci => `${ci.item.name}: ${flat(ci.note)}`).join("; ")
       : null;
     const totalPrice = snapshot.reduce((s, ci) => s + ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((x, o) => x + o.priceDelta, 0)), 0);
 

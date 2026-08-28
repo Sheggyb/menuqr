@@ -145,7 +145,9 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
           ))}
         </ul>
       )}
-      {req.note && (
+      {/* Suppressed when the lines already show their own notes — the
+          same text was rendering twice */}
+      {req.note && !itemLines.some(l => l.note) && (
         <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5, lineHeight: 1.5 }}>
           <IconReceipt width={13} height={13} style={{ flexShrink: 0 }} /> {req.note}
         </span>
