@@ -480,12 +480,18 @@ export default function LiveOrders({ restaurant }: Props) {
 
         <div style={{ flex: 1 }} />
 
-        {/* Compact stats */}
-        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-          Today: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.total}</strong>
-          {" · "}Done: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.done}</strong>
-          {" · "}Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>
-          {estWaitMin > 0 ? ` (~${estWaitMin}m)` : ""}
+        {/* Stats read as one unit instead of loose text against the far edge */}
+        <span style={{
+          display: "inline-flex", alignItems: "center", gap: 10,
+          padding: "5px 12px", borderRadius: "var(--radius-pill)",
+          background: "var(--surface)", border: "1px solid var(--border)",
+          fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap", flexShrink: 0,
+        }}>
+          <span>Today <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong></span>
+          <span aria-hidden="true" style={{ opacity: 0.35 }}>|</span>
+          <span>Done <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.done}</strong></span>
+          <span aria-hidden="true" style={{ opacity: 0.35 }}>|</span>
+          <span>Waiting <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>{estWaitMin > 0 ? ` ~${estWaitMin}m` : ""}</span>
         </span>
 
         {pendingCount > 0 && (

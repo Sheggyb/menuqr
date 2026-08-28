@@ -546,10 +546,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   if (tableActive && sessionStatus !== "active") {
     if (sessionStatus === "idle" || sessionStatus === "declined") {
       return (
-        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "var(--font-body)", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
           <style>{`@keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconQr(44)}</div>
-          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-2xl)", color: "var(--text)", margin: "0 0 4px", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>{restaurant.name}</h1>
+          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-2xl)", color: "var(--text)", margin: "0 0 4px", fontFamily: "var(--font-display)", letterSpacing: "0.02em" }}>{restaurant.name}</h1>
           <div aria-hidden="true" style={{ width: 32, height: 2, background: accentColor, margin: "16px auto 20px" }} />
           <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, marginBottom: 36, lineHeight: 1.7 }}>
             {sessionStatus === "declined" ? "Your session was declined. Tap below to request again." : "Welcome. Tap below to request access to the menu."}
@@ -566,13 +566,13 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
     if (sessionStatus === "pending") {
       return (
-        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
+        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "var(--font-body)", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
           <style>{`
             @keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }
             @keyframes gmDot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
           `}</style>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconClock(44)}</div>
-          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>Waiting for staff</h1>
+          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "var(--font-display)" }}>Waiting for staff</h1>
           <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, lineHeight: 1.7, marginBottom: 32 }}>
             A staff member will approve your access in a moment. Please wait.
           </p>
@@ -589,9 +589,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   // --- CLOSED CHECK ---
   if (!tableActive) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "var(--font-body)", textAlign: "center" }}>
         <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconLock(44)}</div>
-        <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>We&apos;re closed</h1>
+        <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "var(--font-display)" }}>We&apos;re closed</h1>
         <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, lineHeight: 1.7 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
         <div style={{ marginTop: 32, color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", borderTop: "1px solid var(--border)", paddingTop: 16 }}>{restaurant.name}</div>
       </div>
@@ -600,7 +600,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
   // --- MAIN MENU ---
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", paddingBottom: sessionRequests.length > 0 ? 110 : 90, animation: "gmFadeIn 0.35s ease both" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font-body)", paddingBottom: sessionRequests.length > 0 ? 110 : 90, animation: "gmFadeIn 0.35s ease both" }}>
       <style>{`
         @keyframes gmSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -634,7 +634,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             }}
           >
             <div aria-hidden="true" style={{ color: accentColor, marginBottom: 18 }}>{IconBell(40)}</div>
-            <h2 style={{ color: "var(--text)", fontWeight: 700, fontSize: "var(--fs-xl)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
+            <h2 style={{ color: "var(--text)", fontWeight: 700, fontSize: "var(--fs-xl)", margin: "0 0 10px", fontFamily: "var(--font-display)" }}>
               {readyBanner.length === 1 ? "Your order is ready" : "Orders are ready"}
             </h2>
             <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", marginBottom: 26, lineHeight: 1.6 }}>
@@ -668,7 +668,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             />
           )}
           <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14, minWidth: 0 }}>
-            <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
+            <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", margin: 0, letterSpacing: "0.03em", fontFamily: "var(--font-display)", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
             <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
           </div>
         </div>
@@ -706,7 +706,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {items.length === 0 && (
         <div style={{ textAlign: "center", padding: "72px 32px", color: "var(--text-muted)" }}>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 20 }}>{IconDish(40)}</div>
-          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>Menu coming soon</h2>
+          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 10px", fontFamily: "var(--font-display)" }}>Menu coming soon</h2>
           <p style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", lineHeight: 1.7, maxWidth: 280, margin: "0 auto" }}>The restaurant is still setting up their menu. Please ask your server.</p>
         </div>
       )}
@@ -897,7 +897,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         <div onClick={() => setCartOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "22px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>Your Order</h3>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, fontFamily: "var(--font-display)", color: "var(--text)" }}>Your Order</h3>
               <button onClick={() => setCartOpen(false)} aria-label="Close order" style={{ background: "none", border: "none", fontSize: "var(--fs-xl)", cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}>×</button>
             </div>
             {cart.map((ci, idx) => (
@@ -930,9 +930,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {noteFor && (
         <div onClick={() => setNoteFor(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)" }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: "var(--fs-lg)", fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: "var(--fs-lg)", fontFamily: "var(--font-display)", color: "var(--text)" }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: "var(--fs-md)", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: "var(--fs-md)", fontFamily: "var(--font-body)", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
             </h3>
             {/* Full description — the card clamps it to two lines, so this is the
                 only place a guest can read all of it */}

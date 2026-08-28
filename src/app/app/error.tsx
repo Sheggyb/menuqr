@@ -9,7 +9,7 @@ export default function AppError({
   reset: () => void;
 }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 24 }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "var(--font-body)", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "36px 28px" }}>
         <div aria-hidden="true" style={{ marginBottom: 14, color: "var(--warning)" }}><IconAlert width={42} height={42} /></div>
         <h1 style={{ fontWeight: 800, fontSize: "var(--fs-xl)", marginBottom: 10, color: "var(--text)" }}>Something went wrong</h1>

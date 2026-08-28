@@ -27,7 +27,7 @@ const faqs = [
 
 export default function LandingPage() {
   return (
-    <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font-body)" }}>
       <style>{`
         * { box-sizing: border-box; }
         .btn-hero { display: inline-block; padding: 14px 32px; border-radius: 10px; background: var(--accent); color: white; text-decoration: none; font-weight: 700; font-size: 17px; letter-spacing: -0.2px; transition: transform 0.1s, box-shadow 0.1s; }

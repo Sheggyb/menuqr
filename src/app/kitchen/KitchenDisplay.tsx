@@ -420,7 +420,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font-body)" }}>
       <style>{`
         @keyframes kd-slideIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
         .kd-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.10); }

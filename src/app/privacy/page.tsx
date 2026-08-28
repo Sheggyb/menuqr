@@ -12,7 +12,7 @@ const li: React.CSSProperties = { color: "var(--text-muted)", fontSize: "var(--f
 
 export default function PrivacyPage() {
   return (
-    <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font-body)" }}>
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 32px", background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
         <Link href="/" style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", textDecoration: "none", letterSpacing: "-0.5px" }}>MenuQR</Link>
         <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", fontWeight: 500 }}>← Back to home</Link>

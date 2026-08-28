@@ -117,8 +117,8 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       {/* TOP NAV */}
       <header style={{ background: resolvedTheme === "dark" ? "rgba(18,18,21,0.92)" : "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", position: "sticky", top: 0, zIndex: 40 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
           {restaurant.logo_url && (
             <img
               src={restaurant.logo_url}
@@ -130,7 +130,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
           )}
           <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>/ {restaurant.name}</span>
         </div>
-        {clock && <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
+        {clock && <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", display: "none", marginRight: "auto" }} className="header-clock">{clock}</span>}
         <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <a

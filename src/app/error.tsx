@@ -9,7 +9,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 24 }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "var(--font-body)", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420 }}>
         <div aria-hidden="true" style={{ marginBottom: 16, color: "var(--warning)" }}><IconAlert width={48} height={48} /></div>
         <h1 style={{ fontWeight: 800, fontSize: "var(--fs-xl)", marginBottom: 10, color: "var(--text)" }}>Something went wrong</h1>
