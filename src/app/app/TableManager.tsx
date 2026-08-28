@@ -374,29 +374,29 @@ export default function TableManager({ restaurant }: Props) {
           background: "var(--surface)",
           border: "1px solid var(--border)",
           borderLeft: "3px solid var(--accent)",
-          borderRadius: 10,
+          borderRadius: "var(--radius-md)",
           padding: "12px 16px",
           display: "flex", flexDirection: "column", gap: 8,
         }}>
-          <div style={{ fontWeight: 700, fontSize: 14, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
             <IconUsers width={16} height={16} style={{ color: "var(--accent)" }} />
             {pendingSessions.length} guest{pendingSessions.length !== 1 ? "s" : ""} waiting
           </div>
           {pendingSessions.map(s => (
             <div key={s.session_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid var(--border)" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>{s.table?.name ?? "Unknown table"}</span>
-                <span style={{ fontSize: 12, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{relativeWait(s.created_at, now)}</span>
+                <span style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text)" }}>{s.table?.name ?? "Unknown table"}</span>
+                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{relativeWait(s.created_at, now)}</span>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => approveSession(s.session_id)}
-                  style={{ background: "var(--accent)", color: "#fff", border: "none", borderRadius: 7, padding: "6px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  style={{ background: "var(--accent)", color: "#fff", border: "none", borderRadius: "var(--radius-sm)", padding: "6px 16px", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}
                 >Approve</button>
                 <button
                   onClick={() => declineSession(s.session_id)}
                   aria-label="Decline guest access request"
-                  style={{ background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: 7, padding: "6px 14px", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
+                  style={{ background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "6px 14px", fontSize: "var(--fs-sm)", fontWeight: 500, cursor: "pointer" }}
                 >Decline</button>
               </div>
             </div>
@@ -405,17 +405,17 @@ export default function TableManager({ restaurant }: Props) {
       )}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontWeight: 700, fontSize: 20, display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
+        <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
           <IconTable width={20} height={20} style={{ color: "var(--text-muted)" }} />
           Tables
         </h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {tables.length > 0 && (
-            <button onClick={toggleAll} style={{ fontSize: 13, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", cursor: "pointer", fontWeight: 600 }}>
+            <button onClick={toggleAll} style={{ fontSize: "var(--fs-sm)", padding: "6px 14px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", cursor: "pointer", fontWeight: 600 }}>
               {tables.some(t => t.is_active) ? "Close all" : "Open all"}
             </button>
           )}
-          <Link href="/app/print-qr" style={{ fontSize: 13, padding: "6px 14px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Link href="/app/print-qr" style={{ fontSize: "var(--fs-sm)", padding: "6px 14px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <IconQr width={14} height={14} />
             Print all QR codes
           </Link>
@@ -437,16 +437,16 @@ export default function TableManager({ restaurant }: Props) {
       {tables.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)" }}>
           <IconTable width={32} height={32} style={{ color: "var(--text-muted)", opacity: 0.6, marginBottom: 10 }} />
-          <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>No tables yet</p>
-          <p style={{ fontSize: 13, margin: 0 }}>Add a table above to generate a QR code for guests.</p>
+          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>No tables yet</p>
+          <p style={{ fontSize: "var(--fs-sm)", margin: 0 }}>Add a table above to generate a QR code for guests.</p>
         </div>
       ) : (
         <>
           {/* STATUS GRID — read-only */}
           <div className="card" style={{ padding: "18px 22px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>Table Status</h3>
-              <div style={{ display: "flex", gap: 14, fontSize: 11, color: "var(--text-muted)", flexWrap: "wrap" }}>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: 0 }}>Table Status</h3>
+              <div style={{ display: "flex", gap: 14, fontSize: "var(--fs-xs)", color: "var(--text-muted)", flexWrap: "wrap" }}>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#22c55e")} />Idle</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#f59e0b")} />Has requests</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#dc2626")} />Urgent (3+)</span>
@@ -465,7 +465,7 @@ export default function TableManager({ restaurant }: Props) {
                     style={{
                       background: "var(--surface)",
                       border: "1px solid var(--border)",
-                      borderRadius: 12,
+                      borderRadius: "var(--radius-lg)",
                       padding: "14px 10px",
                       textAlign: "center",
                     }}
@@ -475,8 +475,8 @@ export default function TableManager({ restaurant }: Props) {
                     <div style={{ color: !table.is_active ? "var(--text-muted)" : "var(--text)", marginBottom: 4 }}>
                       <IconTable width={18} height={18} style={{ opacity: table.is_active ? 0.8 : 0.4 }} />
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: !table.is_active ? "var(--text-muted)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{table.name}</div>
-                    {pending > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: isUrgent ? "#dc2626" : "#f59e0b", marginTop: 3 }}>{pending} pending</div>}
+                    <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: !table.is_active ? "var(--text-muted)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{table.name}</div>
+                    {pending > 0 && <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: isUrgent ? "#dc2626" : "#f59e0b", marginTop: 3 }}>{pending} pending</div>}
                   </div>
                 );
               })}
@@ -505,10 +505,10 @@ export default function TableManager({ restaurant }: Props) {
                         value={renaming.name}
                         onChange={e => setRenaming({ id: table.id, name: e.target.value })}
                         onKeyDown={e => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") setRenaming(null); }}
-                        style={{ width: 160, padding: "5px 9px", fontSize: 14, fontWeight: 700, borderRadius: 6 }}
+                        style={{ width: 160, padding: "5px 9px", fontSize: "var(--fs-sm)", fontWeight: 700, borderRadius: "var(--radius-sm)" }}
                       />
-                      <button onClick={saveRename} style={{ padding: "5px 11px", borderRadius: 6, border: "none", background: "var(--accent)", color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Save</button>
-                      <button onClick={() => setRenaming(null)} style={{ padding: "5px 9px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>Cancel</button>
+                      <button onClick={saveRename} style={{ padding: "5px 11px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--accent)", color: "#fff", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>Save</button>
+                      <button onClick={() => setRenaming(null)} style={{ padding: "5px 9px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>Cancel</button>
                     </span>
                   ) : (
                     <span
@@ -518,15 +518,15 @@ export default function TableManager({ restaurant }: Props) {
                     >{table.name}</span>
                   )}
                   {pendingByTable[table.id] > 0 && (
-                    <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, border: "1px solid var(--accent)", color: "var(--accent)", fontWeight: 700 }}>
+                    <span style={{ marginLeft: 8, fontSize: "var(--fs-xs)", padding: "2px 8px", borderRadius: "var(--radius-pill)", border: "1px solid var(--accent)", color: "var(--accent)", fontWeight: 700 }}>
                       {pendingByTable[table.id]} waiting
                     </span>
                   )}
-                  <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 99, border: `1px solid ${table.is_active ? "#22c55e55" : "var(--border)"}`, color: table.is_active ? "#22c55e" : "var(--text-muted)", fontWeight: 600 }}>
+                  <span style={{ marginLeft: 8, fontSize: "var(--fs-xs)", padding: "2px 8px", borderRadius: "var(--radius-pill)", border: `1px solid ${table.is_active ? "#22c55e55" : "var(--border)"}`, color: table.is_active ? "#22c55e" : "var(--text-muted)", fontWeight: 600 }}>
                     {table.is_active ? "Open" : "Closed"}
                   </span>
                   {lastRequests[table.id] && (
-                    <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+                    <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3 }}>
                       Last request: {new Date(lastRequests[table.id]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </div>
                   )}
@@ -536,14 +536,14 @@ export default function TableManager({ restaurant }: Props) {
                   <button
                     onClick={() => copyLink(table)}
                     aria-label={copiedId === table.id ? "Link copied" : `Copy menu link for ${table.name}`}
-                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: copiedId === table.id ? "#22c55e" : "var(--text-muted)" }}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: copiedId === table.id ? "#22c55e" : "var(--text-muted)" }}
                     title={copiedId === table.id ? "Copied" : "Copy link"}
                   >
                     {copiedId === table.id ? <IconCheck width={14} height={14} /> : <IconCopy width={14} height={14} />}
                   </button>
                   <button
                     onClick={() => showQR(table)}
-                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
+                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
                     title="Show QR code"
                     aria-label={`Show QR code for ${table.name}`}
                   >
@@ -552,7 +552,7 @@ export default function TableManager({ restaurant }: Props) {
                   {/* more actions — tap on mobile, right-click also works on desktop */}
                   <button
                     onClick={(e) => { e.stopPropagation(); openCtxMenu(e, buildTableCtxMenu(table)); }}
-                    style={{ fontSize: 16, padding: "5px 9px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 700, lineHeight: 1 }}
+                    style={{ fontSize: "var(--fs-md)", padding: "5px 9px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 700, lineHeight: 1 }}
                     title="More options"
                     aria-label={`More options for ${table.name}`}
                   >⋮</button>
@@ -567,21 +567,21 @@ export default function TableManager({ restaurant }: Props) {
       {qrModal && (
         <div onClick={() => setQrModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 16 }}>
           <div onClick={e => e.stopPropagation()} className="card" style={{ width: "100%", maxWidth: 380, textAlign: "center", padding: "24px 24px 20px" }}>
-            <h3 style={{ fontWeight: 700, fontSize: 18, margin: "0 0 16px" }}>{qrModal.name}</h3>
+            <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: "0 0 16px" }}>{qrModal.name}</h3>
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt={`QR code for ${qrModal.name}`} style={{ width: 260, height: 260, margin: "0 auto 16px", display: "block", borderRadius: 8 }} />
+              <img src={qrDataUrl} alt={`QR code for ${qrModal.name}`} style={{ width: 260, height: 260, margin: "0 auto 16px", display: "block", borderRadius: "var(--radius-md)" }} />
             ) : (
-              <div style={{ width: 260, height: 260, margin: "0 auto 16px", background: "var(--surface-2)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: 13 }}>Generating…</div>
+              <div style={{ width: 260, height: 260, margin: "0 auto 16px", background: "var(--surface-2)", borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>Generating…</div>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginBottom: 18 }}>
-              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11, color: "var(--text-muted)", wordBreak: "break-all", textAlign: "left" }}>
+              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "var(--fs-xs)", color: "var(--text-muted)", wordBreak: "break-all", textAlign: "left" }}>
                 {typeof window !== "undefined" && `${window.location.origin}/menu/${qrModal.token}`}
               </span>
               <button
                 onClick={() => copyModalLink(qrModal)}
                 aria-label={modalCopied ? "Link copied" : "Copy link"}
                 title={modalCopied ? "Copied" : "Copy link"}
-                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "5px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: modalCopied ? "#22c55e" : "var(--text-muted)", flexShrink: 0 }}
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: modalCopied ? "#22c55e" : "var(--text-muted)", flexShrink: 0 }}
               >
                 {modalCopied ? <IconCheck width={14} height={14} /> : <IconCopy width={14} height={14} />}
               </button>

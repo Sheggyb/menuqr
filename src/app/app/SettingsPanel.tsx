@@ -19,7 +19,7 @@ function Section({ title, first, children }: { title: string; first?: boolean; c
     >
       <div
         style={{
-          fontSize: 11,
+          fontSize: "var(--fs-xs)",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.09em",
@@ -180,19 +180,19 @@ export default function SettingsPanel({ restaurant }: Props) {
     }
   }
 
-  const labelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6, color: "var(--text)" };
-  const inputStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 15, outline: "none" };
-  const metaStyle: React.CSSProperties = { fontSize: 11, color: "var(--text-muted)", margin: "6px 0 0" };
+  const labelStyle: React.CSSProperties = { fontSize: "var(--fs-sm)", fontWeight: 600, display: "block", marginBottom: 6, color: "var(--text)" };
+  const inputStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: "var(--fs-md)", outline: "none" };
+  const metaStyle: React.CSSProperties = { fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: "6px 0 0" };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 620 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <h2 style={{ fontWeight: 700, fontSize: 18, margin: 0, color: "var(--text)" }}>Settings</h2>
+        <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)" }}>Settings</h2>
         <div
           aria-live="polite"
           style={{
             display: "flex", alignItems: "center", gap: 6,
-            fontSize: 13, fontWeight: 500, color: "var(--accent)",
+            fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--accent)",
             opacity: saved ? 1 : 0, transition: "opacity 0.4s ease",
             pointerEvents: "none",
           }}
@@ -202,7 +202,7 @@ export default function SettingsPanel({ restaurant }: Props) {
         </div>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "24px 28px" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "24px 28px" }}>
         <form onSubmit={e => { e.preventDefault(); persist(); }} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
           {/* ── Restaurant ── */}
@@ -216,7 +216,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                 required
                 style={{ ...inputStyle, border: nameError ? "1px solid #dc2626" : "1px solid var(--border)" }}
               />
-              {nameError && <p style={{ color: "#dc2626", fontSize: 13, margin: "6px 0 0" }}>{nameError}</p>}
+              {nameError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: "6px 0 0" }}>{nameError}</p>}
             </div>
 
             <div>
@@ -238,7 +238,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                   }}
                   onBlur={() => persist()}
                   placeholder="#E85D2F"
-                  style={{ ...inputStyle, width: 130, fontFamily: "monospace", fontSize: 13, border: accentError ? "1px solid #dc2626" : "1px solid var(--border)" }}
+                  style={{ ...inputStyle, width: 130, fontFamily: "monospace", fontSize: "var(--fs-sm)", border: accentError ? "1px solid #dc2626" : "1px solid var(--border)" }}
                 />
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -259,7 +259,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                   />
                 ))}
               </div>
-              {accentError && <p style={{ color: "#dc2626", fontSize: 13, margin: "6px 0 0" }}>{accentError}</p>}
+              {accentError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: "6px 0 0" }}>{accentError}</p>}
               <p style={metaStyle}>Used on guest menus as the brand color.</p>
             </div>
 
@@ -278,7 +278,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center",
                       minHeight: 64, padding: "6px 10px",
-                      background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
+                      background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
                     }}
                   >
                     <img
@@ -291,9 +291,9 @@ export default function SettingsPanel({ restaurant }: Props) {
                     />
                   </div>
                   {logoError ? (
-                    <span style={{ color: "#dc2626", fontSize: 12 }}>Couldn't load that image — check the URL</span>
+                    <span style={{ color: "#dc2626", fontSize: "var(--fs-xs)" }}>Couldn't load that image — check the URL</span>
                   ) : (
-                    <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                    <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", lineHeight: 1.5 }}>
                       Preview — shown in the guest menu header and dashboard header. Height-capped, never cropped.
                     </span>
                   )}
@@ -316,15 +316,15 @@ export default function SettingsPanel({ restaurant }: Props) {
                     style={{
                       textAlign: "left", cursor: "pointer",
                       display: "flex", flexDirection: "column", gap: 8,
-                      padding: 14, borderRadius: 12,
+                      padding: 14, borderRadius: "var(--radius-lg)",
                       border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
                       background: selected ? "color-mix(in srgb, var(--accent) 10%, var(--surface))" : "var(--surface-2)",
                       color: "var(--text)", transition: "border-color 0.15s, background 0.15s",
                     }}
                   >
                     <v.Icon width={20} height={20} style={{ color: selected ? "var(--accent)" : "var(--text-muted)" }} />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{v.label}</span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.4 }}>{v.desc}</span>
+                    <span style={{ fontSize: "var(--fs-sm)", fontWeight: 600 }}>{v.label}</span>
+                    <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", lineHeight: 1.4 }}>{v.desc}</span>
                   </button>
                 );
               })}
@@ -348,8 +348,8 @@ export default function SettingsPanel({ restaurant }: Props) {
                       aria-pressed={on}
                       style={{
                         display: "flex", alignItems: "center", gap: 7,
-                        padding: "8px 14px", borderRadius: 99, cursor: "pointer",
-                        fontWeight: 500, fontSize: 13,
+                        padding: "8px 14px", borderRadius: "var(--radius-pill)", cursor: "pointer",
+                        fontWeight: 500, fontSize: "var(--fs-sm)",
                         border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`,
                         background: on ? "color-mix(in srgb, var(--accent) 14%, var(--surface))" : "var(--surface-2)",
                         color: on ? "var(--accent)" : "var(--text-muted)",
@@ -383,14 +383,14 @@ export default function SettingsPanel({ restaurant }: Props) {
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>Sound alerts</div>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>Play an audio ping when a new order comes in. Stored per browser.</div>
+                <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)" }}>Sound alerts</div>
+                <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3 }}>Play an audio ping when a new order comes in. Stored per browser.</div>
               </div>
               <button
                 type="button"
                 onClick={toggleSound}
                 style={{
-                  width: 52, height: 28, borderRadius: 99, flexShrink: 0,
+                  width: 52, height: 28, borderRadius: "var(--radius-pill)", flexShrink: 0,
                   background: soundEnabled ? "var(--accent)" : "var(--border)",
                   border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
                 }}
@@ -405,22 +405,22 @@ export default function SettingsPanel({ restaurant }: Props) {
               </button>
             </div>
 
-            {error && <p style={{ color: "#dc2626", fontSize: 13, margin: 0 }}>{error}</p>}
+            {error && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{error}</p>}
             {/* Fallback explicit save — changes also auto-save on blur/toggle */}
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <button
                 type="submit"
                 disabled={saving}
                 style={{
-                  padding: "7px 14px", borderRadius: 8, cursor: "pointer",
+                  padding: "7px 14px", borderRadius: "var(--radius-md)", cursor: "pointer",
                   border: "1px solid var(--border)", background: "var(--surface-2)",
-                  color: "var(--text-muted)", fontSize: 13, fontWeight: 500,
+                  color: "var(--text-muted)", fontSize: "var(--fs-sm)", fontWeight: 500,
                   opacity: saving ? 0.6 : 1,
                 }}
               >
                 {saving ? "Saving…" : "Save now"}
               </button>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Changes save automatically.</span>
+              <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Changes save automatically.</span>
             </div>
           </Section>
 
@@ -434,7 +434,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                   style={{
                     display: "inline-flex", alignItems: "center", gap: 7,
                     background: "none", border: "none", padding: 0, cursor: "pointer",
-                    color: "#dc2626", fontSize: 13, fontWeight: 600, textDecoration: "underline",
+                    color: "#dc2626", fontSize: "var(--fs-sm)", fontWeight: 600, textDecoration: "underline",
                   }}
                 >
                   <IconAlert width={15} height={15} /> Delete this restaurant
@@ -447,12 +447,12 @@ export default function SettingsPanel({ restaurant }: Props) {
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
                   <IconAlert width={16} height={16} />
-                  <span style={{ fontWeight: 700, fontSize: 15 }}>Delete this restaurant</span>
+                  <span style={{ fontWeight: 700, fontSize: "var(--fs-md)" }}>Delete this restaurant</span>
                 </div>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: 0 }}>
                   Permanently delete <strong style={{ color: "var(--text)" }}>{restaurant.name}</strong> and all its data — tables, menu, requests. This cannot be undone.
                 </p>
-                <label style={{ fontSize: 13, fontWeight: 600, color: "#dc2626" }}>
+                <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "#dc2626" }}>
                   Type <strong>{restaurant.name}</strong> to confirm:
                 </label>
                 <input
@@ -461,20 +461,20 @@ export default function SettingsPanel({ restaurant }: Props) {
                   placeholder={restaurant.name}
                   style={{ ...inputStyle, background: "var(--surface)", border: "2px solid #fecaca" }}
                 />
-                {deleteError && <p style={{ color: "#dc2626", fontSize: 13, margin: 0 }}>{deleteError}</p>}
+                {deleteError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{deleteError}</p>}
                 <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
                     onClick={handleDelete}
                     disabled={deleting}
-                    style={{ padding: "9px 18px", borderRadius: 8, border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
+                    style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
                   >
                     {deleting ? "Deleting..." : "Yes, delete everything"}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setDeleteConfirm(false); setDeleteInput(""); setDeleteError(""); }}
-                    style={{ padding: "9px 18px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: 14, cursor: "pointer" }}
+                    style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}
                   >
                     Cancel
                   </button>

@@ -110,10 +110,10 @@ export default function RequestHistory({ restaurant }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
+        <h2 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
           <IconHistory width={18} height={18} /> Request History
         </h2>
-        <button onClick={load} style={{ padding: "6px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: 13, cursor: "pointer" }}>Refresh</button>
+        <button onClick={load} style={{ padding: "6px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>Refresh</button>
       </div>
 
       {/* Search */}
@@ -126,7 +126,7 @@ export default function RequestHistory({ restaurant }: Props) {
           placeholder="Search table, item, note..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 30px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+          style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 30px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none" }}
         />
       </div>
 
@@ -136,7 +136,7 @@ export default function RequestHistory({ restaurant }: Props) {
           const active = typeFilter === c.id;
           return (
             <button key={c.id} onClick={() => setTypeFilter(c.id)}
-              style={{ padding: "5px 14px", borderRadius: 99, border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`, background: active ? "var(--accent)" : "var(--surface)", color: active ? "white" : "var(--text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              style={{ padding: "5px 14px", borderRadius: "var(--radius-pill)", border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`, background: active ? "var(--accent)" : "var(--surface)", color: active ? "white" : "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer" }}>
               {c.label}
             </button>
           );
@@ -152,7 +152,7 @@ export default function RequestHistory({ restaurant }: Props) {
         </div>
       ) : (
         <>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>{filtered.length} request{filtered.length !== 1 ? "s" : ""}</p>
+          <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: 0 }}>{filtered.length} request{filtered.length !== 1 ? "s" : ""}</p>
 
           <style>{`
             .feed-entry { display: flex; align-items: flex-start; gap: 12px; }
@@ -167,26 +167,26 @@ export default function RequestHistory({ restaurant }: Props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {groups.map(g => (
               <div key={g.header}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", margin: "0 2px 8px" }}>{g.header}</div>
-                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, overflow: "hidden" }}>
+                <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", margin: "0 2px 8px" }}>{g.header}</div>
+                <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
                   {g.items.map((r, i) => {
                     const tableName = ((r.table as { name: string } | undefined)?.name ?? "—");
                     const badge = STATUS_BADGE[r.status] ?? STATUS_BADGE.done;
                     const Icon = TYPE_ICON[r.type] ?? IconBell;
                     return (
                       <div key={r.id} className="feed-entry" style={{ padding: "12px 16px", borderBottom: i < g.items.length - 1 ? "1px solid var(--border)" : "none" }}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--surface-2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: "var(--radius-md)", background: "var(--surface-2)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", flexShrink: 0 }}>
                           <Icon width={16} height={16} />
                         </div>
                         <div className="feed-main" style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 600, color: "var(--text)", fontSize: 13 }}>
+                          <div style={{ fontWeight: 600, color: "var(--text)", fontSize: "var(--fs-sm)" }}>
                             {tableName} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {r.item_name || typeName(r.type)}</span>
                           </div>
-                          {r.note && <div style={{ fontSize: 12, color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.note}</div>}
+                          {r.note && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.note}</div>}
                         </div>
                         <div className="feed-meta">
-                          <span style={{ fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at)}</span>
-                          <span style={{ background: badge.bg, color: badge.color, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, whiteSpace: "nowrap" }}>{badge.label}</span>
+                          <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at)}</span>
+                          <span style={{ background: badge.bg, color: badge.color, fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap" }}>{badge.label}</span>
                         </div>
                       </div>
                     );
@@ -199,9 +199,9 @@ export default function RequestHistory({ restaurant }: Props) {
           {/* Pagination */}
           {totalPages > 1 && (
             <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
-              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1 }}>Prev</button>
-              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Page {page + 1} of {totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page >= totalPages - 1 ? "default" : "pointer", opacity: page >= totalPages - 1 ? 0.4 : 1 }}>Next</button>
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1 }}>Prev</button>
+              <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Page {page + 1} of {totalPages}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page >= totalPages - 1 ? "default" : "pointer", opacity: page >= totalPages - 1 ? 0.4 : 1 }}>Next</button>
             </div>
           )}
         </>

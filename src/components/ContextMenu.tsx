@@ -90,12 +90,12 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
                     cursor: "pointer",
                     color: item.danger ? "#dc2626" : "var(--text)",
                     textAlign: "left",
-                    fontSize: 16,
+                    fontSize: "var(--fs-md)",
                     fontWeight: item.danger ? 600 : 400,
                   }}
                 >
                   {item.icon && (
-                    <span style={{ fontSize: 20, width: 28, textAlign: "center", flexShrink: 0 }}>
+                    <span style={{ fontSize: "var(--fs-lg)", width: 28, textAlign: "center", flexShrink: 0 }}>
                       {item.icon}
                     </span>
                   )}
@@ -112,12 +112,12 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
               style={{
                 width: "100%",
                 padding: "14px",
-                borderRadius: 12,
+                borderRadius: "var(--radius-lg)",
                 border: "1px solid var(--border)",
                 background: "var(--surface)",
                 cursor: "pointer",
                 fontWeight: 600,
-                fontSize: 16,
+                fontSize: "var(--fs-md)",
                 color: "var(--text-muted)",
               }}
             >
@@ -150,7 +150,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
           zIndex: 9999,
           background: "var(--surface)",
           border: "1px solid var(--border)",
-          borderRadius: 10,
+          borderRadius: "var(--radius-md)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.28)",
           minWidth: 188,
           padding: "4px 0",
@@ -175,7 +175,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
                 cursor: "pointer",
                 color: item.danger ? "#dc2626" : "var(--text)",
                 textAlign: "left",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 fontWeight: item.danger ? 600 : 400,
                 transition: "background 0.08s",
               }}
@@ -183,7 +183,7 @@ export default function ContextMenu({ x, y, items, onClose }: Props) {
               onMouseLeave={e => (e.currentTarget.style.background = "none")}
             >
               {item.icon && (
-                <span style={{ fontSize: 14, opacity: 0.75, width: 18, textAlign: "center", flexShrink: 0 }}>
+                <span style={{ fontSize: "var(--fs-sm)", opacity: 0.75, width: 18, textAlign: "center", flexShrink: 0 }}>
                   {item.icon}
                 </span>
               )}

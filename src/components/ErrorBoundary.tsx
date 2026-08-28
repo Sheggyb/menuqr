@@ -25,15 +25,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
       <div style={{
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         padding: "48px 24px", textAlign: "center", gap: 16,
-        background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
+        background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
       }}>
         <IconAlert width={36} height={36} style={{ color: "var(--warning)" }} />
         <div>
-          <p style={{ fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
+          <p style={{ fontWeight: 700, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>
             {this.props.fallbackTitle ?? "Something went wrong"}
           </p>
           {this.state.error && (
-            <p style={{ fontSize: 12, color: "var(--text-muted)", fontFamily: "monospace", maxWidth: 360, wordBreak: "break-word" }}>
+            <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontFamily: "monospace", maxWidth: 360, wordBreak: "break-word" }}>
               {this.state.error.message}
             </p>
           )}
@@ -41,14 +41,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <button
           onClick={this.handleRetry}
           style={{
-            padding: "9px 22px", borderRadius: 8, background: "var(--accent)", color: "white",
-            border: "none", cursor: "pointer", fontWeight: 700, fontSize: 14,
+            padding: "9px 22px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white",
+            border: "none", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)",
           }}
         >
           ↻ Retry
         </button>
         {this.state.retryCount > 2 && (
-          <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
             Still failing? Try refreshing the page.
           </p>
         )}

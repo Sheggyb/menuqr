@@ -59,17 +59,17 @@ function LoginForm() {
       <div style={{ position: "fixed", top: -80, right: -80, width: 280, height: 280, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
       <div style={{ position: "fixed", bottom: -60, left: -60, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
-      <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "40px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)" }}>
+      <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: "40px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
-          <div style={{ fontWeight: 900, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
-          <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>Welcome back! Log in to your account</p>
+          <div style={{ width: 52, height: 52, borderRadius: "var(--radius-lg)", background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
+          <div style={{ fontWeight: 900, fontSize: "var(--fs-xl)", color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", margin: 0 }}>Welcome back! Log in to your account</p>
         </div>
 
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Email address</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Email address</label>
             <input
               className="login-input"
               type="email"
@@ -77,11 +77,11 @@ function LoginForm() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--border)", borderRadius: 10, fontSize: 15, outline: "none", fontFamily: "inherit" }}
+              style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", fontSize: "var(--fs-md)", outline: "none", fontFamily: "inherit" }}
             />
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Password</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Password</label>
             <input
               className="login-input"
               type="password"
@@ -89,15 +89,15 @@ function LoginForm() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
-              style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--border)", borderRadius: 10, fontSize: 15, outline: "none", fontFamily: "inherit" }}
+              style={{ width: "100%", padding: "12px 14px", border: "1.5px solid var(--border)", borderRadius: "var(--radius-md)", fontSize: "var(--fs-md)", outline: "none", fontFamily: "inherit" }}
             />
           </div>
           {error && (
-            <div style={{ padding: "10px 14px", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
+            <div style={{ padding: "10px 14px", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", borderRadius: "var(--radius-md)", color: "#dc2626", fontSize: "var(--fs-sm)", fontWeight: 500 }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><IconAlert width={15} height={15} style={{ flexShrink: 0 }} /> {error}</span>
             </div>
           )}
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "var(--fs-sm)", color: "var(--text)", cursor: "pointer" }}>
             <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }} />
             Remember me
@@ -105,13 +105,13 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading}
-            style={{ width: "100%", padding: "13px", borderRadius: 10, background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: 15, opacity: loading ? 0.75 : 1, transition: "opacity 0.15s", marginTop: 4 }}
+            style={{ width: "100%", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: "var(--fs-md)", opacity: loading ? 0.75 : 1, transition: "opacity 0.15s", marginTop: 4 }}
           >
             {loading ? "Logging in…" : "Log in →"}
           </button>
         </form>
 
-        <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "var(--text-muted)" }}>
+        <p style={{ textAlign: "center", marginTop: 20, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
           No account yet?{" "}
           <Link href="/signup" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>Sign up free</Link>
         </p>

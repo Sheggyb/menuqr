@@ -79,7 +79,7 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
           display: "inline-flex", alignItems: "center",
           background: "transparent", color: accent,
           border: `1px solid ${accent}`,
-          fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 99,
+          fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 9px", borderRadius: "var(--radius-pill)",
           textTransform: "uppercase", letterSpacing: "0.03em",
           flexShrink: 0,
         }}>
@@ -88,18 +88,18 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 5,
           background: "var(--bg)", color: "var(--text-muted)",
-          fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99,
+          fontSize: "var(--fs-xs)", fontWeight: 600, padding: "3px 9px", borderRadius: "var(--radius-pill)",
           minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 1,
         }}>
           <IconTable width={12} height={12} style={{ flexShrink: 0 }} />
           <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tableName}</span>
         </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: isLate ? "#d97706" : "var(--text-muted)", fontWeight: isLate ? 600 : 400, whiteSpace: "nowrap", flexShrink: 0, marginLeft: "auto" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: "var(--fs-xs)", color: isLate ? "#d97706" : "var(--text-muted)", fontWeight: isLate ? 600 : 400, whiteSpace: "nowrap", flexShrink: 0, marginLeft: "auto" }}>
           {isLate && <IconClock width={12} height={12} />}
           {timeText}
         </span>
         {req.total_price != null && req.total_price > 0 && (
-          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 11, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
             {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
           </span>
         )}
@@ -113,11 +113,11 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
             <li key={i} style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
               <span style={{
                 flexShrink: 0, minWidth: 24, textAlign: "right",
-                fontSize: 14, fontWeight: 700, color: "var(--text-muted)",
+                fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--text-muted)",
                 fontVariantNumeric: "tabular-nums",
               }}>{line.qty && line.qty > 1 ? `${line.qty}×` : "1×"}</span>
               <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-                <span style={{ fontSize: 15, fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>
+                <span style={{ fontSize: "var(--fs-md)", fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>
                   {line.name}
                   {line.choices.length > 0 && (
                     <span style={{ fontWeight: 500, color: "var(--text-muted)" }}> · {line.choices.join(" · ")}</span>
@@ -126,19 +126,19 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
                 {(line.removed.length > 0 || line.extra.length > 0) && (
                   <span style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {line.removed.map((r, j) => (
-                      <span key={`r${j}`} style={{ fontSize: 11.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5, background: "color-mix(in srgb, #dc2626 14%, transparent)", color: "#dc2626", whiteSpace: "nowrap" }}>
+                      <span key={`r${j}`} style={{ fontSize: "var(--fs-xs)", fontWeight: 700, padding: "1px 7px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #dc2626 14%, transparent)", color: "#dc2626", whiteSpace: "nowrap" }}>
                         NO {r}
                       </span>
                     ))}
                     {line.extra.map((x, j) => (
-                      <span key={`x${j}`} style={{ fontSize: 11.5, fontWeight: 700, padding: "1px 7px", borderRadius: 5, background: "color-mix(in srgb, #16a34a 14%, transparent)", color: "#16a34a", whiteSpace: "nowrap" }}>
+                      <span key={`x${j}`} style={{ fontSize: "var(--fs-xs)", fontWeight: 700, padding: "1px 7px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #16a34a 14%, transparent)", color: "#16a34a", whiteSpace: "nowrap" }}>
                         EXTRA {x}
                       </span>
                     ))}
                   </span>
                 )}
                 {line.note && (
-                  <span style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
+                  <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
                 )}
               </div>
             </li>
@@ -146,7 +146,7 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </ul>
       )}
       {req.note && (
-        <span style={{ fontSize: 13, color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5, lineHeight: 1.5 }}>
+        <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", display: "inline-flex", alignItems: "center", gap: 5, lineHeight: 1.5 }}>
           <IconReceipt width={13} height={13} style={{ flexShrink: 0 }} /> {req.note}
         </span>
       )}
@@ -200,11 +200,11 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
       {/* Section header */}
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <span style={{ color: "var(--text-muted)", display: "inline-flex" }}>{icon}</span>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "var(--text)" }}>{title}</h2>
+        <h2 style={{ margin: 0, fontSize: "var(--fs-lg)", fontWeight: 700, color: "var(--text)" }}>{title}</h2>
         <span style={{
           background: "var(--surface-2)", color: "var(--text-muted)",
-          fontSize: 13, fontWeight: 600,
-          padding: "1px 9px", borderRadius: 99, minWidth: 22, textAlign: "center",
+          fontSize: "var(--fs-sm)", fontWeight: 600,
+          padding: "1px 9px", borderRadius: "var(--radius-pill)", minWidth: 22, textAlign: "center",
         }}>{count}</span>
       </div>
 
@@ -411,7 +411,7 @@ export default function LiveOrders({ restaurant }: Props) {
 
   if (loading) return (
     <div>
-      <div style={{ height: 40, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10, marginBottom: 16 }} />
+      <div style={{ height: 40, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", marginBottom: 16 }} />
       <div style={{ marginBottom: 24 }}><SkeletonList count={3} /></div>
       <SkeletonList count={2} />
     </div>
@@ -439,10 +439,10 @@ export default function LiveOrders({ restaurant }: Props) {
       {(!fetchOk || !realtimeOk) && (
         <div role="status" style={{
           display: "flex", alignItems: "center", gap: 9,
-          padding: "10px 14px", borderRadius: 10,
+          padding: "10px 14px", borderRadius: "var(--radius-md)",
           background: "color-mix(in srgb, #f59e0b 12%, transparent)",
           border: "1px solid color-mix(in srgb, #f59e0b 45%, transparent)",
-          color: "#b45309", fontSize: 13, fontWeight: 600,
+          color: "#b45309", fontSize: "var(--fs-sm)", fontWeight: 600,
         }}>
           <IconAlert width={16} height={16} style={{ flexShrink: 0 }} />
           {!fetchOk
@@ -458,12 +458,12 @@ export default function LiveOrders({ restaurant }: Props) {
           placeholder="Search table..."
           value={searchTable}
           onChange={e => setSearchTable(e.target.value)}
-          style={{ width: 150, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 12, outline: "none", flexShrink: 0 }}
+          style={{ width: 150, padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-xs)", outline: "none", flexShrink: 0 }}
         />
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
-          style={{ width: 100, padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 12, cursor: "pointer", flexShrink: 0 }}
+          style={{ width: 100, padding: "6px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-xs)", cursor: "pointer", flexShrink: 0 }}
         >
           <option value="all">All</option>
           <option value="waiter">Waiter</option>
@@ -475,13 +475,13 @@ export default function LiveOrders({ restaurant }: Props) {
         <button
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on" : "Sound off"}
-          style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 14, lineHeight: 1, flexShrink: 0, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
+          style={{ padding: "6px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: "var(--fs-sm)", lineHeight: 1, flexShrink: 0, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
         >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
 
         <div style={{ flex: 1 }} />
 
         {/* Compact stats */}
-        <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
           Today: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.total}</strong>
           {" · "}Done: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.done}</strong>
           {" · "}Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>

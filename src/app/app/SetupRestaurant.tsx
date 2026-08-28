@@ -66,12 +66,12 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
       <div className="card" style={{ width: "100%", maxWidth: 440 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
           <div style={{ marginBottom: 10, color: "var(--accent)", display: "flex", justifyContent: "center" }}><IconStore width={42} height={42} /></div>
-          <h1 style={{ fontWeight: 700, fontSize: 22 }}>Set up your restaurant</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 4 }}>You only need to do this once.</p>
+          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)" }}>Set up your restaurant</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", marginTop: 4 }}>You only need to do this once.</p>
         </div>
         <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>Restaurant name</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 4, display: "block" }}>Restaurant name</label>
             <input
               type="text"
               required
@@ -81,7 +81,7 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
             />
           </div>
           <div>
-            <label style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, display: "block" }}>URL slug</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 4, display: "block" }}>URL slug</label>
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -92,12 +92,12 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
               />
             </div>
             {slug && (
-              <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+              <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3 }}>
                 Used for your public menu URL (not live yet).
               </p>
             )}
           </div>
-          {error && <p style={{ color: "#dc2626", fontSize: 13 }}>{error}</p>}
+          {error && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)" }}>{error}</p>}
           <button type="submit" className="btn-primary" disabled={loading}>
             {loading ? "Creating..." : "Create restaurant →"}
           </button>

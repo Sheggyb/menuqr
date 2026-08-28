@@ -59,13 +59,13 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
 
 function bigBtn(variant: "outline" | "filled", color: string): React.CSSProperties {
   return {
-    height: 32, borderRadius: 8, padding: "0 12px",
+    height: 32, borderRadius: "var(--radius-md)", padding: "0 12px",
     display: "inline-flex", alignItems: "center", gap: 6,
     cursor: "pointer", flexShrink: 0,
     background: variant === "filled" ? color : "transparent",
     color: variant === "filled" ? "white" : color,
     border: variant === "filled" ? "none" : `1.5px solid ${color}`,
-    fontSize: 13, fontWeight: 700,
+    fontSize: "var(--fs-k-sm)", fontWeight: 700,
   };
 }
 
@@ -92,7 +92,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         background: "var(--surface-2)",
         border: "1px solid var(--border)",
         borderLeft: `4px solid ${leftAccent}`,
-        borderRadius: 12,
+        borderRadius: "var(--radius-lg)",
         padding: "10px 14px",
         display: "flex",
         flexDirection: "column",
@@ -107,7 +107,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
           display: "inline-flex", alignItems: "center",
           background: "transparent", color: accent,
           border: `1.5px solid ${accent}`,
-          fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
+          fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 10px", borderRadius: "var(--radius-pill)",
           textTransform: "uppercase", letterSpacing: "0.03em",
           flexShrink: 0,
         }}>
@@ -116,7 +116,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           background: "var(--bg)", color: "var(--text)",
-          fontSize: 13, fontWeight: 700, padding: "2px 10px", borderRadius: 99,
+          fontSize: "var(--fs-k-sm)", fontWeight: 700, padding: "2px 10px", borderRadius: "var(--radius-pill)",
           minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexShrink: 1,
         }}>
           <IconTable width={12} height={12} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
@@ -124,7 +124,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </span>
         <span style={{
           marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6,
-          fontSize: 13, fontWeight: isLate ? 700 : 500,
+          fontSize: "var(--fs-k-sm)", fontWeight: isLate ? 700 : 500,
           color: isLate ? "#d97706" : "var(--text-muted)",
           whiteSpace: "nowrap", flexShrink: 0,
         }}>
@@ -132,7 +132,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
           {timeText}
         </span>
         {req.total_price != null && req.total_price > 0 && (
-          <span style={{ display: "inline-flex", alignItems: "center", fontSize: 12, fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
             {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
           </span>
         )}
@@ -146,11 +146,11 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
             <div key={i} style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
               <span style={{
                 flexShrink: 0, minWidth: 30, textAlign: "right",
-                fontSize: 17, fontWeight: 800, color: accent,
+                fontSize: "var(--fs-k-md)", fontWeight: 800, color: accent,
                 fontVariantNumeric: "tabular-nums",
               }}>{line.qty && line.qty > 1 ? `${line.qty}×` : "1×"}</span>
               <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-                <span style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>
+                <span style={{ fontSize: "var(--fs-k-md)", fontWeight: 700, color: "var(--text)", lineHeight: 1.3 }}>
                   {line.name}
                   {line.choices.length > 0 && (
                     <span style={{ fontWeight: 600, color: "var(--text-muted)" }}> · {line.choices.join(" · ")}</span>
@@ -159,19 +159,19 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
                 {(line.removed.length > 0 || line.extra.length > 0) && (
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {line.removed.map((r, j) => (
-                      <span key={`r${j}`} style={{ fontSize: 13, fontWeight: 800, padding: "2px 9px", borderRadius: 6, background: "color-mix(in srgb, #dc2626 16%, transparent)", color: "#dc2626", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+                      <span key={`r${j}`} style={{ fontSize: "var(--fs-k-sm)", fontWeight: 800, padding: "2px 9px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #dc2626 16%, transparent)", color: "#dc2626", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
                         NO {r.toUpperCase()}
                       </span>
                     ))}
                     {line.extra.map((x, j) => (
-                      <span key={`x${j}`} style={{ fontSize: 13, fontWeight: 800, padding: "2px 9px", borderRadius: 6, background: "color-mix(in srgb, #16a34a 16%, transparent)", color: "#16a34a", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
+                      <span key={`x${j}`} style={{ fontSize: "var(--fs-k-sm)", fontWeight: 800, padding: "2px 9px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #16a34a 16%, transparent)", color: "#16a34a", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
                         EXTRA {x.toUpperCase()}
                       </span>
                     ))}
                   </div>
                 )}
                 {line.note && (
-                  <span style={{ fontSize: 13.5, color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
+                  <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)", fontStyle: "italic", lineHeight: 1.4 }}>{line.note}</span>
                 )}
               </div>
             </div>
@@ -180,7 +180,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
       )}
 
       {req.note && (
-        <div style={{ fontSize: 13, color: "var(--text-muted)", display: "inline-flex", alignItems: "flex-start", gap: 7, lineHeight: 1.5 }}>
+        <div style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)", display: "inline-flex", alignItems: "flex-start", gap: 7, lineHeight: 1.5 }}>
           <IconReceipt width={14} height={14} style={{ flexShrink: 0, marginTop: 2 }} />
           <span>{req.note}</span>
         </div>
@@ -222,11 +222,11 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
     <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <span style={{ color: "var(--text-muted)", display: "inline-flex" }}>{icon}</span>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "var(--text)" }}>{title}</h2>
+        <h2 style={{ margin: 0, fontSize: "var(--fs-k-md)", fontWeight: 800, color: "var(--text)" }}>{title}</h2>
         <span style={{
           background: "var(--surface-2)", color: "var(--text)",
-          fontSize: 13, fontWeight: 700,
-          padding: "1px 10px", borderRadius: 99, minWidth: 22, textAlign: "center",
+          fontSize: "var(--fs-k-sm)", fontWeight: 700,
+          padding: "1px 10px", borderRadius: "var(--radius-pill)", minWidth: 22, textAlign: "center",
         }}>{count}</span>
       </div>
       {/* Permanent board frame — the empty-state box is always present, orders render inside it */}
@@ -410,10 +410,10 @@ export default function KitchenDisplay({ restaurant }: Props) {
 
   if (loading) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", padding: 24, display: "flex", flexDirection: "column", gap: 24 }}>
-      <div style={{ height: 56, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12 }} />
+      <div style={{ height: 56, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }} />
       <div className="kd-grid">
         {[0, 1, 2, 3].map(i => (
-          <div key={i} style={{ height: 220, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14 }} />
+          <div key={i} style={{ height: 220, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }} />
         ))}
       </div>
     </div>
@@ -444,23 +444,23 @@ export default function KitchenDisplay({ restaurant }: Props) {
         display: "flex", alignItems: "center", gap: 16,
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontWeight: 800, fontSize: 17, color: "var(--text)", letterSpacing: "-0.3px" }}>Kitchen</span>
-          <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{restaurant.name}</span>
+          <span style={{ fontWeight: 800, fontSize: "var(--fs-k-md)", color: "var(--text)", letterSpacing: "-0.3px" }}>Kitchen</span>
+          <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{restaurant.name}</span>
         </div>
 
         <div style={{ flex: 1 }} />
 
         {/* Filter chips */}
-        <div style={{ display: "flex", gap: 6, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 10, padding: 4 }}>
+        <div style={{ display: "flex", gap: 6, background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 4 }}>
           {(["food", "drinks", "all"] as Filter[]).map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               style={{
-                padding: "5px 12px", borderRadius: 7, border: "none", cursor: "pointer",
+                padding: "5px 12px", borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer",
                 background: filter === f ? "var(--accent)" : "transparent",
                 color: filter === f ? "white" : "var(--text-muted)",
-                fontSize: 12, fontWeight: filter === f ? 700 : 500,
+                fontSize: "var(--fs-xs)", fontWeight: filter === f ? 700 : 500,
                 display: "inline-flex", alignItems: "center", gap: 6,
               }}
             >
@@ -474,22 +474,22 @@ export default function KitchenDisplay({ restaurant }: Props) {
         <button
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on" : "Sound off"}
-          style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: 15, lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
+          style={{ padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: "var(--fs-k-md)", lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
         >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
 
         {/* Live clock */}
-        <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
+        <span style={{ fontSize: "var(--fs-k-md)", fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
       </header>
 
       {/* Connection warning — sized to be readable from across the kitchen,
           because the failure mode is an empty board that looks like "all done" */}
       {!fetchOk && (
         <div role="status" style={{
-          margin: "14px 24px 0", padding: "12px 16px", borderRadius: 10,
+          margin: "14px 24px 0", padding: "12px 16px", borderRadius: "var(--radius-md)",
           display: "flex", alignItems: "center", gap: 10,
           background: "color-mix(in srgb, #dc2626 12%, transparent)",
           border: "1px solid color-mix(in srgb, #dc2626 50%, transparent)",
-          color: "#dc2626", fontSize: 15, fontWeight: 700,
+          color: "#dc2626", fontSize: "var(--fs-k-md)", fontWeight: 700,
         }}>
           <IconAlert width={18} height={18} style={{ flexShrink: 0 }} />
           Can&apos;t reach the server — these tickets may be out of date. Retrying every 12s.
@@ -497,11 +497,11 @@ export default function KitchenDisplay({ restaurant }: Props) {
       )}
       {fetchOk && !realtimeOk && (
         <div role="status" style={{
-          margin: "14px 24px 0", padding: "10px 16px", borderRadius: 10,
+          margin: "14px 24px 0", padding: "10px 16px", borderRadius: "var(--radius-md)",
           display: "flex", alignItems: "center", gap: 10,
           background: "color-mix(in srgb, #f59e0b 12%, transparent)",
           border: "1px solid color-mix(in srgb, #f59e0b 45%, transparent)",
-          color: "#b45309", fontSize: 14, fontWeight: 600,
+          color: "#b45309", fontSize: "var(--fs-k-sm)", fontWeight: 600,
         }}>
           <IconAlert width={17} height={17} style={{ flexShrink: 0 }} />
           Live updates interrupted — refreshing every 12s, no sound on new orders.
@@ -510,23 +510,23 @@ export default function KitchenDisplay({ restaurant }: Props) {
 
       {/* STATS BAR */}
       <div style={{ padding: "14px 24px 0", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
           Today: <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong>
         </span>
-        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
           Done: <strong style={{ color: "#22c55e", fontWeight: 700 }}>{todayStats.done}</strong>
         </span>
-        <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
+        <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
           Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{freshCount}</strong>
         </span>
         {/* The dot must reflect reality — it used to stay green during an outage */}
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: fetchOk ? "var(--text-muted)" : "#b45309", fontWeight: fetchOk ? 400 : 700 }}>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--fs-xs)", color: fetchOk ? "var(--text-muted)" : "#b45309", fontWeight: fetchOk ? 400 : 700 }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: fetchOk ? (realtimeOk ? "#22c55e" : "#f59e0b") : "#dc2626", display: "inline-block", flexShrink: 0 }} />
           {fetchOk
             ? `${realtimeOk ? "Live" : "Polling"} · updated ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "…"}`
             : `Offline · last update ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "unknown"}`}
         </span>
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>P = start · D = done</span>
+        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>P = start · D = done</span>
       </div>
 
       {/* COLUMNS */}

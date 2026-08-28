@@ -6,21 +6,21 @@ export const metadata: Metadata = {
   description: "How MenuQR collects, uses and protects your data.",
 };
 
-const h2: React.CSSProperties = { fontSize: 20, fontWeight: 800, color: "var(--text)", marginTop: 36, marginBottom: 10, letterSpacing: "-0.3px" };
-const p: React.CSSProperties = { color: "var(--text-muted)", fontSize: 15, lineHeight: 1.7, margin: "0 0 12px" };
-const li: React.CSSProperties = { color: "var(--text-muted)", fontSize: 15, lineHeight: 1.7, marginBottom: 6 };
+const h2: React.CSSProperties = { fontSize: "var(--fs-lg)", fontWeight: 800, color: "var(--text)", marginTop: 36, marginBottom: 10, letterSpacing: "-0.3px" };
+const p: React.CSSProperties = { color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.7, margin: "0 0 12px" };
+const li: React.CSSProperties = { color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.7, marginBottom: 6 };
 
 export default function PrivacyPage() {
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif" }}>
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 32px", background: "var(--surface)", borderBottom: "1px solid var(--border)" }}>
-        <Link href="/" style={{ fontWeight: 800, fontSize: 20, color: "var(--accent)", textDecoration: "none", letterSpacing: "-0.5px" }}>MenuQR</Link>
-        <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14, fontWeight: 500 }}>← Back to home</Link>
+        <Link href="/" style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", textDecoration: "none", letterSpacing: "-0.5px" }}>MenuQR</Link>
+        <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", fontWeight: 500 }}>← Back to home</Link>
       </nav>
 
       <article style={{ maxWidth: 720, margin: "0 auto", padding: "56px 24px 80px" }}>
         <h1 style={{ fontSize: 34, fontWeight: 900, color: "var(--text)", marginBottom: 8, letterSpacing: "-0.8px" }}>Privacy Policy</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 32 }}>Last updated: July 2026</p>
+        <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", marginBottom: 32 }}>Last updated: July 2026</p>
 
         <p style={p}>
           MenuQR (&ldquo;we&rdquo;, &ldquo;us&rdquo;) provides digital menus and table ordering for restaurants. This policy explains what

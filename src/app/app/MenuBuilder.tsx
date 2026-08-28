@@ -653,7 +653,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                   setEmojiPickerPos({ top: rect.bottom + 4, left: rect.left });
                   setShowEmojiPicker(p => !p);
                 }}
-                style={{ fontSize: 22, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1 }}
+                style={{ fontSize: "var(--fs-xl)", padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1 }}
               >
                 {newCatIcon}
               </button>
@@ -667,10 +667,10 @@ export default function MenuBuilder({ restaurant }: Props) {
               placeholder="Category name…"
               onKeyDown={e => { if (e.key === "Enter") addCategory(); if (e.key === "Escape") { setAddingCategory(false); setNewCatName(""); } }}
             />
-            <button className="btn-primary" onClick={addCategory} style={{ whiteSpace: "nowrap", fontSize: 13, padding: "8px 16px" }}>Add</button>
+            <button className="btn-primary" onClick={addCategory} style={{ whiteSpace: "nowrap", fontSize: "var(--fs-sm)", padding: "8px 16px" }}>Add</button>
             <button
               onClick={() => { setAddingCategory(false); setNewCatName(""); }}
-              style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: 13 }}
+              style={{ padding: "8px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}
             >Cancel</button>
           </div>
         </div>
@@ -678,14 +678,14 @@ export default function MenuBuilder({ restaurant }: Props) {
 
       {/* SIDEBAR + CONTENT LAYOUT */}
       {categories.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "64px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: 14, border: "2px dashed var(--border)" }}>
+        <div style={{ textAlign: "center", padding: "64px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: "var(--radius-lg)", border: "2px dashed var(--border)" }}>
           <div style={{ marginBottom: 12 }}><IconDish width={36} height={36} style={{ color: "var(--text-muted)", opacity: 0.7 }} /></div>
-          <p style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", marginBottom: 4 }}>Your menu is empty</p>
-          <p style={{ fontSize: 13, marginBottom: 16 }}>Start by adding your first category</p>
+          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>Your menu is empty</p>
+          <p style={{ fontSize: "var(--fs-sm)", marginBottom: 16 }}>Start by adding your first category</p>
           <button
             className="btn-primary"
             onClick={() => setAddingCategory(true)}
-            style={{ whiteSpace: "nowrap", fontSize: 13, padding: "8px 18px" }}
+            style={{ whiteSpace: "nowrap", fontSize: "var(--fs-sm)", padding: "8px 18px" }}
           >+ Category</button>
         </div>
       ) : (
@@ -696,7 +696,7 @@ export default function MenuBuilder({ restaurant }: Props) {
               <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
                 <button
                   onClick={() => setAddingCategory(true)}
-                  style={{ padding: "5px 10px", borderRadius: 6, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", flexShrink: 0, height: 28 }}
+                  style={{ padding: "5px 10px", borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-xs)", whiteSpace: "nowrap", flexShrink: 0, height: 28 }}
                 >+ Category</button>
               </div>
             )}
@@ -719,7 +719,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                     // ── Inline editor ──
                     <div style={{
                       display: "flex", alignItems: "center", gap: 4,
-                      padding: "4px 6px", borderRadius: 8,
+                      padding: "4px 6px", borderRadius: "var(--radius-md)",
                       background: "var(--surface-2)",
                       border: "1px solid var(--accent)",
                     }}>
@@ -731,7 +731,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           setEditEmojiPickerPos({ top: rect.bottom + 4, left: rect.left });
                           setShowEditEmojiPicker(p => !p);
                         }}
-                        style={{ fontSize: 16, padding: "2px 4px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
+                        style={{ fontSize: "var(--fs-md)", padding: "2px 4px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", lineHeight: 1, flexShrink: 0 }}
                       >
                         {editCatIcon}
                        </button>
@@ -742,15 +742,15 @@ export default function MenuBuilder({ restaurant }: Props) {
                         onChange={e => setEditCatName(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") saveEditCat(); if (e.key === "Escape") cancelEditCat(); }}
                         className="mb-edit-input"
-                        style={{ flex: 1, fontSize: 13, padding: "3px 6px", minWidth: 0 }}
+                        style={{ flex: 1, fontSize: "var(--fs-sm)", padding: "3px 6px", minWidth: 0 }}
                       />
                       <button
                         onClick={saveEditCat}
-                        style={{ fontSize: 11, padding: "2px 6px", borderRadius: 5, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, flexShrink: 0 }}
+                        style={{ fontSize: "var(--fs-xs)", padding: "2px 6px", borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, flexShrink: 0 }}
                       ><IconCheck width={13} height={13} strokeWidth={2.5} /></button>
                       <button
                         onClick={cancelEditCat}
-                        style={{ fontSize: 11, padding: "2px 5px", borderRadius: 5, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer", flexShrink: 0 }}
+                        style={{ fontSize: "var(--fs-xs)", padding: "2px 5px", borderRadius: "var(--radius-sm)", background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer", flexShrink: 0 }}
                       ><IconX width={12} height={12} /></button>
                     </div>
                   ) : (
@@ -807,25 +807,25 @@ export default function MenuBuilder({ restaurant }: Props) {
                       style={{
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "10px 14px",
-                        borderRadius: 8,
+                        borderRadius: "var(--radius-md)",
                         borderLeft: active ? "3px solid var(--accent)" : "3px solid transparent",
                         borderTop: "none", borderRight: "none", borderBottom: "none",
                         background: active ? "color-mix(in srgb, var(--accent) 5%, transparent)" : "transparent",
                         color: "var(--text)",
                         cursor: "pointer",
-                        fontSize: 13,
+                        fontSize: "var(--fs-sm)",
                         fontWeight: active ? 600 : 500,
                         textAlign: "left",
                         width: "100%",
                         transition: "background 0.1s",
                       }}
                     >
-                      <span style={{ fontSize: 15, flexShrink: 0 }}>{cat.icon}</span>
+                      <span style={{ fontSize: "var(--fs-md)", flexShrink: 0 }}>{cat.icon}</span>
                       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>{cat.name}</span>
                       <span style={{
-                        fontSize: 11, fontWeight: 600, flexShrink: 0,
+                        fontSize: "var(--fs-xs)", fontWeight: 600, flexShrink: 0,
                         color: "var(--text-muted)", background: "var(--surface-2)",
-                        padding: "1px 8px", borderRadius: 99, minWidth: 18, textAlign: "center",
+                        padding: "1px 8px", borderRadius: "var(--radius-pill)", minWidth: 18, textAlign: "center",
                       }}>{count}</span>
                     </button>
                   )}
@@ -836,9 +836,9 @@ export default function MenuBuilder({ restaurant }: Props) {
               className="menu-add-cat-btn"
               onClick={() => setAddingCategory(true)}
               style={{
-                marginTop: 6, padding: "10px 14px", borderRadius: 8,
+                marginTop: 6, padding: "10px 14px", borderRadius: "var(--radius-md)",
                 border: "1px dashed var(--border)", background: "none",
-                cursor: "pointer", color: "var(--text-muted)", fontSize: 13,
+                cursor: "pointer", color: "var(--text-muted)", fontSize: "var(--fs-sm)",
                 fontWeight: 500, textAlign: "left", width: "100%",
               }}
             >
@@ -857,17 +857,17 @@ export default function MenuBuilder({ restaurant }: Props) {
                 placeholder="Search menu..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: 13, borderRadius: 6, boxSizing: "border-box" }}
+                style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: "var(--fs-sm)", borderRadius: "var(--radius-sm)", boxSizing: "border-box" }}
               />
             </div>
             {/* Category header */}
             {searchQuery ? (
               <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 10 }}>
-                <h3 style={{ fontWeight: 700, fontSize: 18, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
                   <IconSearch width={18} height={18} style={{ color: "var(--text-muted)" }} />
                   &quot;{searchQuery}&quot;
                 </h3>
-                <span style={{ color: "var(--text-muted)", fontSize: 13 }}>
+                <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>
                   {displayItems.length} result{displayItems.length !== 1 ? "s" : ""}
                 </span>
                 <button
@@ -884,11 +884,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                     { separator: true },
                     { label: "Delete category", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
                   ])}
-                  style={{ fontWeight: 700, fontSize: 18, margin: 0, flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}
+                  style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}
                 >
-                  <span style={{ fontSize: 22, flexShrink: 0 }}>{activeCat.icon}</span>
+                  <span style={{ fontSize: "var(--fs-xl)", flexShrink: 0 }}>{activeCat.icon}</span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeCat.name}</span>
-                  <span style={{ fontWeight: 500, color: "var(--text-muted)", fontSize: 13, flexShrink: 0 }}>
+                  <span style={{ fontWeight: 500, color: "var(--text-muted)", fontSize: "var(--fs-sm)", flexShrink: 0 }}>
                     {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
                   </span>
                 </h3>
@@ -914,7 +914,7 @@ export default function MenuBuilder({ restaurant }: Props) {
               <div className="mb-additem-row" style={{
                 marginBottom: 12, padding: "0 6px 0 12px",
                 height: 48, background: "var(--surface)",
-                border: "1px solid var(--accent)", borderRadius: 10,
+                border: "1px solid var(--accent)", borderRadius: "var(--radius-md)",
                 display: "flex", gap: 8, alignItems: "center",
               }}>
                 <input
@@ -923,7 +923,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                   value={quickAdds[selectedCatId]?.name ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], name: e.target.value } }))}
                   onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
-                  style={{ flex: 1, height: 34, padding: "0 10px", fontSize: 13, minWidth: 0 }}
+                  style={{ flex: 1, height: 34, padding: "0 10px", fontSize: "var(--fs-sm)", minWidth: 0 }}
                 />
                 <input
                   type="number"
@@ -933,11 +933,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                   value={quickAdds[selectedCatId]?.price ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], price: e.target.value } }))}
                   onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
-                  style={{ width: 120, height: 34, padding: "0 10px", fontSize: 13 }}
+                  style={{ width: 120, height: 34, padding: "0 10px", fontSize: "var(--fs-sm)" }}
                 />
                 <button
                   onClick={() => quickAddItem(selectedCatId)}
-                  style={{ height: 34, padding: "0 16px", borderRadius: 7, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}
+                  style={{ height: 34, padding: "0 16px", borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }}
                 >Add</button>
                 <button
                   onClick={() => setShowQuickAdd(false)}
@@ -952,14 +952,14 @@ export default function MenuBuilder({ restaurant }: Props) {
               searchQuery ? (
                 <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
                   <IconSearch width={24} height={24} style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 10 }} />
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text)", margin: 0 }}>
+                  <p style={{ fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--text)", margin: 0 }}>
                     No items match &quot;{searchQuery}&quot;
                   </p>
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
-                  <div style={{ fontSize: 24, marginBottom: 10, opacity: 0.8 }}>{activeCat?.icon}</div>
-                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--text-muted)", margin: "0 0 6px" }}>
+                  <div style={{ fontSize: "var(--fs-xl)", marginBottom: 10, opacity: 0.8 }}>{activeCat?.icon}</div>
+                  <p style={{ fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--text-muted)", margin: "0 0 6px" }}>
                     No items yet
                   </p>
                   <button
@@ -1025,7 +1025,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                         padding: "12px 14px",
                         background: "var(--surface)",
                         border: "1px solid var(--border)",
-                        borderRadius: 12,
+                        borderRadius: "var(--radius-lg)",
                         opacity: item.is_available ? 1 : 0.5,
                         boxShadow: draggingItemId === item.id
                           ? "0 8px 24px rgba(0,0,0,0.16)"
@@ -1052,10 +1052,10 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                             className="mb-edit-input"
-                            style={{ fontWeight: 600, fontSize: 15, padding: "2px 8px", width: "70%" }}
+                            style={{ fontWeight: 600, fontSize: "var(--fs-md)", padding: "2px 8px", width: "70%" }}
                           />
                         ) : (
-                          <span style={{ fontWeight: 600, fontSize: 15, display: "block" }}>
+                          <span style={{ fontWeight: 600, fontSize: "var(--fs-md)", display: "block" }}>
                             {item.name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Untitled</span>}
                           </span>
                         )}
@@ -1067,12 +1067,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onBlur={saveEdit}
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                             className="mb-edit-input"
-                            style={{ fontSize: 13, padding: "2px 8px", width: "100%", marginTop: 4 }}
+                            style={{ fontSize: "var(--fs-sm)", padding: "2px 8px", width: "100%", marginTop: 4 }}
                             placeholder="Description…"
                           />
                         ) : (
                           item.description && (
-                            <span style={{ color: "var(--text-muted)", fontSize: 13, display: "block", lineHeight: 1.4, marginTop: 2 }}>
+                            <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", display: "block", lineHeight: 1.4, marginTop: 2 }}>
                               {item.description}
                             </span>
                           )
@@ -1091,11 +1091,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                           onBlur={saveEdit}
                           onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                           className="mb-edit-input"
-                          style={{ width: 90, padding: "2px 8px", fontSize: 16, fontWeight: 700, textAlign: "right", flexShrink: 0 }}
+                          style={{ width: 90, padding: "2px 8px", fontSize: "var(--fs-md)", fontWeight: 700, textAlign: "right", flexShrink: 0 }}
                         />
                       ) : (
                         <span style={{
-                          fontWeight: 700, fontSize: 16, flexShrink: 0,
+                          fontWeight: 700, fontSize: "var(--fs-md)", flexShrink: 0,
                           color: item.price ? "var(--accent)" : "var(--text-muted)",
                           opacity: item.price ? 1 : 0.4,
                           minWidth: 54, textAlign: "right",
@@ -1106,7 +1106,7 @@ export default function MenuBuilder({ restaurant }: Props) {
 
                       {/* Category badge (only when searching across categories) */}
                       {searchQuery && cat && (
-                        <span style={{ fontSize: 11, background: "var(--surface-2)", color: "var(--text-muted)", padding: "2px 8px", borderRadius: 99, fontWeight: 600, flexShrink: 0 }}>
+                        <span style={{ fontSize: "var(--fs-xs)", background: "var(--surface-2)", color: "var(--text-muted)", padding: "2px 8px", borderRadius: "var(--radius-pill)", fontWeight: 600, flexShrink: 0 }}>
                           {cat.icon} {cat.name}
                         </span>
                       )}
@@ -1119,7 +1119,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onClick={() => toggleItem(item)}
                             title={item.is_available ? "Available — click to hide" : "Hidden — click to show"}
                             style={{
-                              fontSize: 11, padding: "3px 10px", borderRadius: 99,
+                              fontSize: "var(--fs-xs)", padding: "3px 10px", borderRadius: "var(--radius-pill)",
                               border: "none",
                               background: item.is_available
                                 ? "color-mix(in srgb, #22c55e 15%, transparent)"
@@ -1175,13 +1175,13 @@ export default function MenuBuilder({ restaurant }: Props) {
             >
               <div
                 onClick={e => e.stopPropagation()}
-                style={{ background: "var(--surface)", borderRadius: 16, padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
+                style={{ background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
               >
                 <div style={{ textAlign: "center", marginBottom: 12 }}><IconAlert width={32} height={32} style={{ color: "#dc2626" }} /></div>
-                <h3 style={{ fontWeight: 800, fontSize: 18, textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
+                <h3 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
                   Delete &ldquo;{cat.icon} {cat.name}&rdquo;?
                 </h3>
-                <p style={{ fontSize: 14, color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
                   {itemCount > 0
                     ? `This will also delete all ${itemCount} item${itemCount !== 1 ? "s" : ""} in this category. This cannot be undone.`
                     : "This cannot be undone."}
@@ -1189,11 +1189,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                 <div style={{ display: "flex", gap: 10 }}>
                   <button
                     onClick={() => setConfirmDeleteCat(null)}
-                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}
+                    style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
                   >Cancel</button>
                   <button
                     onClick={() => { deleteCategory(confirmDeleteCat); setConfirmDeleteCat(null); }}
-                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                    style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}
                   >Yes, delete</button>
                 </div>
               </div>
@@ -1208,13 +1208,13 @@ export default function MenuBuilder({ restaurant }: Props) {
           <div onClick={() => setShowEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
           <div style={{
             position: "fixed", top: emojiPickerPos.top, left: emojiPickerPos.left, zIndex: 99,
-            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
             padding: 10, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4,
             boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 240,
           }}>
             {CATEGORY_EMOJIS.map(e => (
               <button key={e} type="button" onClick={() => { setNewCatIcon(e); setShowEmojiPicker(false); }}
-                style={{ fontSize: 20, background: newCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 4, lineHeight: 1 }}>
+                style={{ fontSize: "var(--fs-lg)", background: newCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: "var(--radius-sm)", cursor: "pointer", padding: 4, lineHeight: 1 }}>
                 {e}
               </button>
             ))}
@@ -1228,14 +1228,14 @@ export default function MenuBuilder({ restaurant }: Props) {
           <div onClick={() => setShowEditEmojiPicker(false)} style={{ position: "fixed", inset: 0, zIndex: 98 }} />
           <div style={{
             position: "fixed", top: editEmojiPickerPos.top, left: editEmojiPickerPos.left, zIndex: 99,
-            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12,
+            background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)",
             padding: 8, display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3,
             boxShadow: "0 4px 20px rgba(0,0,0,0.25)", width: 220,
           }}>
             {CATEGORY_EMOJIS.map(e => (
               <button key={e} type="button"
                 onClick={() => { setEditCatIcon(e); setShowEditEmojiPicker(false); }}
-                style={{ fontSize: 18, background: editCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: 6, cursor: "pointer", padding: 3, lineHeight: 1 }}>
+                style={{ fontSize: "var(--fs-lg)", background: editCatIcon === e ? "var(--accent-soft)" : "none", border: "none", borderRadius: "var(--radius-sm)", cursor: "pointer", padding: 3, lineHeight: 1 }}>
                 {e}
               </button>
             ))}
@@ -1247,30 +1247,30 @@ export default function MenuBuilder({ restaurant }: Props) {
       {optionsEditor && typeof document !== "undefined" && createPortal(
         <>
           <div onClick={() => setOptionsEditor(null)} style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: 16, padding: "24px", maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}>
-              <h3 style={{ fontWeight: 800, fontSize: 17, margin: "0 0 4px", color: "var(--text)" }}>Options — {optionsEditor.item.name}</h3>
-              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: "24px", maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}>
+              <h3 style={{ fontWeight: 800, fontSize: "var(--fs-md)", margin: "0 0 4px", color: "var(--text)" }}>Options — {optionsEditor.item.name}</h3>
+              <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
                 <strong>Choice</strong> — guest picks one (e.g. meat on kebabs).{" "}
                 <strong>Ingredients</strong> — all included, guest removes or adds extra.{" "}
                 <strong>Allergens</strong> — shown to guests; required by EU food-information rules.
               </p>
               {optionDrafts.length === 0 && (
-                <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "0 0 12px" }}>No options yet — add a group below.</p>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: "0 0 12px" }}>No options yet — add a group below.</p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
                 {optionDrafts.map((g, gi) => (
-                  <div key={g.id} style={{ border: "1px solid var(--border)", borderRadius: 12, padding: "12px 14px", background: "var(--surface-2)" }}>
+                  <div key={g.id} style={{ border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "12px 14px", background: "var(--surface-2)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <input
                         value={g.name}
                         onChange={e => patchGroup(gi, { name: e.target.value })}
                         placeholder={g.type === "ingredients" ? "Group name (e.g. Ingredients)" : g.type === "allergens" ? "Group name (e.g. Allergens)" : "Group name (e.g. Meat choice)"}
-                        style={{ flex: 1, padding: "7px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                        style={{ flex: 1, padding: "7px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none" }}
                       />
-                      <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 16, padding: "2px 4px" }}>×</button>
+                      <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                      <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 2 }}>
+                      <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 2 }}>
                         {([
                           ["choice", "Choice"],
                           ["ingredients", "Ingredients"],
@@ -1282,18 +1282,18 @@ export default function MenuBuilder({ restaurant }: Props) {
                             // for being unnamed
                             ...(g.name.trim() ? {} : { name: t === "allergens" ? "Allergens" : t === "ingredients" ? "Ingredients" : "" }),
                           })}
-                            style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, background: g.type === t ? "var(--accent)" : "transparent", color: g.type === t ? "#fff" : "var(--text-muted)" }}>{label}</button>
+                            style={{ padding: "4px 10px", borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer", fontSize: "var(--fs-xs)", fontWeight: 600, background: g.type === t ? "var(--accent)" : "transparent", color: g.type === t ? "#fff" : "var(--text-muted)" }}>{label}</button>
                         ))}
                       </div>
                       {g.type === "choice" ? (
-                        <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
                           Required
                         </label>
                       ) : g.type === "ingredients" ? (
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Guests tap to remove or add extra</span>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Guests tap to remove or add extra</span>
                       ) : (
-                        <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Shown to guests, not selectable</span>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Shown to guests, not selectable</span>
                       )}
                     </div>
                     {g.type === "allergens" ? (
@@ -1309,7 +1309,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                               onClick={() => toggleAllergen(gi, a.id)}
                               aria-pressed={on}
                               style={{
-                                padding: "5px 11px", borderRadius: 99, cursor: "pointer", fontSize: 12, fontWeight: 600,
+                                padding: "5px 11px", borderRadius: "var(--radius-pill)", cursor: "pointer", fontSize: "var(--fs-xs)", fontWeight: 600,
                                 border: `1px solid ${on ? "#dc2626" : "var(--border)"}`,
                                 background: on ? "color-mix(in srgb, #dc2626 12%, transparent)" : "var(--surface)",
                                 color: on ? "#dc2626" : "var(--text-muted)",
@@ -1326,7 +1326,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             value={c.label}
                             onChange={e => patchChoice(gi, ci, { label: e.target.value })}
                             placeholder={g.type === "ingredients" ? "Ingredient (e.g. Lök)" : "Choice (e.g. Fläsk)"}
-                            style={{ flex: 1, padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none", textDecoration: c.isAvailable ? "none" : "line-through", opacity: c.isAvailable ? 1 : 0.6 }}
+                            style={{ flex: 1, padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none", textDecoration: c.isAvailable ? "none" : "line-through", opacity: c.isAvailable ? 1 : 0.6 }}
                           />
                           {g.type === "choice" && (
                             <input
@@ -1334,7 +1334,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                               onChange={e => patchChoice(gi, ci, { price: e.target.value })}
                               placeholder={`+${currencySymbol}`}
                               inputMode="decimal"
-                              style={{ width: 64, padding: "6px 8px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: 13, outline: "none" }}
+                              style={{ width: 64, padding: "6px 8px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none" }}
                             />
                           )}
                           {/* Sold out today — hides it from guests without losing the row */}
@@ -1344,16 +1344,16 @@ export default function MenuBuilder({ restaurant }: Props) {
                             title={c.isAvailable ? "Available — click to mark sold out" : "Sold out — click to make available"}
                             aria-pressed={!c.isAvailable}
                             style={{
-                              fontSize: 11, padding: "3px 9px", borderRadius: 99, border: "none", cursor: "pointer",
+                              fontSize: "var(--fs-xs)", padding: "3px 9px", borderRadius: "var(--radius-pill)", border: "none", cursor: "pointer",
                               fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0,
                               background: c.isAvailable ? "color-mix(in srgb, #22c55e 15%, transparent)" : "color-mix(in srgb, #f43f5e 15%, transparent)",
                               color: c.isAvailable ? "#22c55e" : "#f43f5e",
                             }}
                           >{c.isAvailable ? "On" : "Sold out"}</button>
-                          <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 15, padding: "2px 4px" }}>×</button>
+                          <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
                         </div>
                       ))}
-                      <button type="button" onClick={() => addChoice(gi)} style={{ alignSelf: "flex-start", padding: "5px 10px", borderRadius: 8, border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: 12, cursor: "pointer" }}>
+                      <button type="button" onClick={() => addChoice(gi)} style={{ alignSelf: "flex-start", padding: "5px 10px", borderRadius: "var(--radius-md)", border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>
                         + Add {g.type === "ingredients" ? "ingredient" : "choice"}
                       </button>
                     </div>
@@ -1361,12 +1361,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={addOptionGroup} style={{ width: "100%", padding: "9px", borderRadius: 10, border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: 13, cursor: "pointer", marginBottom: 16 }}>
+              <button type="button" onClick={addOptionGroup} style={{ width: "100%", padding: "9px", borderRadius: "var(--radius-md)", border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer", marginBottom: 16 }}>
                 + Add option group
               </button>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setOptionsEditor(null)} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}>Cancel</button>
-                <button onClick={saveOptions} style={{ flex: 1, padding: "11px", borderRadius: 10, border: "none", background: "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}>Save options</button>
+                <button onClick={() => setOptionsEditor(null)} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Cancel</button>
+                <button onClick={saveOptions} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "none", background: "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}>Save options</button>
               </div>
             </div>
           </div>

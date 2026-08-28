@@ -41,11 +41,11 @@ export default async function GuestMenuPage({ params }: Props) {
           <path d="M21 21l-4.5-4.5" />
         </svg>
       </div>
-      <h1 style={{ fontWeight: 700, fontSize: 24, marginBottom: 8, color: "var(--text)", fontFamily: "'Playfair Display', serif" }}>Table not found</h1>
-      <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 320, lineHeight: 1.6 }}>
+      <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", marginBottom: 8, color: "var(--text)", fontFamily: "'Playfair Display', serif" }}>Table not found</h1>
+      <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 320, lineHeight: 1.6 }}>
         This QR code doesn&apos;t match any active table. Please ask a staff member for help or scan the QR code again.
       </p>
-      <div style={{ marginTop: 24, padding: "10px 20px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: 13, fontWeight: 500 }}>
+      <div style={{ marginTop: 24, padding: "10px 20px", borderRadius: "var(--radius-md)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", fontWeight: 500 }}>
         If you think this is a mistake, please contact the restaurant.
       </div>
     </div>

@@ -26,16 +26,16 @@ function Delta({ today, yesterday }: { today: number; yesterday: number }) {
     text = `${up ? "↑" : "↓"} ${Math.abs(pct)}% vs yesterday`;
     color = up ? "#16a34a" : "#dc2626";
   }
-  return <div style={{ fontSize: 11, fontWeight: 600, color }}>{text}</div>;
+  return <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color }}>{text}</div>;
 }
 
 function StatCard({ label, value, sub, color, delta }: { label: string; value: number | string; sub?: string; color: string; delta?: { today: number; yesterday: number } }) {
   return (
-    <div style={{ position: "relative", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 20px 16px 23px", display: "flex", flexDirection: "column", gap: 4, boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
+    <div style={{ position: "relative", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px 20px 16px 23px", display: "flex", flexDirection: "column", gap: 4, boxShadow: "var(--shadow-card)", overflow: "hidden" }}>
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: color }} />
-      <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)" }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{sub}</div>}
+      <div style={{ fontSize: "var(--fs-2xl)", fontWeight: 800, color }}>{value}</div>
+      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text-muted)" }}>{label}</div>
+      {sub && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{sub}</div>}
       {delta && <Delta today={delta.today} yesterday={delta.yesterday} />}
     </div>
   );
@@ -82,12 +82,12 @@ export default function Analytics({ restaurant }: Props) {
 
   const header = (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-      <h2 style={{ fontWeight: 800, fontSize: 18, margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
+      <h2 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
         <IconChart width={18} height={18} /> Stats
       </h2>
-      <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: 8, overflow: "hidden" }}>
+      <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
         {(["7d", "30d"] as const).map(r => (
-          <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>
+          <button key={r} onClick={() => setRange(r)} style={{ padding: "6px 16px", border: "none", background: range === r ? "var(--accent)" : "var(--surface)", color: range === r ? "white" : "var(--text-muted)", fontWeight: 600, fontSize: "var(--fs-sm)", cursor: "pointer" }}>
             {r}
           </button>
         ))}
@@ -98,7 +98,7 @@ export default function Analytics({ restaurant }: Props) {
   if (loading) return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
       {[1,2,3,4].map(i => (
-        <div key={i} style={{ background: "var(--surface-2)", borderRadius: 12, height: 90, animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div key={i} style={{ background: "var(--surface-2)", borderRadius: "var(--radius-lg)", height: 90, animation: "pulse 1.5s ease-in-out infinite" }} />
       ))}
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
     </div>
@@ -113,10 +113,10 @@ export default function Analytics({ restaurant }: Props) {
   if (inRange.length === 0) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {header}
-      <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16 }}>
+      <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}>
         <div style={{ color: "var(--text-muted)", marginBottom: 16 }}><IconChart width={48} height={48} /></div>
-        <h3 style={{ fontWeight: 700, fontSize: 18, color: "var(--text)", marginBottom: 8 }}>No data yet</h3>
-        <p style={{ color: "var(--text-muted)", fontSize: 14, maxWidth: 300, margin: "0 auto" }}>
+        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 8 }}>No data yet</h3>
+        <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", maxWidth: 300, margin: "0 auto" }}>
           Analytics will appear here once guests start making requests. Share your QR codes to get started!
         </p>
       </div>
@@ -164,8 +164,8 @@ export default function Analytics({ restaurant }: Props) {
       </div>
 
       {/* Daily bar chart */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
-        <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px 20px" }}>
+        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
         <div style={{ overflowX: "auto" }}>
           <div style={{ display: "flex", gap: range === "30d" ? 4 : 6, alignItems: "flex-end", paddingBottom: 42, minWidth: range === "30d" ? 30 * 36 : 7 * 52, position: "relative" }}>
             {/* Horizontal grid lines behind bars (chart area is 90px tall above the labels) */}
@@ -186,15 +186,15 @@ export default function Analytics({ restaurant }: Props) {
                   onMouseLeave={() => setHovered(h => (h === i ? null : h))}
                   style={{ flex: 1, minWidth: range === "30d" ? 32 : 46, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
                   {hovered === i && (
-                    <div style={{ position: "absolute", bottom: "100%", marginBottom: 6, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", fontSize: 11, fontWeight: 600, padding: "4px 8px", borderRadius: 6, whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
+                    <div style={{ position: "absolute", bottom: "100%", marginBottom: 6, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 8px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
                       {d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })} — {b.total} request{b.total !== 1 ? "s" : ""}
                     </div>
                   )}
-                  <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>
+                  <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>
                   <div style={{ width: "100%", background: isToday ? "var(--accent)" : "var(--text-muted)", borderRadius: "4px 4px 0 0", height: Math.max(4, (b.total / maxVal) * 90), transition: "height 0.3s ease", opacity: b.total === 0 ? 0.15 : isToday ? 1 : hovered === i ? 0.65 : 0.4 }} />
                   <div style={{ position: "absolute", bottom: -38, display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                     <span style={{ fontSize: range === "30d" ? 9 : 10, color: isToday ? "var(--accent)" : "var(--text-muted)", fontWeight: isToday ? 700 : 400, whiteSpace: "nowrap" }}>{labelTop}</span>
-                    {labelBot && <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>{labelBot}</span>}
+                    {labelBot && <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{labelBot}</span>}
                   </div>
                 </div>
               );
@@ -204,19 +204,19 @@ export default function Analytics({ restaurant }: Props) {
       </div>
 
       {/* By type breakdown */}
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: "16px 20px" }}>
-        <h3 style={{ fontWeight: 700, fontSize: 14, margin: "0 0 14px", color: "var(--text)" }}>Requests by type</h3>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px 20px" }}>
+        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 14px", color: "var(--text)" }}>Requests by type</h3>
         {Object.keys(TYPE_LABEL).map(type => {
           const count = byType[type] ?? 0;
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
           return (
             <div key={type} style={{ marginBottom: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
                 <span>{typeName(type)}</span>
                 <span style={{ color: "var(--text-muted)" }}>{count} ({pct}%)</span>
               </div>
-              <div style={{ height: 6, background: "var(--border)", borderRadius: 99, overflow: "hidden" }}>
-                <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)", borderRadius: 99, transition: "width 0.4s ease" }} />
+              <div style={{ height: 6, background: "var(--border)", borderRadius: "var(--radius-pill)", overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${pct}%`, background: "var(--accent)", borderRadius: "var(--radius-pill)", transition: "width 0.4s ease" }} />
               </div>
             </div>
           );

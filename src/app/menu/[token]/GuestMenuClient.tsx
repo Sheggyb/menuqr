@@ -549,14 +549,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center", animation: "gmFadeIn 0.4s ease both" }}>
           <style>{`@keyframes gmFadeIn { from { opacity: 0; } to { opacity: 1; } }`}</style>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconQr(44)}</div>
-          <h1 style={{ fontWeight: 700, fontSize: 28, color: "var(--text)", margin: "0 0 4px", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>{restaurant.name}</h1>
+          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-2xl)", color: "var(--text)", margin: "0 0 4px", fontFamily: "'Playfair Display', serif", letterSpacing: "0.02em" }}>{restaurant.name}</h1>
           <div aria-hidden="true" style={{ width: 32, height: 2, background: accentColor, margin: "16px auto 20px" }} />
-          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, marginBottom: 36, lineHeight: 1.7 }}>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, marginBottom: 36, lineHeight: 1.7 }}>
             {sessionStatus === "declined" ? "Your session was declined. Tap below to request again." : "Welcome. Tap below to request access to the menu."}
           </p>
           <button
             onClick={requestSession}
-            style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 12, padding: "15px 44px", fontSize: 16, fontWeight: 600, letterSpacing: "0.01em", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}
+            style={{ background: accentColor, color: "#fff", border: "none", borderRadius: "var(--radius-lg)", padding: "15px 44px", fontSize: "var(--fs-md)", fontWeight: 600, letterSpacing: "0.01em", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}
           >
             {sessionStatus === "declined" ? "Request Again" : "Request Menu Access"}
           </button>
@@ -572,8 +572,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             @keyframes gmDot { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
           `}</style>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconClock(44)}</div>
-          <h1 style={{ fontWeight: 700, fontSize: 24, color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>Waiting for staff</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, lineHeight: 1.7, marginBottom: 32 }}>
+          <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>Waiting for staff</h1>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, lineHeight: 1.7, marginBottom: 32 }}>
             A staff member will approve your access in a moment. Please wait.
           </p>
           <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
@@ -591,9 +591,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     return (
       <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 48, fontFamily: "Inter, system-ui, sans-serif", textAlign: "center" }}>
         <div aria-hidden="true" style={{ color: "var(--text-muted)", marginBottom: 28 }}>{IconLock(44)}</div>
-        <h1 style={{ fontWeight: 700, fontSize: 26, color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>We&apos;re closed</h1>
-        <p style={{ color: "var(--text-muted)", fontSize: 15, maxWidth: 300, lineHeight: 1.7 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
-        <div style={{ marginTop: 32, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", borderTop: "1px solid var(--border)", paddingTop: 16 }}>{restaurant.name}</div>
+        <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 12px", fontFamily: "'Playfair Display', serif" }}>We&apos;re closed</h1>
+        <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 300, lineHeight: 1.7 }}>This table is currently not taking orders. Please ask a staff member for assistance.</p>
+        <div style={{ marginTop: 32, color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.14em", borderTop: "1px solid var(--border)", paddingTop: 16 }}>{restaurant.name}</div>
       </div>
     );
   }
@@ -627,17 +627,17 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: "var(--surface)", borderRadius: 20, border: "1px solid var(--border)",
+              background: "var(--surface)", borderRadius: "var(--radius-xl)", border: "1px solid var(--border)",
               padding: "36px 28px 28px", textAlign: "center", maxWidth: 320, width: "100%",
               boxShadow: "0 12px 48px rgba(0,0,0,0.25)",
               animation: "gmScaleIn 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
             }}
           >
             <div aria-hidden="true" style={{ color: accentColor, marginBottom: 18 }}>{IconBell(40)}</div>
-            <h2 style={{ color: "var(--text)", fontWeight: 700, fontSize: 22, margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
+            <h2 style={{ color: "var(--text)", fontWeight: 700, fontSize: "var(--fs-xl)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>
               {readyBanner.length === 1 ? "Your order is ready" : "Orders are ready"}
             </h2>
-            <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 26, lineHeight: 1.6 }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", marginBottom: 26, lineHeight: 1.6 }}>
               {readyBanner.length === 1
                 ? <><strong style={{ color: "var(--text)" }}>{readyBanner[0]}</strong> is ready to collect.</>
                 : <>
@@ -647,7 +647,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             </p>
             <button
               onClick={() => setReadyBanner([])}
-              style={{ background: accentColor, color: "#fff", border: "none", borderRadius: 12, padding: "13px 36px", fontWeight: 600, fontSize: 15, cursor: "pointer" }}
+              style={{ background: accentColor, color: "#fff", border: "none", borderRadius: "var(--radius-lg)", padding: "13px 36px", fontWeight: 600, fontSize: "var(--fs-md)", cursor: "pointer" }}
             >
               Got it
             </button>
@@ -664,12 +664,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               alt={`${restaurant.name} logo`}
               referrerPolicy="no-referrer"
               onError={() => setLogoFailed(true)}
-              style={{ height: 46, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, background: "var(--surface)", borderRadius: 8, border: "1px solid var(--border)" }}
+              style={{ height: 46, width: "auto", maxWidth: 160, objectFit: "contain", flexShrink: 0, background: "var(--surface)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
             />
           )}
           <div style={{ borderLeft: `2px solid ${accentColor}`, paddingLeft: 14, minWidth: 0 }}>
-            <h1 style={{ fontWeight: 700, fontSize: 21, margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
-            <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: 12, fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
+            <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", margin: 0, letterSpacing: "0.03em", fontFamily: "'Playfair Display', serif", color: "var(--text)", lineHeight: 1.25 }}>{restaurant.name}</h1>
+            <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>{table.name}</p>
           </div>
         </div>
       </header>
@@ -677,7 +677,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {/* QUICK ACTIONS */}
       {(restaurant.quick_actions ?? ["waiter","bill","refill"]).length > 0 && (
       <div style={{ padding: "20px 20px 0" }}>
-        <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10 }}>Quick actions</p>
+        <p style={{ fontSize: "var(--fs-xs)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 10 }}>Quick actions</p>
         <div role="group" aria-label="Quick actions" style={{ display: "grid", gridTemplateColumns: `repeat(${(restaurant.quick_actions ?? ["waiter","bill","refill"]).length}, 1fr)`, gap: 10 }}>
           {(([
             ["waiter", IconBell(22), "Call Waiter"],
@@ -688,11 +688,11 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             return (
             <button key={type} onClick={() => { if (!requested) sendRequest(type); }}
               aria-disabled={requested}
-              style={{ padding: "15px 8px", borderRadius: 14, border: "1px solid var(--border)", background: requested ? "var(--surface-2)" : "var(--surface)", cursor: requested ? "default" : "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, WebkitTapHighlightColor: "transparent", boxShadow: requested ? "none" : "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.12s ease", opacity: requested ? 0.75 : 1 }}
+              style={{ padding: "15px 8px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: requested ? "var(--surface-2)" : "var(--surface)", cursor: requested ? "default" : "pointer", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 7, WebkitTapHighlightColor: "transparent", boxShadow: requested ? "none" : "0 1px 3px rgba(0,0,0,0.04)", transition: "transform 0.12s ease", opacity: requested ? 0.75 : 1 }}
               onTouchStart={e => { if (!requested) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
               onTouchEnd={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}>
               <span aria-hidden="true" style={{ color: requested ? "var(--text-muted)" : accentColor, display: "inline-flex" }}>{requested ? IconTick(22) : iconEl}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: requested ? "var(--text-muted)" : "var(--text)", lineHeight: 1.2 }}>{requested ? QUICK_DONE_LABEL[type as QuickType] : label}</span>
+              <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: requested ? "var(--text-muted)" : "var(--text)", lineHeight: 1.2 }}>{requested ? QUICK_DONE_LABEL[type as QuickType] : label}</span>
             </button>
             );
           })}
@@ -706,8 +706,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {items.length === 0 && (
         <div style={{ textAlign: "center", padding: "72px 32px", color: "var(--text-muted)" }}>
           <div aria-hidden="true" style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 20 }}>{IconDish(40)}</div>
-          <h2 style={{ fontWeight: 700, fontSize: 21, color: "var(--text)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>Menu coming soon</h2>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.7, maxWidth: 280, margin: "0 auto" }}>The restaurant is still setting up their menu. Please ask your server.</p>
+          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", color: "var(--text)", margin: "0 0 10px", fontFamily: "'Playfair Display', serif" }}>Menu coming soon</h2>
+          <p style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", lineHeight: 1.7, maxWidth: 280, margin: "0 auto" }}>The restaurant is still setting up their menu. Please ask your server.</p>
         </div>
       )}
 
@@ -724,14 +724,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               aria-label="Search the menu"
               style={{
                 width: "100%", boxSizing: "border-box", padding: "12px 14px 12px 38px",
-                borderRadius: 12, border: "1px solid var(--border)",
+                borderRadius: "var(--radius-lg)", border: "1px solid var(--border)",
                 background: "var(--surface)", color: "var(--text)",
-                fontSize: 14, outline: "none", fontFamily: "inherit",
+                fontSize: "var(--fs-md)", outline: "none", fontFamily: "inherit",
               }}
             />
           </div>
           {q && (
-            <p style={{ margin: "8px 0 0", fontSize: 12, color: "var(--text-muted)" }}>
+            <p style={{ margin: "8px 0 0", fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
               {visibleItems.length === 0
                 ? `Nothing matches “${search.trim()}”`
                 : `${visibleItems.length} match${visibleItems.length > 1 ? "es" : ""} for “${search.trim()}”`}
@@ -748,9 +748,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             aria-expanded={allergenFilterOpen}
             style={{
               display: "flex", alignItems: "center", gap: 8, width: "100%",
-              padding: "11px 14px", borderRadius: 12, cursor: "pointer",
+              padding: "11px 14px", borderRadius: "var(--radius-lg)", cursor: "pointer",
               border: `1px solid ${hiddenAllergens.length > 0 ? accentColor : "var(--border)"}`,
-              background: "var(--surface)", color: "var(--text)", fontSize: 13, fontWeight: 600,
+              background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", fontWeight: 600,
             }}
           >
             <span aria-hidden="true" style={{ color: hiddenAllergens.length > 0 ? accentColor : "var(--text-muted)", display: "inline-flex" }}>{IconLeaf(17)}</span>
@@ -761,8 +761,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             <span style={{ marginLeft: "auto", display: "inline-flex", color: "var(--text-muted)" }}>{IconChevron(allergenFilterOpen)}</span>
           </button>
           {allergenFilterOpen && (
-            <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
-              <p style={{ margin: "0 0 10px", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.5 }}>
+            <div style={{ marginTop: 10, padding: "12px 14px", borderRadius: "var(--radius-lg)", background: "var(--surface)", border: "1px solid var(--border)" }}>
+              <p style={{ margin: "0 0 10px", fontSize: "var(--fs-xs)", color: "var(--text-muted)", lineHeight: 1.5 }}>
                 Tap what you can&apos;t eat — we&apos;ll show you the rest.
                 <br />
                 <span style={{ fontWeight: 600 }}>Always tell your server about allergies.</span>
@@ -776,7 +776,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                       onClick={() => setHiddenAllergens(h => off ? h.filter(x => x !== a.id) : [...h, a.id])}
                       aria-pressed={off}
                       style={{
-                        padding: "7px 13px", borderRadius: 99, cursor: "pointer", fontSize: 12.5, fontWeight: 600,
+                        padding: "7px 13px", borderRadius: "var(--radius-pill)", cursor: "pointer", fontSize: "var(--fs-sm)", fontWeight: 600,
                         border: `1px solid ${off ? accentColor : "var(--border)"}`,
                         background: off ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
                         color: off ? accentColor : "var(--text-muted)",
@@ -788,7 +788,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {hiddenAllergens.length > 0 && (
                 <button
                   onClick={() => setHiddenAllergens([])}
-                  style={{ marginTop: 10, background: "none", border: "none", padding: 0, color: "var(--text-muted)", fontSize: 12, fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
+                  style={{ marginTop: 10, background: "none", border: "none", padding: 0, color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer", textDecoration: "underline" }}
                 >Show everything again</button>
               )}
             </div>
@@ -799,7 +799,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {/* CATEGORY TABS — hidden while searching, since results span categories */}
       {!q && visibleCategories.length > 0 && items.length > 0 && (
         <div style={{ paddingTop: 20 }}>
-          <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 6, paddingLeft: 20 }}>Menu</p>
+          <p style={{ fontSize: "var(--fs-xs)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--text-muted)", marginBottom: 6, paddingLeft: 20 }}>Menu</p>
           <div
             role="tablist"
             aria-label="Menu categories"
@@ -823,7 +823,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                     cursor: "pointer",
                     fontWeight: 600,
                     whiteSpace: "nowrap",
-                    fontSize: 11,
+                    fontSize: "var(--fs-xs)",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
                     display: "flex",
@@ -835,7 +835,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                 >
                   {cat.name}
                   {(itemCountByCategory[cat.id] ?? 0) > 0 && (
-                    <span style={{ fontSize: 10, fontWeight: 600, color: active ? accentColor : "var(--text-muted)", letterSpacing: 0 }}>
+                    <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: active ? accentColor : "var(--text-muted)", letterSpacing: 0 }}>
                       {itemCountByCategory[cat.id]}
                     </span>
                   )}
@@ -852,28 +852,28 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
           {visibleItems.length === 0 ? (
             <div style={{ textAlign: "center", padding: "72px 24px", color: "var(--text-muted)", animation: "gmItemIn 0.3s ease both" }}>
               <div aria-hidden="true" style={{ opacity: 0.7, marginBottom: 16 }}>{IconDish(36)}</div>
-              <p style={{ fontSize: 14, fontWeight: 500, margin: 0 }}>No items in this category.</p>
+              <p style={{ fontSize: "var(--fs-md)", fontWeight: 500, margin: 0 }}>No items in this category.</p>
             </div>
           ) : visibleItems.map((item, idx) => (
             <div key={item.id} role="listitem"
-              style={{ background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: `gmItemIn 0.3s ease ${Math.min(idx * 0.03, 0.24)}s both` }}>
+              style={{ background: "var(--surface)", borderRadius: "var(--radius-xl)", border: "1px solid var(--border)", padding: "18px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, boxShadow: "0 1px 3px rgba(0,0,0,0.04)", animation: `gmItemIn 0.3s ease ${Math.min(idx * 0.03, 0.24)}s both` }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, justifyContent: "space-between" }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, color: "var(--text)", lineHeight: 1.35 }}>{item.name}</div>
+                  <div style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", lineHeight: 1.35 }}>{item.name}</div>
                   {item.price ? (
-                    <span style={{ fontWeight: 600, color: accentColor, fontSize: 13, background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, borderRadius: 99, padding: "3px 10px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    <span style={{ fontWeight: 600, color: accentColor, fontSize: "var(--fs-sm)", background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, borderRadius: "var(--radius-pill)", padding: "3px 10px", whiteSpace: "nowrap", flexShrink: 0 }}>
                       {fmtPrice(item.price)} {currencySymbol}
                     </span>
                   ) : null}
                 </div>
-                {item.description && <div style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 5, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
+                {item.description && <div style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", marginTop: 5, lineHeight: 1.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as const }}>{item.description}</div>}
                 {/* Allergens are deliberately NOT shown on the card — they appear as
                     a "Contains" block in the add sheet, where the guest is choosing. */}
               </div>
               <button onClick={() => addToCart(item)}
                 data-gm-add=""
                 aria-label={`Add ${item.name} to order`}
-                style={{ padding: "8px 18px", borderRadius: 99, background: "transparent", color: accentColor, border: `1px solid color-mix(in srgb, ${accentColor} 45%, transparent)`, cursor: "pointer", fontWeight: 600, fontSize: 13, letterSpacing: "0.01em", flexShrink: 0, WebkitTapHighlightColor: "transparent" }}>
+                style={{ padding: "8px 18px", borderRadius: "var(--radius-pill)", background: "transparent", color: accentColor, border: `1px solid color-mix(in srgb, ${accentColor} 45%, transparent)`, cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", letterSpacing: "0.01em", flexShrink: 0, WebkitTapHighlightColor: "transparent" }}>
                 Add
               </button>
             </div>
@@ -885,10 +885,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {cart.length > 0 && !cartOpen && (
         <button
           onClick={() => setCartOpen(true)}
-          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: 99, padding: "14px 26px", fontWeight: 600, fontSize: 15, cursor: "pointer", zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: 10, animation: "gmFadeIn 0.2s ease", whiteSpace: "nowrap" }}>
-          <span key={cartCount} style={{ background: "rgba(255,255,255,0.22)", borderRadius: "50%", width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, animation: "gmPulse 0.35s ease" }}>{cartCount}</span>
+          style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: "var(--radius-pill)", padding: "14px 26px", fontWeight: 600, fontSize: "var(--fs-md)", cursor: "pointer", zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: 10, animation: "gmFadeIn 0.2s ease", whiteSpace: "nowrap" }}>
+          <span key={cartCount} style={{ background: "rgba(255,255,255,0.22)", borderRadius: "50%", width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "var(--fs-xs)", animation: "gmPulse 0.35s ease" }}>{cartCount}</span>
           View Order
-          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: 14, fontWeight: 500 }}>· {fmtPrice(cartTotal)} {currencySymbol}</span>}
+          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: "var(--fs-md)", fontWeight: 500 }}>· {fmtPrice(cartTotal)} {currencySymbol}</span>}
         </button>
       )}
 
@@ -897,29 +897,29 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         <div onClick={() => setCartOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "22px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)", maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ fontWeight: 700, fontSize: 19, margin: 0, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>Your Order</h3>
-              <button onClick={() => setCartOpen(false)} aria-label="Close order" style={{ background: "none", border: "none", fontSize: 22, cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}>×</button>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>Your Order</h3>
+              <button onClick={() => setCartOpen(false)} aria-label="Close order" style={{ background: "none", border: "none", fontSize: "var(--fs-xl)", cursor: "pointer", color: "var(--text-muted)", lineHeight: 1 }}>×</button>
             </div>
             {cart.map((ci, idx) => (
               <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 0", borderBottom: "1px solid var(--border)" }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
-                  {ci.options.length > 0 && <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 1 }}>{ci.options.map(o => o.label).join(", ")}</div>}
-                  {ci.note && <div style={{ fontSize: 12, color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: 13, color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((s, o) => s + o.priceDelta, 0)))} {currencySymbol}</div> : null}
+                  <div style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
+                  {ci.options.length > 0 && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 1 }}>{ci.options.map(o => o.label).join(", ")}</div>}
+                  {ci.note && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
+                  {ci.item.price ? <div style={{ fontSize: "var(--fs-sm)", color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((s, o) => s + o.priceDelta, 0)))} {currencySymbol}</div> : null}
                 </div>
-                <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 18, fontWeight: 600, padding: "0 4px" }}>×</button>
+                <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "var(--fs-lg)", fontWeight: 600, padding: "0 4px" }}>×</button>
               </div>
             ))}
             {cartTotal > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 4px", fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 4px", fontWeight: 700, fontSize: "var(--fs-md)", color: "var(--text)" }}>
                 <span>Total</span>
                 <span style={{ color: accentColor }}>{fmtPrice(cartTotal)} {currencySymbol}</span>
               </div>
             )}
             <button onClick={submitCart}
               disabled={sending}
-              style={{ width: "100%", padding: "14px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 15, letterSpacing: "0.01em", marginTop: 16, opacity: sending ? 0.7 : 1, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
+              style={{ width: "100%", padding: "14px", borderRadius: "var(--radius-lg)", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-md)", letterSpacing: "0.01em", marginTop: 16, opacity: sending ? 0.7 : 1, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
               {sending ? "Sending..." : `Send Order (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
             </button>
           </div>
@@ -930,23 +930,23 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       {noteFor && (
         <div onClick={() => setNoteFor(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 50, display: "flex", alignItems: "flex-end", animation: "gmFadeIn 0.18s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)" }}>
-            <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: 18, fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>
+            <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: "var(--fs-lg)", fontFamily: "'Playfair Display', serif", color: "var(--text)" }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: 14, fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: "var(--fs-md)", fontFamily: "Inter, system-ui, sans-serif", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
             </h3>
             {/* Full description — the card clamps it to two lines, so this is the
                 only place a guest can read all of it */}
             {noteFor.item.description && (
-              <p style={{ margin: "-6px 0 14px", fontSize: 13.5, color: "var(--text-muted)", lineHeight: 1.6 }}>
+              <p style={{ margin: "-6px 0 14px", fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.6 }}>
                 {noteFor.item.description}
               </p>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
-              <span style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
+              <span style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", fontWeight: 500 }}>Qty:</span>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 18, fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                <span style={{ fontSize: 18, fontWeight: 700, minWidth: 28, textAlign: "center", color: "var(--text)" }}>{qty}</span>
-                <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${accentColor}`, background: accentColor, cursor: "pointer", fontSize: 18, fontWeight: 600, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                <button onClick={() => setQty(q => Math.max(1, q - 1))} aria-label="Decrease quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: "var(--fs-lg)", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                <span style={{ fontSize: "var(--fs-lg)", fontWeight: 700, minWidth: 28, textAlign: "center", color: "var(--text)" }}>{qty}</span>
+                <button onClick={() => setQty(q => q + 1)} aria-label="Increase quantity" style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${accentColor}`, background: accentColor, cursor: "pointer", fontSize: "var(--fs-lg)", fontWeight: 600, color: "white", display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
               </div>
             </div>
             {(() => {
@@ -960,9 +960,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                     if (o.type === "allergens") {
                       if (o.choices.length === 0) return null;
                       return (
-                        <div key={o.id} style={{ padding: "10px 12px", borderRadius: 10, background: "var(--bg)", border: "1px solid var(--border)" }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Contains</div>
-                          <div style={{ fontSize: 12.5, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                        <div key={o.id} style={{ padding: "10px 12px", borderRadius: "var(--radius-md)", background: "var(--bg)", border: "1px solid var(--border)" }}>
+                          <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Contains</div>
+                          <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>
                             {o.choices.map(c => allergenLabel(c.label)).join(" · ")}
                           </div>
                         </div>
@@ -971,10 +971,10 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                     if (available.length === 0) return null;
                     return (
                     <div key={o.id}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
+                      <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)", marginBottom: 6 }}>
                         {o.name}
                         {o.type === "choice" && o.is_required && <span style={{ color: accentColor, marginLeft: 4 }}>*</span>}
-                        {o.type === "ingredients" && <span style={{ color: "var(--text-muted)", fontSize: 11, fontWeight: 500, marginLeft: 6 }}>— tap to remove, tap again for extra</span>}
+                        {o.type === "ingredients" && <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 500, marginLeft: 6 }}>— tap to remove, tap again for extra</span>}
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                         {o.type === "ingredients" ? available.map(c => {
@@ -989,7 +989,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                               onClick={() => cycleIngredient(o.id, c.id, all)}
                               aria-label={`${c.label} — ${state}`}
                               style={{
-                                padding: "8px 14px", borderRadius: 99, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                                padding: "8px 14px", borderRadius: "var(--radius-pill)", cursor: "pointer", fontSize: "var(--fs-sm)", fontWeight: 600,
                                 border: `1px solid ${isRemoved ? "var(--border)" : accentColor}`,
                                 background: isExtra
                                   ? `color-mix(in srgb, ${accentColor} 24%, transparent)`
@@ -1010,7 +1010,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                               type="button"
                               onClick={() => setSelOptions(s => ({ ...s, [o.id]: c.id }))}
                               style={{
-                                padding: "8px 14px", borderRadius: 99, cursor: "pointer", fontSize: 13, fontWeight: 600,
+                                padding: "8px 14px", borderRadius: "var(--radius-pill)", cursor: "pointer", fontSize: "var(--fs-sm)", fontWeight: 600,
                                 border: `1px solid ${on ? accentColor : "var(--border)"}`,
                                 background: on ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
                                 color: on ? accentColor : "var(--text)",
@@ -1032,14 +1032,14 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               onChange={e => setNoteText(e.target.value)}
               placeholder="Special request? (e.g. no onions)"
               rows={2}
-              style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 10, fontSize: 14, outline: "none", resize: "none", background: "var(--bg)", color: "var(--text)" }}
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", fontSize: "var(--fs-md)", outline: "none", resize: "none", background: "var(--bg)", color: "var(--text)" }}
             />
             <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
               <button onClick={confirmAddToCart}
-                style={{ flex: 1, padding: "13px", borderRadius: 12, background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 15 }}>
+                style={{ flex: 1, padding: "13px", borderRadius: "var(--radius-lg)", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-md)" }}>
                 Add to order
               </button>
-              <button onClick={() => setNoteFor(null)} style={{ padding: "13px 18px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 500, fontSize: 14 }}>
+              <button onClick={() => setNoteFor(null)} style={{ padding: "13px 18px", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 500, fontSize: "var(--fs-md)" }}>
                 Cancel
               </button>
             </div>
@@ -1055,7 +1055,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             onClick={() => setSessionPanelOpen(o => !o)}
             style={{ width: "100%", background: "color-mix(in srgb, var(--surface) 82%, transparent)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", color: "var(--text)", border: "none", borderTop: "1px solid var(--border)", padding: "13px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}
           >
-            <span style={{ fontWeight: 600, fontSize: 14, display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontWeight: 600, fontSize: "var(--fs-md)", display: "inline-flex", alignItems: "center", gap: 8 }}>
               <span aria-hidden="true" style={{ color: "var(--text-muted)", display: "inline-flex" }}>{IconReceipt(17)}</span>
               My Bill
               {sessionRequests.some(r => r.price > 0) && (
@@ -1064,9 +1064,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                 </span>
               )}
             </span>
-            <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 8 }}>
               {sessionRequests.filter(r => r.status !== "done").length > 0 && (
-                <span style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, borderRadius: 99, padding: "3px 10px", fontSize: 11, fontWeight: 600 }}>
+                <span style={{ background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor, borderRadius: "var(--radius-pill)", padding: "3px 10px", fontSize: "var(--fs-xs)", fontWeight: 600 }}>
                   {sessionRequests.filter(r => r.status !== "done").length} on the way
                 </span>
               )}
@@ -1079,20 +1079,20 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {/* On the way */}
               {sessionRequests.filter(r => r.status !== "done").length > 0 && (
                 <div style={{ padding: "12px 20px 0" }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>On the way</div>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>On the way</div>
                   {sessionRequests.filter(r => r.status !== "done").map((r, i) => {
                     const pill = r.status === "seen"
                       ? { label: "Preparing", bg: `color-mix(in srgb, ${accentColor} 10%, transparent)`, color: accentColor }
                       : { label: "Pending", bg: "var(--surface-2)", color: "var(--text-muted)" };
                     return (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13 }}>
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: "var(--fs-sm)" }}>
                         <div>
                           <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
-                          <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
+                          <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                           {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99, background: pill.bg, color: pill.color, letterSpacing: "0.02em" }}>{pill.label}</span>
+                          <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, padding: "3px 9px", borderRadius: "var(--radius-pill)", background: pill.bg, color: pill.color, letterSpacing: "0.02em" }}>{pill.label}</span>
                         </div>
                       </div>
                     );
@@ -1103,12 +1103,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {/* Delivered */}
               {sessionRequests.filter(r => r.status === "done").length > 0 && (
                 <div style={{ padding: "12px 20px 0" }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Delivered</div>
+                  <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Delivered</div>
                   {sessionRequests.filter(r => r.status === "done").map((r, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: 13, opacity: 0.65 }}>
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid var(--border)", fontSize: "var(--fs-sm)", opacity: 0.65 }}>
                       <div>
                         <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
-                        <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
                       {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
                     </div>
@@ -1119,8 +1119,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {/* Total */}
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ padding: "13px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: "var(--text)" }}>My Total</span>
-                  <span style={{ fontWeight: 700, fontSize: 17, color: accentColor }}>{fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}</span>
+                  <span style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)" }}>My Total</span>
+                  <span style={{ fontWeight: 700, fontSize: "var(--fs-md)", color: accentColor }}>{fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}</span>
                 </div>
               )}
             </div>
@@ -1139,7 +1139,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
       {/* TOAST */}
       {toast && (
-        <div role="status" aria-live="polite" style={{ position: "fixed", top: 78, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", padding: "10px 22px", borderRadius: 99, fontWeight: 500, fontSize: 13, letterSpacing: "0.01em", zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", animation: "gmFadeIn 0.2s ease" }}>
+        <div role="status" aria-live="polite" style={{ position: "fixed", top: 78, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", padding: "10px 22px", borderRadius: "var(--radius-pill)", fontWeight: 500, fontSize: "var(--fs-sm)", letterSpacing: "0.01em", zIndex: 100, whiteSpace: "nowrap", boxShadow: "0 4px 16px rgba(0,0,0,0.2)", animation: "gmFadeIn 0.2s ease" }}>
           {toast}
         </div>
       )}

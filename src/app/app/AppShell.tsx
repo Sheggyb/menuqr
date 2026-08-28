@@ -118,19 +118,19 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       {/* TOP NAV */}
       <header style={{ background: resolvedTheme === "dark" ? "rgba(18,18,21,0.92)" : "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 20, color: "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
           {restaurant.logo_url && (
             <img
               src={restaurant.logo_url}
               alt=""
               referrerPolicy="no-referrer"
               onError={e => { e.currentTarget.style.display = "none"; }}
-              style={{ height: 22, width: "auto", maxWidth: 120, objectFit: "contain", borderRadius: 4, border: "1px solid var(--border)", flexShrink: 0 }}
+              style={{ height: 22, width: "auto", maxWidth: 120, objectFit: "contain", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", flexShrink: 0 }}
             />
           )}
-          <span style={{ color: "var(--text-muted)", fontSize: 13 }}>/ {restaurant.name}</span>
+          <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>/ {restaurant.name}</span>
         </div>
-        {clock && <span style={{ fontSize: 12, color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
+        {clock && <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", display: "none" }} className="header-clock">{clock}</span>}
         <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <a
@@ -138,13 +138,13 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
             target="_blank"
             rel="noopener noreferrer"
             title="Open kitchen display in a new tab"
-            style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 10px", lineHeight: 1, textDecoration: "none" }}
+            style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", padding: "5px 10px", lineHeight: 1, textDecoration: "none" }}
           >Kitchen</a>
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            style={{ fontSize: 16, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
+            style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
           >
             {resolvedTheme === "dark" ? <IconSun width={16} height={16} /> : <IconMoon width={16} height={16} />}
           </button>
@@ -153,7 +153,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               await supabase.auth.signOut();
               window.location.href = "/";
             }}
-            style={{ fontSize: 13, color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
+            style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
           >Sign out</button>
         </div>
       </header>
@@ -219,7 +219,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               <Icon width={20} height={20} />
             </span>
             {id === "orders" && pendingCount > 0 && (
-              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>{pendingCount}</span>
+              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", padding: "1px 4px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>{pendingCount}</span>
             )}
             {short}
           </button>

@@ -62,16 +62,16 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
           >
             <div
               onClick={e => e.stopPropagation()}
-              style={{ background: "var(--surface)", borderRadius: 16, padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
+              style={{ background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
             >
               <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: options.danger ? "var(--danger)" : "var(--text-muted)" }}>
                 {options.danger ? <IconTrash width={32} height={32} /> : <IconHelp width={32} height={32} />}
               </div>
-              <h3 style={{ fontWeight: 800, fontSize: 18, textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
+              <h3 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
                 {options.title}
               </h3>
               {options.message && (
-                <p style={{ fontSize: 14, color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
                   {options.message}
                 </p>
               )}
@@ -79,12 +79,12 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 <button
                   autoFocus={!!options.danger}
                   onClick={() => close(false)}
-                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: 14, color: "var(--text-muted)" }}
+                  style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
                 >Cancel</button>
                 <button
                   autoFocus={!options.danger}
                   onClick={() => close(true)}
-                  style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: options.danger ? "#dc2626" : "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
+                  style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "none", background: options.danger ? "#dc2626" : "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}
                 >{options.confirmLabel ?? "Confirm"}</button>
               </div>
             </div>
