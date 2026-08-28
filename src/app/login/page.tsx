@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { IconDish, IconAlert } from "@/components/icons";
 
 function LoginForm() {
   const [email, setEmail] = useState("");
@@ -61,7 +62,7 @@ function LoginForm() {
       <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "40px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 12 }}>🍽️</div>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
           <div style={{ fontWeight: 900, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
           <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>Welcome back! Log in to your account</p>
         </div>
@@ -93,7 +94,7 @@ function LoginForm() {
           </div>
           {error && (
             <div style={{ padding: "10px 14px", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
-              ⚠️ {error}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><IconAlert width={15} height={15} style={{ flexShrink: 0 }} /> {error}</span>
             </div>
           )}
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text)", cursor: "pointer" }}>

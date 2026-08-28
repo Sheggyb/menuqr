@@ -1,11 +1,15 @@
 // Shared UI constants for the dashboard.
 
+// Request types. The label is text only — the icon is chosen by the consumer
+// from components/icons.tsx. Previously these were "<emoji> Name" strings and
+// two files did `label.split(" ").slice(1)` to peel the emoji back off.
 export const TYPE_LABEL: Record<string, string> = {
-  waiter: "🙋 Waiter",
-  bill: "💳 Bill",
-  refill: "🔄 Refill",
-  item_request: "🍽️ Order",
+  waiter: "Waiter",
+  bill: "Bill",
+  refill: "Refill",
+  item_request: "Order",
 };
+
 
 export const CURRENCIES: Record<string, string> = {
   SEK: "kr", USD: "$", EUR: "€", GBP: "£", NOK: "kr", DKK: "kr", CHF: "CHF", JPY: "¥", AUD: "$", CAD: "$",

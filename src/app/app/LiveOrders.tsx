@@ -7,7 +7,7 @@ import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock, IconAlert } from "@/components/icons";
+import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock, IconAlert, IconBellOff } from "@/components/icons";
 import type { SVGProps } from "react";
 
 interface Props { restaurant: Restaurant }
@@ -475,7 +475,7 @@ export default function LiveOrders({ restaurant }: Props) {
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on" : "Sound off"}
           style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: 14, lineHeight: 1, flexShrink: 0, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
-        >{soundEnabled ? "🔔" : "🔕"}</button>
+        >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
 
         <div style={{ flex: 1 }} />
 
@@ -491,7 +491,7 @@ export default function LiveOrders({ restaurant }: Props) {
           <button
             onClick={markAllDone}
             style={{ padding: "6px 10px", borderRadius: 6, border: "none", background: "#22c55e", color: "white", fontSize: 12, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
-          >✓ Done ({pendingCount})</button>
+          ><IconCheck width={14} height={14} strokeWidth={2.5} /> Done ({pendingCount})</button>
         )}
       </div>
 

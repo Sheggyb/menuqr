@@ -8,7 +8,7 @@ import { CURRENCIES, EU_ALLERGENS } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
-import { IconSearch, IconDish, IconAlert, IconCopy } from "@/components/icons";
+import { IconSearch, IconDish, IconAlert, IconCopy, IconCheck, IconX } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
 
@@ -747,11 +747,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                       <button
                         onClick={saveEditCat}
                         style={{ fontSize: 11, padding: "2px 6px", borderRadius: 5, background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, flexShrink: 0 }}
-                      >✓</button>
+                      ><IconCheck width={13} height={13} strokeWidth={2.5} /></button>
                       <button
                         onClick={cancelEditCat}
                         style={{ fontSize: 11, padding: "2px 5px", borderRadius: 5, background: "none", color: "var(--text-muted)", border: "1px solid var(--border)", cursor: "pointer", flexShrink: 0 }}
-                      >✕</button>
+                      ><IconX width={12} height={12} /></button>
                     </div>
                   ) : (
                     // ── Category row (subtle active state, not a filled button) ──

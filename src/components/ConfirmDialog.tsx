@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { IconTrash, IconHelp } from "./icons";
 
 export interface ConfirmOptions {
   title: string;
@@ -63,7 +64,9 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               onClick={e => e.stopPropagation()}
               style={{ background: "var(--surface)", borderRadius: 16, padding: "28px 24px", maxWidth: 360, width: "100%", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}
             >
-              <div style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>{options.danger ? "🗑️" : "❓"}</div>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 12, color: options.danger ? "var(--danger)" : "var(--text-muted)" }}>
+                {options.danger ? <IconTrash width={32} height={32} /> : <IconHelp width={32} height={32} />}
+              </div>
               <h3 style={{ fontWeight: 800, fontSize: 18, textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
                 {options.title}
               </h3>

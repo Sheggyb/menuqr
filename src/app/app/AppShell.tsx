@@ -13,8 +13,22 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { useTheme } from "@/lib/theme";
+import { IconBolt, IconFork, IconTable, IconChart, IconHistory, IconGear, IconSun, IconMoon } from "@/components/icons";
+import type { SVGProps } from "react";
 
 type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
+
+// One definition for both navs — desktop and mobile previously used different
+// icon languages (inline SVG vs emoji) for the same six destinations.
+const TABS: { id: Tab; label: string; short: string; Icon: (p: SVGProps<SVGSVGElement>) => React.ReactElement }[] = [
+  { id: "orders",    label: "Live Orders", short: "Orders",   Icon: IconBolt },
+  { id: "menu",      label: "Menu",        short: "Menu",     Icon: IconFork },
+  { id: "tables",    label: "Tables",      short: "Tables",   Icon: IconTable },
+  { id: "analytics", label: "Stats",       short: "Stats",    Icon: IconChart },
+  { id: "history",   label: "History",     short: "History",  Icon: IconHistory },
+  { id: "settings",  label: "Settings",    short: "Settings", Icon: IconGear },
+];
+
 
 interface Props {
   user: { id: string; email?: string };
@@ -132,7 +146,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
             aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             style={{ fontSize: 16, color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: 8, cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
           >
-            {resolvedTheme === "dark" ? "☀️" : "🌙"}
+            {resolvedTheme === "dark" ? <IconSun width={16} height={16} /> : <IconMoon width={16} height={16} />}
           </button>
           <button
             onClick={async () => {
@@ -146,14 +160,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
       <nav aria-label="Main navigation" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", gap: 2 }} className="desktop-tabs">
-        {([
-          ["orders", "bolt", "Live Orders"],
-          ["menu", "fork", "Menu"],
-          ["tables", "table", "Tables"],
-          ["analytics", "chart", "Stats"],
-          ["history", "clock", "History"],
-          ["settings", "gear", "Settings"],
-        ] as [Tab, string, string][]).map(([id, icon, label]) => {
+        {TABS.map(({ id, label, Icon }) => {
           const active = tab === id;
           return (
             <button
@@ -168,7 +175,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
                 cursor: "pointer",
                 fontWeight: active ? 700 : 500,
                 color: active ? "var(--accent)" : "var(--text-muted)",
-                fontSize: 13,
+                fontSize: "var(--fs-sm)",
                 display: "flex",
                 alignItems: "center",
                 gap: 7,
@@ -176,15 +183,11 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
                 transition: "color 0.15s",
               }}
             >
-              {icon === "bolt" && <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>}
-              {icon === "fork" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 3h18M3 3v5a6 6 0 0012 0V3M9 8v13M15 8v13"/></svg>}
-              {icon === "table" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="6" width="18" height="3" rx="1"/><line x1="6" y1="9" x2="6" y2="18"/><line x1="18" y1="9" x2="18" y2="18"/></svg>}
-              {icon === "chart" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>}
-              {icon === "clock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-              {icon === "gear" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>}
-              {id === "orders" && pendingCount > 0
-                ? <>{label} <span style={{ background: "var(--accent)", color: "white", fontSize: 10, padding: "1px 6px", borderRadius: 99, fontWeight: 700, lineHeight: 1.6 }}>{pendingCount}</span></>
-                : label}
+              <Icon width={15} height={15} />
+              {label}
+              {id === "orders" && pendingCount > 0 && (
+                <span style={{ background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", padding: "1px 6px", borderRadius: "var(--radius-pill)", fontWeight: 700, lineHeight: 1.5 }}>{pendingCount}</span>
+              )}
             </button>
           );
         })}
@@ -192,14 +195,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
 
       {/* MOBILE BOTTOM NAV */}
       <nav aria-label="Mobile navigation" className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        {([
-          ["orders", "⚡", "Orders"],
-          ["menu", "🍽️", "Menu"],
-          ["tables", "table-svg", "Tables"],
-          ["analytics", "📊", "Stats"],
-          ["history", "🕐", "History"],
-          ["settings", "⚙️", "Settings"],
-        ] as [Tab, string, string][]).map(([id, icon, label]) => (
+        {TABS.map(({ id, short, Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -212,26 +208,20 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 2,
+              gap: 3,
               color: tab === id ? "var(--accent)" : "var(--text-muted)",
-              fontSize: 10,
+              fontSize: "var(--fs-xs)",
               fontWeight: tab === id ? 700 : 400,
               position: "relative",
             }}
           >
-            {icon === "table-svg" ? (
-              <span style={{ height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="6" width="18" height="3" rx="1"/>
-                  <line x1="6" y1="9" x2="6" y2="18"/>
-                  <line x1="18" y1="9" x2="18" y2="18"/>
-                </svg>
-              </span>
-            ) : <span style={{ fontSize: 20, height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</span>}
+            <span style={{ height: 24, width: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Icon width={20} height={20} />
+            </span>
             {id === "orders" && pendingCount > 0 && (
-              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: 99, fontWeight: 700 }}>{pendingCount}</span>
+              <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: 9, padding: "1px 4px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>{pendingCount}</span>
             )}
-            {label}
+            {short}
           </button>
         ))}
       </nav>

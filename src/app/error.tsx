@@ -1,4 +1,5 @@
 "use client";
+import { IconAlert } from "@/components/icons";
 
 export default function GlobalError({
   error,
@@ -10,7 +11,7 @@ export default function GlobalError({
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420 }}>
-        <div aria-hidden="true" style={{ fontSize: 56, marginBottom: 16 }}>⚠️</div>
+        <div aria-hidden="true" style={{ marginBottom: 16, color: "var(--warning)" }}><IconAlert width={48} height={48} /></div>
         <h1 style={{ fontWeight: 800, fontSize: 24, marginBottom: 10, color: "var(--text)" }}>Something went wrong</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.6, marginBottom: 28 }}>
           An unexpected error occurred. You can try again — if the problem keeps happening, please reload the page.

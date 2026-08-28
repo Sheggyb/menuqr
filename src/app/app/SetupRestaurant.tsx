@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
 import { DEFAULT_ACCENT } from "@/lib/constants";
+import { IconStore } from "@/components/icons";
 
 interface Props {
   userId: string;
@@ -64,7 +65,7 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 16 }}>
       <div className="card" style={{ width: "100%", maxWidth: 440 }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🏪</div>
+          <div style={{ marginBottom: 10, color: "var(--accent)", display: "flex", justifyContent: "center" }}><IconStore width={42} height={42} /></div>
           <h1 style={{ fontWeight: 700, fontSize: 22 }}>Set up your restaurant</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 14, marginTop: 4 }}>You only need to do this once.</p>
         </div>

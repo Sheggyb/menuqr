@@ -61,6 +61,7 @@ const IconTick = (size = 18) => icon(<path d="M5 12.5l4.5 4.5L19 7.5" />, size);
 const IconQr = (size = 40) => icon(<><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><path d="M14 14h2.5v2.5H14z" /><path d="M17.5 17.5H20V20h-2.5z" /></>, size);
 const IconLeaf = (size = 18) => icon(<><path d="M4 20c0-7 5-12 12-12h4v4c0 7-5 12-12 12H4v-4Z" /><path d="M9 15c2-3 5-5 8-6" /></>, size);
 const IconSearch = (size = 16) => icon(<><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" /></>, size);
+const IconXsmall = (size = 11) => icon(<path d="M18 6 6 18M6 6l12 12" />, size);
 
 export default function GuestMenuClient({ table, restaurant, categories, items, options }: Props) {
   // itemId -> allergen ids declared on that item (EU 1169/2011 Annex II ids)
@@ -780,7 +781,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                         background: off ? `color-mix(in srgb, ${accentColor} 12%, transparent)` : "var(--bg)",
                         color: off ? accentColor : "var(--text-muted)",
                       }}
-                    >{off ? "✕ " : ""}{a.label}</button>
+                    >{off && <span aria-hidden="true" style={{ display: "inline-flex", marginRight: 4, verticalAlign: "-2px" }}>{IconXsmall(11)}</span>}{a.label}</button>
                   );
                 })}
               </div>

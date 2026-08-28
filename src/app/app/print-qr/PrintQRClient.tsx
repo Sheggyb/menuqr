@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { TableRow } from "@/lib/types";
+import { IconPrinter, IconPhone } from "@/components/icons";
 
 interface Props {
   tables: TableRow[];
@@ -40,7 +41,7 @@ export default function PrintQRClient({ tables, restaurantName, accentColor }: P
       <div className="no-print" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <Link href="/app" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 600, fontSize: 14 }}>← Back to Dashboard</Link>
-          <h1 style={{ fontWeight: 800, fontSize: 22, margin: 0 }}>🖨️ Print QR Codes — {restaurantName}</h1>
+          <h1 style={{ fontWeight: 800, fontSize: 22, margin: 0, display: "inline-flex", alignItems: "center", gap: 9 }}><IconPrinter width={20} height={20} style={{ color: "var(--text-muted)" }} /> Print QR Codes — {restaurantName}</h1>
         </div>
         <button
           onClick={() => {
@@ -49,7 +50,7 @@ export default function PrintQRClient({ tables, restaurantName, accentColor }: P
           }}
           style={{ padding: "10px 24px", borderRadius: 8, background: "var(--accent)", color: "white", border: "none", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
         >
-          🖨️ Print
+          <IconPrinter width={16} height={16} /> Print
         </button>
       </div>
 
@@ -66,7 +67,7 @@ export default function PrintQRClient({ tables, restaurantName, accentColor }: P
                 <div style={{ width: 170, height: 170, margin: "0 auto", background: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 13 }}>Generating…</div>
               )}
               <div style={{ fontSize: 13, color: accentColor, marginTop: 12, fontWeight: 700 }}>{restaurantName}</div>
-              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Scan to order 📱</div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 5, justifyContent: "center" }}><IconPhone width={12} height={12} /> Scan to order</div>
             </div>
           ))}
         </div>

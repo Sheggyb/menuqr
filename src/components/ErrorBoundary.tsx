@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { IconAlert } from "./icons";
 
 interface State { hasError: boolean; error: Error | null; retryCount: number }
 interface Props { children: React.ReactNode; fallbackTitle?: string }
@@ -26,7 +27,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         padding: "48px 24px", textAlign: "center", gap: 16,
         background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14,
       }}>
-        <div style={{ fontSize: 40 }}>⚠️</div>
+        <IconAlert width={36} height={36} style={{ color: "var(--warning)" }} />
         <div>
           <p style={{ fontWeight: 700, fontSize: 16, color: "var(--text)", marginBottom: 4 }}>
             {this.props.fallbackTitle ?? "Something went wrong"}

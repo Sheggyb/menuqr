@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { IconDish, IconAlert, IconMail } from "@/components/icons";
 
 function getPasswordStrength(pw: string): { level: number; label: string; color: string } {
   if (pw.length === 0) return { level: 0, label: "", color: "#e5e7eb" };
@@ -54,7 +55,7 @@ export default function SignupPage() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 16 }}>
         <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "48px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)", textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(34,197,94,0.12)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 30, marginBottom: 20 }}>✉️</div>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--success-soft)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--success)", marginBottom: 20 }}><IconMail width={30} height={30} /></div>
           <h1 style={{ fontWeight: 700, fontSize: 22, marginBottom: 10 }}>Check your email</h1>
           <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.6, marginBottom: 24 }}>
             We sent a confirmation link to <strong style={{ color: "var(--text)" }}>{email}</strong>.<br />
@@ -80,7 +81,7 @@ export default function SignupPage() {
 
       <div style={{ width: "100%", maxWidth: 400, background: "var(--surface)", borderRadius: 20, padding: "40px 32px", boxShadow: "0 4px 32px rgba(0,0,0,0.08)", border: "1px solid var(--border)" }}>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 24, marginBottom: 12 }}>🍽️</div>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
           <div style={{ fontWeight: 900, fontSize: 26, color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
           <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>Create your free account — no credit card needed</p>
         </div>
@@ -113,7 +114,7 @@ export default function SignupPage() {
           </div>
           {error && (
             <div style={{ padding: "10px 14px", background: "var(--danger-soft)", border: "1px solid var(--danger-border)", borderRadius: 8, color: "#dc2626", fontSize: 13, fontWeight: 500 }}>
-              ⚠️ {error}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}><IconAlert width={15} height={15} style={{ flexShrink: 0 }} /> {error}</span>
             </div>
           )}
           <button type="submit" disabled={loading}

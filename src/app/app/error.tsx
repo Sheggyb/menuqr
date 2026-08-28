@@ -1,4 +1,5 @@
 "use client";
+import { IconAlert } from "@/components/icons";
 
 export default function AppError({
   error,
@@ -10,7 +11,7 @@ export default function AppError({
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", fontFamily: "Inter, system-ui, sans-serif", padding: 24 }}>
       <div style={{ textAlign: "center", maxWidth: 420, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: "36px 28px" }}>
-        <div aria-hidden="true" style={{ fontSize: 48, marginBottom: 14 }}>⚠️</div>
+        <div aria-hidden="true" style={{ marginBottom: 14, color: "var(--warning)" }}><IconAlert width={42} height={42} /></div>
         <h1 style={{ fontWeight: 800, fontSize: 22, marginBottom: 10, color: "var(--text)" }}>Something went wrong</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
           We couldn&apos;t load this part of the dashboard. Try again, or head back to the overview.

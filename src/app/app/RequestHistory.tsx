@@ -29,10 +29,8 @@ const FILTER_CHIPS: { id: string; label: string }[] = [
   { id: "refill", label: "Refill" },
 ];
 
-// TYPE_LABEL values are "<emoji> Name" — take just the name (no emojis in dashboard UI)
 function typeName(type: string): string {
-  const label = TYPE_LABEL[type];
-  return label ? label.split(" ").slice(1).join(" ") : type;
+  return TYPE_LABEL[type] ?? type;
 }
 
 function relativeTime(iso: string): string {

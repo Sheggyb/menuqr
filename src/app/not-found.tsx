@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { IconDish } from "@/components/icons";
 
 export default function NotFound() {
   return (
@@ -8,7 +9,7 @@ export default function NotFound() {
         * { box-sizing: border-box; }
       `}</style>
       <div style={{ textAlign: "center", maxWidth: 440 }}>
-        <div aria-hidden="true" style={{ fontSize: 90, marginBottom: 8, animation: "float 3s ease-in-out infinite", display: "block" }}>🍽️</div>
+        <div aria-hidden="true" style={{ marginBottom: 8, color: "var(--accent)", animation: "float 3s ease-in-out infinite", display: "flex", justifyContent: "center" }}><IconDish width={72} height={72} /></div>
         <div style={{ fontSize: 80, fontWeight: 900, color: "var(--accent)", lineHeight: 1, marginBottom: 8, letterSpacing: "-4px" }}>404</div>
         <h1 style={{ fontWeight: 800, fontSize: 26, marginBottom: 12, color: "var(--text)" }}>This page doesn&apos;t exist</h1>
         <p style={{ color: "var(--text-muted)", fontSize: 16, marginBottom: 32, lineHeight: 1.6, maxWidth: 320, margin: "0 auto 32px" }}>

@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { IconBolt, IconFork, IconCheckCircle, IconChart, IconMoonStars, IconCurrency, IconCheck } from "@/components/icons";
 
 const features = [
-  { icon: "⚡", title: "Live orders", text: "Guest requests appear on your dashboard the moment they tap — no refresh, no delay." },
-  { icon: "🍽️", title: "Menu builder", text: "Categories, items, descriptions and prices. Edit anything and guests see it instantly." },
-  { icon: "✅", title: "Guest approval", text: "Review and confirm incoming orders before they reach the kitchen." },
-  { icon: "📊", title: "Analytics", text: "Daily trends, popular items and completion rates at a glance." },
-  { icon: "🌙", title: "Dark mode", text: "The dashboard and guest menu adapt to light or dark automatically." },
-  { icon: "💱", title: "Multi-currency", text: "Show prices in SEK, EUR, USD or the currency your guests expect." },
+  { Icon: IconBolt,     title: "Live orders",    text: "Guest requests appear on your dashboard the moment they tap — no refresh, no delay." },
+  { Icon: IconFork,     title: "Menu builder",   text: "Categories, items, descriptions and prices. Edit anything and guests see it instantly." },
+  { Icon: IconCheckCircle, title: "Guest approval", text: "Review and confirm incoming orders before they reach the kitchen." },
+  { Icon: IconChart,    title: "Analytics",      text: "Daily trends, popular items and completion rates at a glance." },
+  { Icon: IconMoonStars, title: "Dark mode",     text: "The dashboard and guest menu adapt to light or dark automatically." },
+  { Icon: IconCurrency, title: "Multi-currency", text: "Show prices in SEK, EUR, USD or the currency your guests expect." },
 ];
 
 const steps = [
@@ -124,11 +125,11 @@ export default function LandingPage() {
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
           <h2 style={{ textAlign: "center", fontWeight: 800, fontSize: 32, marginBottom: 40, color: "var(--text)", letterSpacing: "-0.5px" }}>Everything you need, nothing you don&apos;t</h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
-            {features.map((f) => (
-              <div key={f.title} className="feature-card" style={{ borderTop: "3px solid var(--accent)" }}>
-                <div aria-hidden="true" style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
-                <h3 style={{ fontWeight: 700, marginBottom: 6, fontSize: 15, color: "var(--text)" }}>{f.title}</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{f.text}</p>
+            {features.map(({ Icon, title, text }) => (
+              <div key={title} className="feature-card" style={{ borderTop: "3px solid var(--accent)" }}>
+                <div aria-hidden="true" style={{ marginBottom: 12, color: "var(--accent)" }}><Icon width={26} height={26} /></div>
+                <h3 style={{ fontWeight: 700, marginBottom: 6, fontSize: 15, color: "var(--text)" }}>{title}</h3>
+                <p style={{ color: "var(--text-muted)", fontSize: 13, lineHeight: 1.5, margin: 0 }}>{text}</p>
               </div>
             ))}
           </div>
@@ -148,7 +149,7 @@ export default function LandingPage() {
               <ul style={{ listStyle: "none", padding: 0, margin: "16px 0 24px", display: "flex", flexDirection: "column", gap: 10 }}>
                 {["1 restaurant", "Up to 10 tables", "Unlimited menu items", "Live orders dashboard", "QR code generation", "Analytics overview", "Dark mode & multi-currency"].map((f) => (
                   <li key={f} style={{ fontSize: 14, color: "var(--text)", display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span aria-hidden="true" style={{ color: "#22c55e", fontWeight: 700, flexShrink: 0 }}>✓</span> {f}
+                    <IconCheck width={15} height={15} style={{ color: "var(--success)", flexShrink: 0, marginTop: 2 }} /> {f}
                   </li>
                 ))}
               </ul>

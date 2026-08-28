@@ -5,7 +5,7 @@ import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { parseOrderLines } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
-import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable, IconAlert } from "@/components/icons";
+import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable, IconAlert, IconBellOff } from "@/components/icons";
 import type { SVGProps } from "react";
 
 interface Props {
@@ -475,7 +475,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
           title={soundEnabled ? "Sound on" : "Sound off"}
           style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: 15, lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
-        >{soundEnabled ? "🔔" : "🔕"}</button>
+        >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
 
         {/* Live clock */}
         <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>

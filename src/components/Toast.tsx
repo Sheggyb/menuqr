@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { IconAlert, IconCheckCircle } from "./icons";
 
 interface ToastItem {
   id: number;
@@ -70,7 +71,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   pointerEvents: "auto",
                 }}
               >
-                <span aria-hidden="true">{t.kind === "error" ? "⚠️" : "✅"}</span>
+                <span aria-hidden="true" style={{ display: "inline-flex", color: t.kind === "error" ? "var(--danger)" : "var(--success)", flexShrink: 0 }}>
+                  {t.kind === "error" ? <IconAlert width={15} height={15} /> : <IconCheckCircle width={15} height={15} />}
+                </span>
                 {t.message}
               </div>
             ))}
