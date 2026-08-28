@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
+import { DEFAULT_ACCENT } from "@/lib/constants";
 
 interface Props {
   userId: string;
@@ -44,7 +45,7 @@ export default function SetupRestaurant({ userId, onCreated }: Props) {
       const candidate = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
       const { data, error } = await supabase
         .from("restaurants")
-        .insert({ owner_id: userId, name: trimmedName, slug: candidate, accent_color: "#E85D2F" })
+        .insert({ owner_id: userId, name: trimmedName, slug: candidate, accent_color: DEFAULT_ACCENT })
         .select()
         .single();
       if (!error) { onCreated(data as Restaurant); return; }

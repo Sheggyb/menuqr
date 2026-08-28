@@ -517,7 +517,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
           Done: <strong style={{ color: "#22c55e", fontWeight: 700 }}>{todayStats.done}</strong>
         </span>
         <span style={{ fontSize: 13, color: "var(--text-muted)" }}>
-          Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{freshCount}</strong>
+          Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{freshCount}</strong>
         </span>
         {/* The dot must reflect reality — it used to stay green during an outage */}
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: fetchOk ? "var(--text-muted)" : "#b45309", fontWeight: fetchOk ? 400 : 700 }}>

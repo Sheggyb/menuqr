@@ -15,7 +15,7 @@ export default function NotFound() {
           The QR code might be outdated, the table may no longer exist, or you took a wrong turn.
         </p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-          <Link href="/" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 2px 10px rgba(232,93,47,0.3)" }}>
+          <Link href="/" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 10, background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: 15, boxShadow: "0 2px 10px color-mix(in srgb, var(--accent) 32%, transparent)" }}>
             ← Go to MenuQR
           </Link>
           <Link href="/login" style={{ display: "inline-block", padding: "12px 24px", borderRadius: 10, border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 600, fontSize: 15, background: "var(--surface)" }}>

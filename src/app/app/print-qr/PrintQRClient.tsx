@@ -6,9 +6,12 @@ import type { TableRow } from "@/lib/types";
 interface Props {
   tables: TableRow[];
   restaurantName: string;
+  /* The restaurant's own brand colour — these sheets get printed and put on
+     their tables, so they must not be MenuQR orange. */
+  accentColor: string;
 }
 
-export default function PrintQRClient({ tables, restaurantName }: Props) {
+export default function PrintQRClient({ tables, restaurantName, accentColor }: Props) {
   const [qrMap, setQrMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -55,14 +58,14 @@ export default function PrintQRClient({ tables, restaurantName }: Props) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 28 }}>
           {tables.map(table => (
-            <div key={table.id} style={{ border: "3px solid #E85D2F", borderRadius: 16, padding: "20px 16px 16px", textAlign: "center", background: "white", pageBreakInside: "avoid", boxShadow: "0 4px 16px rgba(232,93,47,0.12)" }}>
+            <div key={table.id} style={{ border: `3px solid ${accentColor}`, borderRadius: 16, padding: "20px 16px 16px", textAlign: "center", background: "white", pageBreakInside: "avoid", boxShadow: `0 4px 16px color-mix(in srgb, ${accentColor} 14%, transparent)` }}>
               <div style={{ fontWeight: 900, fontSize: 22, color: "#111827", marginBottom: 12, letterSpacing: "-0.5px" }}>{table.name}</div>
               {qrMap[table.id] ? (
                 <img src={qrMap[table.id]} alt={`QR for ${table.name}`} style={{ width: 170, height: 170, margin: "0 auto", display: "block", borderRadius: 8, border: "1px solid #f0f0ef" }} />
               ) : (
                 <div style={{ width: 170, height: 170, margin: "0 auto", background: "#f3f4f6", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 13 }}>Generating…</div>
               )}
-              <div style={{ fontSize: 13, color: "#E85D2F", marginTop: 12, fontWeight: 700 }}>{restaurantName}</div>
+              <div style={{ fontSize: 13, color: accentColor, marginTop: 12, fontWeight: 700 }}>{restaurantName}</div>
               <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>Scan to order 📱</div>
             </div>
           ))}

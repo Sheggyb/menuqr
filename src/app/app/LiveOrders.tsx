@@ -483,7 +483,7 @@ export default function LiveOrders({ restaurant }: Props) {
         <span style={{ fontSize: 12, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
           Today: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.total}</strong>
           {" · "}Done: <strong style={{ color: "var(--text)", fontWeight: 600 }}>{todayStats.done}</strong>
-          {" · "}Waiting: <strong style={{ color: "#E85D2F", fontWeight: 700 }}>{pendingCount}</strong>
+          {" · "}Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>
           {estWaitMin > 0 ? ` (~${estWaitMin}m)` : ""}
         </span>
 

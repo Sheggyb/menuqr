@@ -51,7 +51,7 @@ function LoginForm() {
       <style>{`
         * { box-sizing: border-box; }
         .login-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; outline: none; transition: border-color 0.15s; font-family: inherit; }
-        .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,93,47,0.12); }
+        .login-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
       `}</style>
 
       {/* Background decorations */}

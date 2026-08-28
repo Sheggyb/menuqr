@@ -43,3 +43,9 @@ export const ALLERGEN_LABEL: Record<string, string> = Object.fromEntries(
 export function allergenLabel(value: string): string {
   return ALLERGEN_LABEL[value] ?? value;
 }
+
+// MenuQR's default brand orange. Also the fallback when a restaurant has no
+// accent_color yet, and the seed value on restaurant creation. Kept here so the
+// hex lives in one place instead of four (globals.css --accent mirrors it for
+// CSS; static metadata like themeColor and the OG image can't read a CSS var).
+export const DEFAULT_ACCENT = "#E85D2F";

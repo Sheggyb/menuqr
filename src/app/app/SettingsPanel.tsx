@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
-import { CURRENCIES } from "@/lib/constants";
+import { CURRENCIES, DEFAULT_ACCENT } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconReceipt, IconGlass, IconAlert, IconCheck, IconTable, IconDish } from "@/components/icons";
 
@@ -41,7 +41,7 @@ export default function SettingsPanel({ restaurant }: Props) {
   const supabase = createClient();
   const toast = useToast();
   const [name, setName] = useState(restaurant.name);
-  const [accent, setAccent] = useState(restaurant.accent_color || "#E85D2F");
+  const [accent, setAccent] = useState(restaurant.accent_color || DEFAULT_ACCENT);
   const [logoUrl, setLogoUrl] = useState(restaurant.logo_url ?? "");
   const [venueType, setVenueType] = useState<Restaurant["venue_type"]>(
     restaurant.venue_type ?? "table_service"

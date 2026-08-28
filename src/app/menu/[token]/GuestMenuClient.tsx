@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, TableRow } from "@/lib/types";
-import { CURRENCIES, EU_ALLERGENS, allergenLabel } from "@/lib/constants";
+import { CURRENCIES, DEFAULT_ACCENT, EU_ALLERGENS, allergenLabel } from "@/lib/constants";
 
 interface Props {
   table: TableRow & { restaurant: Restaurant };
@@ -191,7 +191,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableActive]);
 
-  const accentColor = restaurant.accent_color || "#E85D2F";
+  const accentColor = restaurant.accent_color || DEFAULT_ACCENT;
 
   // Currency — DB value (NOT NULL, default SEK) is the only source of truth.
   // CURRENCIES from lib/constants is the single map; an inline copy here drifted

@@ -30,8 +30,8 @@ export default function LandingPage() {
       <style>{`
         * { box-sizing: border-box; }
         .btn-hero { display: inline-block; padding: 14px 32px; border-radius: 10px; background: var(--accent); color: white; text-decoration: none; font-weight: 700; font-size: 17px; letter-spacing: -0.2px; transition: transform 0.1s, box-shadow 0.1s; }
-        .btn-hero:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232,93,47,0.35); }
-        .btn-hero:focus-visible { outline: 3px solid rgba(232,93,47,0.4); outline-offset: 2px; }
+        .btn-hero:hover { transform: translateY(-1px); box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 36%, transparent); }
+        .btn-hero:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 42%, transparent); outline-offset: 2px; }
         .feature-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: box-shadow 0.2s, transform 0.2s; }
         .feature-card:hover { box-shadow: var(--shadow-float); transform: translateY(-2px); }
         .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; }

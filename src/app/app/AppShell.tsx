@@ -104,7 +104,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       {/* TOP NAV */}
       <header style={{ background: resolvedTheme === "dark" ? "rgba(18,18,21,0.92)" : "var(--surface)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid var(--border)", padding: "12px 24px", display: "flex", alignItems: "center", gap: 16, justifyContent: "space-between", position: "sticky", top: 0, zIndex: 40 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 20, color: resolvedTheme === "dark" ? "#d4a830" : "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontWeight: 800, fontSize: 20, color: "var(--accent)", letterSpacing: "-0.3px" }}>MenuQR</span>
           {restaurant.logo_url && (
             <img
               src={restaurant.logo_url}

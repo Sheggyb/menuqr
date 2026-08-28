@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import PrintQRClient from "./PrintQRClient";
+import { DEFAULT_ACCENT } from "@/lib/constants";
 
 export default async function PrintQRPage() {
   const supabase = await createClient();
@@ -21,5 +22,11 @@ export default async function PrintQRPage() {
     .eq("restaurant_id", restaurant.id)
     .order("name");
 
-  return <PrintQRClient tables={tables ?? []} restaurantName={restaurant.name} />;
+  return (
+    <PrintQRClient
+      tables={tables ?? []}
+      restaurantName={restaurant.name}
+      accentColor={restaurant.accent_color || DEFAULT_ACCENT}
+    />
+  );
 }
