@@ -49,14 +49,20 @@ export function parseOrderLine(raw: string): OrderLine {
 
   let rest = line;
 
-  // Peel the trailing "[...]" options group, if present. Everything left is the
-  // dish name — including any parentheses it contains.
-  let optionBlob = "";
+  // Peel the trailing "[...]" payload, if present. Everything left is the dish
+  // name — including any parentheses it contains.
+  let payload = "";
   const om = rest.match(TRAILING_OPTS_RE);
   if (om && om.index !== undefined) {
-    optionBlob = om[1];
+    payload = om[1];
     rest = rest.slice(0, om.index).trimEnd();
   }
+
+  // Payload is "options | note". Split on the FIRST pipe only, so a note may
+  // contain anything except the delimiters themselves.
+  const pipe = payload.indexOf("|");
+  const optionBlob = pipe === -1 ? payload : payload.slice(0, pipe);
+  const note = pipe === -1 ? null : (payload.slice(pipe + 1).trim() || null);
 
   // Quantity prefix
   let qty: number | null = null;
@@ -74,10 +80,6 @@ export function parseOrderLine(raw: string): OrderLine {
   // show it verbatim rather than guessing.
   if (!name) return emptyLine(raw);
 
-  // Notes are no longer embedded in this string — they travel in the request's
-  // `note` field, tagged with their dish. Kept on the type so the boards keep a
-  // single shape to render.
-  const note: string | null = null;
 
   const choices: string[] = [];
   const removed: string[] = [];

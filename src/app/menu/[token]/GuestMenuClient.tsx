@@ -336,22 +336,22 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     }
     setSending(true);
     const snapshot = [...cart];
-    // The ticket format separates cart items with newlines and wraps modifiers in
-    // parentheses (see lib/order-lines.ts). A guest note is free text, so a line
-    // break inside one used to split into fake extra order lines on the boards,
-    // and a ")" broke the dish name. Flatten before it enters that string.
-    const flat = (t: string) => t.replace(/[()\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-    // Merge all cart items into ONE order line.
-    // The note is deliberately NOT embedded here. With a single parenthetical the
-    // parser cannot tell "(no onion)" from "(Fläsk)" — a note has no − or + marker,
-    // so it was rendered as a chosen option AND again in the note row below.
-    // It travels in `note` instead, prefixed with the dish name.
-    // Options go in SQUARE brackets, not parentheses: dish names legitimately
-    // contain parentheses ("Sharing (1 pizza för 2 personer)") and were being
-    // parsed as a chosen option. Square brackets don't occur in dish names.
-    const combinedName = snapshot.map(ci =>
-      `x${ci.quantity} ${ci.item.name}${ci.options.length > 0 ? ` [${ci.options.map(o => o.label).join(", ")}]` : ""}`
-    ).join("\n");
+    // A note only has to survive the bracket payload, so it keeps its commas and
+    // parentheses — only the delimiters themselves are stripped.
+    const flat = (t: string) => t.replace(/[[\]|\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+    // Each cart item becomes one line:
+    //   x2 Kebab Brödet [Fläsk, − lök | no mayo please]
+    //                    └ options ─┘   └ this item's note ┘
+    // Options sit in SQUARE brackets because dish names legitimately contain
+    // parentheses ("Sharing (1 pizza för 2 personer)"). The note follows a "|"
+    // inside the same group so it stays attached to ITS OWN item rather than
+    // being pooled into one blob at the bottom of the card.
+    const combinedName = snapshot.map(ci => {
+      const opts = ci.options.map(o => o.label).join(", ");
+      const n = flat(ci.note);
+      const payload = n ? `${opts} | ${n}` : opts;
+      return `x${ci.quantity} ${ci.item.name}${payload ? ` [${payload}]` : ""}`;
+    }).join("\n");
     // Per-item notes, each tagged with its dish so the association survives.
     const withNotes = snapshot.filter(ci => flat(ci.note));
     const combinedNote = withNotes.length > 0
