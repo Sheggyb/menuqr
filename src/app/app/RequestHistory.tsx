@@ -2,16 +2,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL } from "@/lib/constants";
+import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { SkeletonList } from "@/components/Skeleton";
 import { IconHistory, IconBell, IconReceipt, IconGlass, IconDish, IconInbox, IconSearch } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
 
+// Backgrounds were fixed pastels (#dcfce7 / #fef3c7 / #dbeafe) that stayed pale
+// in dark mode — three bright pills on a near-black page. Deriving them from the
+// semantic tokens makes them follow the theme.
 const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  done:    { bg: "#dcfce7", color: "#16a34a", label: "Done" },
-  pending: { bg: "#fef3c7", color: "#d97706", label: "Pending" },
-  seen:    { bg: "#dbeafe", color: "#2563eb", label: "In Progress" },
+  done:    { bg: "var(--success-soft)", color: "var(--success)", label: "Done" },
+  pending: { bg: "var(--warning-soft)", color: "var(--warning)", label: "Pending" },
+  seen:    { bg: "var(--info-soft)",    color: "var(--info)",    label: "In Progress" },
 };
 
 const TYPE_ICON: Record<string, typeof IconBell> = {
@@ -55,10 +58,12 @@ function dateHeader(iso: string): string {
 
 export default function RequestHistory({ restaurant }: Props) {
   const supabase = createClient();
+  const currencySym = currencySymbol(restaurant.currency);
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 20;
 
@@ -89,7 +94,8 @@ export default function RequestHistory({ restaurant }: Props) {
     const tableName = ((r.table as { name: string } | undefined)?.name ?? "").toLowerCase();
     const matchSearch = !search || tableName.includes(search.toLowerCase()) || (r.item_name ?? "").toLowerCase().includes(search.toLowerCase()) || (r.note ?? "").toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "all" || r.type === typeFilter;
-    return matchSearch && matchType;
+    const matchStatus = statusFilter === "all" || r.status === statusFilter;
+    return matchSearch && matchType && matchStatus;
   });
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -105,7 +111,7 @@ export default function RequestHistory({ restaurant }: Props) {
   }
 
   // Reset to page 0 on filter change
-  useEffect(() => { setPage(0); }, [search, typeFilter]);
+  useEffect(() => { setPage(0); }, [search, typeFilter, statusFilter]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -138,6 +144,19 @@ export default function RequestHistory({ restaurant }: Props) {
             <button key={c.id} onClick={() => setTypeFilter(c.id)}
               style={{ padding: "5px 14px", borderRadius: "var(--radius-pill)", border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`, background: active ? "var(--accent)" : "var(--surface)", color: active ? "white" : "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer" }}>
               {c.label}
+            </button>
+          );
+        })}
+
+        {/* Status filter — you could filter by type but not by state, so there
+            was no way to answer "what never got finished?" */}
+        <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: "var(--border)", margin: "0 4px" }} />
+        {([["all", "Any status"], ["pending", "Pending"], ["seen", "In Progress"], ["done", "Done"]] as [string, string][]).map(([id, label]) => {
+          const active = statusFilter === id;
+          return (
+            <button key={id} onClick={() => setStatusFilter(id)}
+              style={{ padding: "5px 14px", borderRadius: "var(--radius-pill)", border: `1px solid ${active ? "var(--text-muted)" : "var(--border)"}`, background: active ? "var(--surface-2)" : "var(--surface)", color: active ? "var(--text)" : "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer" }}>
+              {label}
             </button>
           );
         })}
@@ -180,11 +199,16 @@ export default function RequestHistory({ restaurant }: Props) {
                         </div>
                         <div className="feed-main" style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 600, color: "var(--text)", fontSize: "var(--fs-sm)" }}>
-                            {tableName} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {r.item_name || typeName(r.type)}</span>
+                            {tableName} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {(r.item_name || typeName(r.type)).split(/\r?\n/).filter(Boolean).join(" · ")}</span>
                           </div>
                           {r.note && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.note}</div>}
                         </div>
                         <div className="feed-meta">
+                          {r.total_price != null && r.total_price > 0 && (
+                            <span style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" }}>
+                              {Number.isInteger(r.total_price) ? r.total_price : r.total_price.toFixed(2)} {currencySym}
+                            </span>
+                          )}
                           <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at)}</span>
                           <span style={{ background: badge.bg, color: badge.color, fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap" }}>{badge.label}</span>
                         </div>

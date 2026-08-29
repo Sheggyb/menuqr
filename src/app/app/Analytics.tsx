@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL } from "@/lib/constants";
+import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
 import { IconChart } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
@@ -19,12 +19,12 @@ function Delta({ today, yesterday }: { today: number; yesterday: number }) {
     color = "var(--text-muted)";
   } else if (yesterday === 0) {
     text = `↑ +${today} vs yesterday`;
-    color = "#16a34a";
+    color = "var(--success)";
   } else {
     const pct = Math.round(((today - yesterday) / yesterday) * 100);
     const up = pct > 0;
     text = `${up ? "↑" : "↓"} ${Math.abs(pct)}% vs yesterday`;
-    color = up ? "#16a34a" : "#dc2626";
+    color = up ? "var(--success)" : "var(--danger)";
   }
   return <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color }}>{text}</div>;
 }
@@ -41,7 +41,7 @@ function StatCard({ label, value, sub, color, delta }: { label: string; value: n
   );
 }
 
-interface DayBucket { date: string; label: string; total: number; done: number }
+interface DayBucket { date: string; label: string; total: number; done: number; revenue: number }
 
 export default function Analytics({ restaurant }: Props) {
   const supabase = createClient();
@@ -49,6 +49,7 @@ export default function Analytics({ restaurant }: Props) {
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [range, setRange] = useState<"7d" | "30d">("7d");
   const [hovered, setHovered] = useState<number | null>(null);
+  const currencySym = currencySymbol(restaurant.currency);
 
   useEffect(() => {
     // Always fetch 30 days so switching the range needs no new API call
@@ -95,11 +96,17 @@ export default function Analytics({ restaurant }: Props) {
     </div>
   );
 
+  // Header stays put while loading — it used to disappear, so the heading and
+  // the 7d/30d toggle popped in and shifted the page once data arrived.
   if (loading) return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
-      {[1,2,3,4].map(i => (
-        <div key={i} style={{ background: "var(--surface-2)", borderRadius: "var(--radius-lg)", height: 90, animation: "pulse 1.5s ease-in-out infinite" }} />
-      ))}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      {header}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
+        {[1,2,3,4].map(i => (
+          <div key={i} style={{ background: "var(--surface-2)", borderRadius: "var(--radius-lg)", height: 96, animation: "pulse 1.5s ease-in-out infinite" }} />
+        ))}
+      </div>
+      <div style={{ background: "var(--surface-2)", borderRadius: "var(--radius-lg)", height: 190, animation: "pulse 1.5s ease-in-out infinite" }} />
       <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}`}</style>
     </div>
   );
@@ -110,26 +117,52 @@ export default function Analytics({ restaurant }: Props) {
   rangeStart.setHours(0, 0, 0, 0);
   const inRange = requests.filter(r => new Date(r.created_at).getTime() >= rangeStart.getTime());
 
-  if (inRange.length === 0) return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {header}
-      <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}>
-        <div style={{ color: "var(--text-muted)", marginBottom: 16 }}><IconChart width={48} height={48} /></div>
-        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 8 }}>No data yet</h3>
-        <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", maxWidth: 300, margin: "0 auto" }}>
-          Analytics will appear here once guests start making requests. Share your QR codes to get started!
-        </p>
+  // Two different empty states. "No data yet" was shown even when the venue had
+  // plenty of history but nothing in the selected window — telling an
+  // established restaurant to "share your QR codes to get started" because it
+  // was quiet this week.
+  if (inRange.length === 0) {
+    const hasOlder = requests.length > 0;
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {header}
+        <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}>
+          <div style={{ color: "var(--text-muted)", marginBottom: 16 }}><IconChart width={48} height={48} /></div>
+          <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 8 }}>
+            {hasOlder ? `Nothing in the last ${days} days` : "No data yet"}
+          </h3>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", maxWidth: 320, margin: "0 auto" }}>
+            {hasOlder
+              ? "There are older requests outside this range."
+              : "Analytics will appear here once guests start making requests. Share your QR codes to get started."}
+          </p>
+          {hasOlder && range === "7d" && (
+            <button
+              onClick={() => setRange("30d")}
+              style={{ marginTop: 16, padding: "8px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}
+            >Show last 30 days</button>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   // Summary stats
   const total = inRange.length;
   const done = inRange.filter(r => r.status === "done").length;
+  const inProgress = inRange.filter(r => r.status === "seen").length;
   const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
   const byType: Record<string, number> = {};
   for (const r of inRange) byType[r.type] = (byType[r.type] ?? 0) + 1;
   const topType = Object.entries(byType).sort((a, b) => b[1] - a[1])[0];
+
+  // Revenue. total_price is stored per order but Stats ignored it entirely,
+  // so the one number an owner cares about most was missing from the tab
+  // built to show numbers. Only item_request rows carry a price.
+  const money = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
+  const revenue = inRange.reduce((s, r) => s + (r.total_price ?? 0), 0);
+  const paidOrders = inRange.filter(r => (r.total_price ?? 0) > 0).length;
+  const avgOrder = paidOrders > 0 ? revenue / paidOrders : 0;
 
   // Daily buckets
   const buckets: DayBucket[] = [];
@@ -143,7 +176,13 @@ export default function Analytics({ restaurant }: Props) {
       return t >= d.getTime() && t < next.getTime();
     });
     const label = i === 0 ? "Today" : i === 1 ? "Yesterday" : d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" });
-    buckets.push({ date: d.toISOString(), label, total: dayReqs.length, done: dayReqs.filter(r => r.status === "done").length });
+    buckets.push({
+      date: d.toISOString(),
+      label,
+      total: dayReqs.length,
+      done: dayReqs.filter(r => r.status === "done").length,
+      revenue: dayReqs.reduce((s, r) => s + (r.total_price ?? 0), 0),
+    });
   }
 
   const maxVal = Math.max(...buckets.map(b => b.total), 1);
@@ -156,9 +195,15 @@ export default function Analytics({ restaurant }: Props) {
 
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
+        <StatCard
+          label="Revenue"
+          value={`${money(revenue)} ${currencySym}`}
+          sub={paidOrders > 0 ? `${paidOrders} paid order${paidOrders !== 1 ? "s" : ""} · avg ${money(avgOrder)} ${currencySym}` : "No priced orders yet"}
+          color="var(--accent)"
+        />
         <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="var(--accent)"
           delta={yesterdayBucket ? { today: todayBucket.total, yesterday: yesterdayBucket.total } : undefined} />
-        <StatCard label="Completed" value={done} sub={`${completionRate}% done`} color="#22c55e"
+        <StatCard label="Completed" value={done} sub={`${completionRate}% done${inProgress > 0 ? ` · ${inProgress} in progress` : ""}`} color="var(--success)"
           delta={yesterdayBucket ? { today: todayBucket.done, yesterday: yesterdayBucket.done } : undefined} />
         <StatCard label="Top request" value={topType ? typeName(topType[0]) : "—"} sub={topType ? `${topType[1]} times` : undefined} color="var(--accent)" />
       </div>
@@ -188,6 +233,7 @@ export default function Analytics({ restaurant }: Props) {
                   {hovered === i && (
                     <div style={{ position: "absolute", bottom: "100%", marginBottom: 6, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 8px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
                       {d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })} — {b.total} request{b.total !== 1 ? "s" : ""}
+                      {b.revenue > 0 ? ` · ${money(b.revenue)} ${currencySym}` : ""}
                     </div>
                   )}
                   <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>
