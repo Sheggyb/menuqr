@@ -64,18 +64,36 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
   useEffect(() => {
     if (!restaurant) return;
     const fetchPending = async () => {
-      const { count } = await supabase
+      const { count, error } = await supabase
         .from("table_requests")
         .select("id", { count: "exact", head: true })
         .eq("restaurant_id", restaurant.id)
         .eq("status", "pending");
+      // Keep the last known figure on failure rather than flashing 0
+      if (error) return;
       setPendingCount(count ?? 0);
     };
     fetchPending();
-    const channel = supabase.channel("appshell-pending")
+
+    // Channel name is per-restaurant. A fixed topic can collide across mounts
+    // and leave the badge bound to a dead channel.
+    const channel = supabase.channel(`appshell-pending:${restaurant.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "table_requests", filter: `restaurant_id=eq.${restaurant.id}` }, () => fetchPending())
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    // The badge used to depend ENTIRELY on realtime, so a single missed event
+    // (backgrounded tab, dropped socket, brief blip) left it stuck until a
+    // manual refresh — the board self-corrected via its own 12s poll while the
+    // badge did not. These two are that missing safety net.
+    const poll = setInterval(fetchPending, 15_000);
+    const onVisible = () => { if (document.visibilityState === "visible") fetchPending(); };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [restaurant?.id]);
 
   // Re-fetch the restaurant whenever the tab changes so Settings / Menu Builder

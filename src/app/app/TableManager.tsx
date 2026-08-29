@@ -92,10 +92,20 @@ export default function TableManager({ restaurant }: Props) {
         setPendingByTable(counts);
       });
     fetchPending();
-    const channel = supabase.channel("tablemanager-pending")
+    // Per-restaurant topic; a fixed name can collide across mounts.
+    const channel = supabase.channel(`tablemanager-pending:${restaurant.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "table_requests", filter: `restaurant_id=eq.${restaurant.id}` }, fetchPending)
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    // Same safety net as the nav badge: these counts were realtime-only, so a
+    // missed event left "N waiting" stuck until a manual refresh.
+    const poll = setInterval(fetchPending, 15_000);
+    const onVisible = () => { if (document.visibilityState === "visible") fetchPending(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [tables.length, restaurant.id]);
 
   useEffect(() => {
