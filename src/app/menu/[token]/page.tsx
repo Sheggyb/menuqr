@@ -69,6 +69,7 @@ export default async function GuestMenuPage({ params }: Props) {
       categories={categories ?? []}
       items={items ?? []}
       options={options}
+      paymentsEnabled={!!process.env.STRIPE_SECRET_KEY}
     />
   );
 }

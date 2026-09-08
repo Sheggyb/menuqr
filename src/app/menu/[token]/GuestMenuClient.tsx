@@ -9,6 +9,7 @@ interface Props {
   categories: MenuCategory[];
   items: MenuItem[];
   options: MenuItemOption[];
+  paymentsEnabled: boolean;
 }
 
 type QuickType = "waiter" | "bill" | "refill";
@@ -68,7 +69,7 @@ const IconLeaf = (size = 18) => icon(<><path d="M4 20c0-7 5-12 12-12h4v4c0 7-5 1
 const IconSearch = (size = 16) => icon(<><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.5-4.5" /></>, size);
 const IconXsmall = (size = 11) => icon(<path d="M18 6 6 18M6 6l12 12" />, size);
 
-export default function GuestMenuClient({ table, restaurant, categories, items, options }: Props) {
+export default function GuestMenuClient({ table, restaurant, categories, items, options, paymentsEnabled }: Props) {
   // itemId -> allergen ids declared on that item (EU 1169/2011 Annex II ids)
   const allergensByItem: Record<string, string[]> = {};
   for (const o of options) {
@@ -377,7 +378,9 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     // belong to this restaurant, enforces required choice groups, and computes
     // the price. Nothing here is authoritative any more — item_name and
     // total_price are no longer accepted from the browser at all.
-    const res = await fetch("/api/order", {
+    // When payments are enabled the order is created as 'awaiting' (hidden from
+    // the boards) and only appears after the Stripe payment verifies.
+    const res = await fetch(paymentsEnabled ? "/api/payments/checkout" : "/api/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -406,10 +409,20 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         return `x${ci.quantity} ${ci.item.name}${payload ? ` [${payload}]` : ""}`;
       }).join("\n");
       const localTotal = snapshot.reduce((s, ci) => s + ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((x, o) => x + o.priceDelta, 0)), 0);
-      saveSessionRequest(data.id ?? crypto.randomUUID(), localName, 1, typeof data.total_price === "number" ? data.total_price : localTotal);
+      const orderId = (paymentsEnabled ? data.request_id : data.id) ?? crypto.randomUUID();
+      const serverTotal = typeof data.total_price === "number" ? data.total_price : localTotal;
+      saveSessionRequest(orderId, localName, 1, serverTotal);
       setCart([]);
       setCartOpen(false);
+      if (paymentsEnabled && data.url) {
+        // Off to Stripe's hosted page; the return-poll (checkout=success) or the
+        // webhook flips the order to paid and it reaches the kitchen.
+        window.location.assign(data.url);
+        return;
+      }
       showToast("Order sent");
+    } else if (data.error === "payments_not_configured") {
+      showToast("Payments are not set up on this menu yet — please ask staff");
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
@@ -639,6 +652,31 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     document.addEventListener("visibilitychange", onVisibility);
     return () => { stop(); document.removeEventListener("visibilitychange", onVisibility); };
   }, [table.id]);
+
+  // Stripe checkout return — verify the payment ONCE (server asks Stripe, never
+  // trusts the URL), toast the outcome, then strip the params so a refresh or a
+  // share doesn't re-poll.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("checkout");
+    if (!outcome) return;
+    window.history.replaceState(null, "", window.location.pathname);
+    if (outcome === "cancelled") {
+      showToast("Payment cancelled — nothing was ordered");
+      return;
+    }
+    const sessionId = params.get("session_id");
+    if (outcome === "success" && sessionId) {
+      fetch(`/api/payments/status?session_id=${encodeURIComponent(sessionId)}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.paid) showToast("Payment confirmed — the kitchen is on it");
+          else showToast("Payment not completed — order cancelled");
+        })
+        .catch(() => { /* keep the bill panel as the source of truth */ });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   // --- SESSION GATE ---
@@ -1020,7 +1058,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             <button onClick={submitCart}
               disabled={sending}
               style={{ width: "100%", padding: "14px", borderRadius: "var(--radius-lg)", background: accentColor, color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-md)", letterSpacing: "0.01em", marginTop: 16, opacity: sending ? 0.7 : 1, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }}>
-              {sending ? "Sending..." : `Send Order (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
+              {sending ? "Sending..." : paymentsEnabled ? `Pay & order · ${money(cartTotal)}` : `Send Order (${cartCount} item${cartCount !== 1 ? "s" : ""})`}
             </button>
           </div>
         </div>
