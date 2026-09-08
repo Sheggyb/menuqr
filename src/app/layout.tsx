@@ -5,7 +5,17 @@ import { ThemeProvider } from "@/lib/theme";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+// metadataBase resolves every relative OG/canonical URL. If NEXT_PUBLIC_SITE_URL
+// is not set in the Vercel project, this used to fall straight through to
+// localhost — so a shared link's preview image pointed at the visitor's own
+// machine and rendered nothing. VERCEL_PROJECT_PRODUCTION_URL is the stable
+// production domain (not the per-deployment one), so production is correct even
+// if the explicit variable is missing.
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "http://localhost:3000");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -14,20 +24,20 @@ export const metadata: Metadata = {
     template: "%s · MenuQR",
   },
   description:
-    "Give every table a QR code. Guests scan, browse your menu, and order with a tap — orders arrive live on your dashboard. Free to start.",
+    "Give every table a QR code. Guests scan, browse your menu with EU allergen labelling, and order with a tap — orders arrive live on your dashboard and kitchen screen. Free to start.",
   openGraph: {
     siteName: "MenuQR",
     type: "website",
     locale: "en_US",
     title: "MenuQR — QR code menus & live table orders",
     description:
-      "Give every table a QR code. Guests scan, browse your menu, and order with a tap — orders arrive live on your dashboard.",
+      "Give every table a QR code. Guests scan, browse your allergen-labelled menu, and order with a tap — orders arrive live on your dashboard.",
   },
   twitter: {
     card: "summary_large_image",
     title: "MenuQR — QR code menus & live table orders",
     description:
-      "Give every table a QR code. Guests scan, browse your menu, and order with a tap.",
+      "QR menus with EU allergen labelling and live table ordering. Guests scan, browse and order with a tap.",
   },
   icons: {
     icon: "/favicon.svg",

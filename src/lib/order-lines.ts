@@ -1,19 +1,25 @@
-// Parses the display string a guest order carries in `table_requests.item_name`
-// into something the Live Orders and Kitchen boards can lay out properly.
+// Turns an order into the lines the Live Orders and Kitchen boards render.
 //
-// The guest menu builds one line per cart item (see GuestMenuClient submitCart):
-//   x2 Kebab Brödet (Fläsk, − Sallad, − tomat) (extra spicy)
-//    │  │             │      │                  └ optional free-text note
+// PREFERRED PATH: `order_items` rows, written by /api/order from ids it looked
+// up and priced itself. Use `linesFromOrder()` — it reads those rows when they
+// exist.
+//
+// FALLBACK: orders created before structured orders landed exist only as a
+// packed string in `table_requests.item_name`:
+//   x2 Kebab Brödet [Fläsk, − lök | no mayo]
+//    │  │             │      │       └ this item's note
 //    │  │             │      └ removals (−) and extras (+)
 //    │  │             └ chosen options
 //    │  └ item name
 //    └ quantity
-//
-// This is presentation-layer parsing of a string we generated ourselves, which
-// is inherently fragile — the real fix is storing orders structurally (see
-// ROADMAP.md "Structured orders"). Until then: anything that doesn't parse
+// Parsing a string we generated ourselves is inherently fragile — it caused
+// four separate bugs (newlines in notes, parentheses in dish names, the note
+// rendering twice, options misread as choices). Anything that does not parse
 // cleanly falls back to `raw`, so a kitchen never loses order information to a
-// regex that didn't match.
+// regex that did not match.
+//
+// Once no pre-migration rows fall inside either board's window, everything
+// below `linesFromOrder` can be deleted.
 
 export interface OrderLine {
   /** null when the guest ordered a single unit (no "x1" prefix is emitted) */
@@ -102,4 +108,44 @@ export function parseOrderLines(itemName: string | null | undefined): OrderLine[
     .split("\n")
     .filter(l => l.trim().length > 0)
     .map(parseOrderLine);
+}
+
+/**
+ * The one entry point the boards should use.
+ *
+ * Reads structured `order_items` when the order has them, and falls back to
+ * parsing `item_name` for rows created before that table existed. Both produce
+ * the same `OrderLine[]`, so the rendering does not care which it got.
+ */
+export function linesFromOrder(req: {
+  item_name?: string | null;
+  order_items?: {
+    name_snapshot: string;
+    quantity: number;
+    note: string | null;
+    sort_order: number;
+    selected_options: {
+      choices?: { label: string }[];
+      removed?: { label: string }[];
+      extra?: { label: string }[];
+    } | null;
+  }[];
+}): OrderLine[] {
+  const rows = req.order_items;
+  if (!rows || rows.length === 0) return parseOrderLines(req.item_name);
+
+  return [...rows]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map(r => {
+      const sel = r.selected_options ?? {};
+      return {
+        qty: r.quantity,
+        name: r.name_snapshot,
+        choices: (sel.choices ?? []).map(c => c.label).filter(Boolean),
+        removed: (sel.removed ?? []).map(c => c.label).filter(Boolean),
+        extra: (sel.extra ?? []).map(c => c.label).filter(Boolean),
+        note: r.note && r.note.trim() ? r.note.trim() : null,
+        raw: r.name_snapshot,
+      };
+    });
 }

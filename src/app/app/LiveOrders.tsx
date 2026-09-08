@@ -3,8 +3,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { SkeletonList } from "@/components/Skeleton";
-import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
-import { parseOrderLines } from "@/lib/order-lines";
+import { TYPE_LABEL, formatMoney } from "@/lib/constants";
+import { linesFromOrder } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock, IconAlert, IconBellOff } from "@/components/icons";
@@ -44,18 +44,18 @@ function timeAgo(dateStr: string): { text: string; isLate: boolean } {
 interface CardProps {
   req: TableRequest;
   leaving?: boolean;
-  currencySym: string;
+  currency: string;
   onPickUp?: () => void;
   onDone?: () => void;
   onUndo?: () => void;
 }
 
-function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: CardProps) {
+function RequestCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardProps) {
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
   const leftAccent = isLate ? LATE_ACCENT : accent;
-  const itemLines = parseOrderLines(req.item_name);
+  const itemLines = linesFromOrder(req);
 
   return (
     <div
@@ -100,7 +100,7 @@ function RequestCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </span>
         {req.total_price != null && req.total_price > 0 && (
           <span style={{ display: "inline-flex", alignItems: "center", fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
-            {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
+            {formatMoney(req.total_price, currency)}
           </span>
         )}
       </div>
@@ -258,9 +258,11 @@ export default function LiveOrders({ restaurant }: Props) {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("table_requests")
-      .select("*, table:restaurant_tables(name)")
+      .select("*, table:restaurant_tables(name), order_items(*)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
+      // Stripe seam — an unpaid ticket must never reach the kitchen
+      .neq("payment_status", "awaiting")
       .order("created_at", { ascending: true });
     if (error) {
       // NEVER turn a failed fetch into "no new orders" — that reads as "all
@@ -339,10 +341,16 @@ export default function LiveOrders({ restaurant }: Props) {
   }
 
   async function markAllDone() {
+    // `pending` is the FILTERED list — only what's on screen. Say so, otherwise
+    // "Mark all 3 as done?" while nine are waiting reads as if it clears the board.
     const ids = pending.map(r => r.id);
+    if (ids.length === 0) return;
+    const filtered = searchTable.trim() !== "" || filterType !== "all";
     const ok = await confirm({
       title: "Mark all done?",
-      message: `Mark all ${ids.length} as done?`,
+      message: filtered
+        ? `Mark the ${ids.length} shown request${ids.length !== 1 ? "s" : ""} as done? Requests hidden by the current filter are not affected.`
+        : `Mark all ${ids.length} as done?`,
       confirmLabel: "Mark all done",
     });
     if (!ok) return;
@@ -368,24 +376,32 @@ export default function LiveOrders({ restaurant }: Props) {
   const pending = applyFilters(requests.filter(r => r.status === "pending"));
   const seen = applyFilters(requests.filter(r => r.status === "seen"));
 
-  const pendingCount = requests.filter(r => r.status === "pending").length;
+  // Count WITHIN the active filter, so the "Waiting" figure, the tab title and
+  // the "Done (n)" button all agree with what the board is showing — the same
+  // rule the Kitchen board already follows. This used to read the unfiltered
+  // list while markAllDone acted on the filtered one, so with a table search
+  // active the button offered "Done (9)" and then marked one request done.
+  const pendingCount = pending.length;
 
-  // Keyboard shortcuts: P = pick up first pending, D = mark first in-progress done
+  // Keyboard shortcuts: P = pick up first pending, D = mark first in-progress done.
+  // These act on the FILTERED lists. Reading raw `requests` meant that with a
+  // table search active, P quietly picked up an order from a table that wasn't
+  // even on screen.
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if ((e.target as HTMLElement).tagName === "INPUT" || (e.target as HTMLElement).tagName === "TEXTAREA") return;
       if (e.key === "p" || e.key === "P") {
-        const first = requests.find(r => r.status === "pending");
+        const first = pending[0];
         if (first) move(first.id, "seen");
       } else if (e.key === "d" || e.key === "D") {
-        const first = requests.find(r => r.status === "seen");
+        const first = seen[0];
         if (first) move(first.id, "done");
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requests]);
+  }, [requests, searchTable, filterType]);
 
   // Estimated wait time: assume ~3 min per pending request
   const estWaitMin = pendingCount * 3;
@@ -401,9 +417,12 @@ export default function LiveOrders({ restaurant }: Props) {
     const start = new Date(); start.setHours(0, 0, 0, 0);
     const iso = start.toISOString();
     (async () => {
+      // .neq payment_status — an abandoned unpaid checkout is not an order the
+      // venue took today, and "Today 14 / Done 9" must add up against a board
+      // that hides those rows.
       const [totalRes, doneRes] = await Promise.all([
-        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
-        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).neq("payment_status", "awaiting"),
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done").neq("payment_status", "awaiting"),
       ]);
       // Keep the previous figures on failure rather than flashing 0 / 0
       if (totalRes.error || doneRes.error) return;
@@ -522,7 +541,7 @@ export default function LiveOrders({ restaurant }: Props) {
               key={req.id}
               req={req}
               leaving={leavingIds.has(req.id)}
-              currencySym={currencySymbol(restaurant.currency)}
+              currency={restaurant.currency}
               onPickUp={() => moveAnimated(req.id, "seen")}
             />
           ))}
@@ -541,7 +560,7 @@ export default function LiveOrders({ restaurant }: Props) {
               key={req.id}
               req={req}
               leaving={leavingIds.has(req.id)}
-              currencySym={currencySymbol(restaurant.currency)}
+              currency={restaurant.currency}
               onDone={() => moveAnimated(req.id, "done")}
               onUndo={() => move(req.id, "pending")}
             />

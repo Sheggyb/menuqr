@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, TableRow } from "@/lib/types";
-import { CURRENCIES, DEFAULT_ACCENT, EU_ALLERGENS, allergenLabel } from "@/lib/constants";
+import { DEFAULT_ACCENT, EU_ALLERGENS, allergenLabel, formatMoney } from "@/lib/constants";
 
 interface Props {
   table: TableRow & { restaurant: Restaurant };
@@ -11,7 +11,6 @@ interface Props {
   options: MenuItemOption[];
 }
 
-type RequestType = "waiter" | "bill" | "refill" | "item_request";
 type QuickType = "waiter" | "bill" | "refill";
 
 const QUICK_TYPES: QuickType[] = ["waiter", "bill", "refill"];
@@ -28,7 +27,13 @@ interface CartItem {
   item: MenuItem;
   quantity: number;
   note: string;
+  // Labels drive the cart UI. The ids are what actually gets ordered — the
+  // server re-reads every one of them and computes the price itself, so these
+  // labels and prices are display-only and never reach the database.
   options: { label: string; priceDelta: number; kind: "choice" | "ingredient" }[];
+  choiceIds: string[];
+  removedChoiceIds: string[];
+  extraChoiceIds: string[];
 }
 
 interface SessionRequest {
@@ -181,9 +186,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
       if (changed && !cancelled) persistQuick(next);
     };
-    check();
-    const interval = setInterval(check, 10_000);
-    return () => { cancelled = true; clearInterval(interval); };
+    // Same visibility rule as the order-status poll below — no background polling
+    // from a guest's phone.
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (interval) return; check(); interval = setInterval(check, 10_000); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    const onVisibility = () => { if (document.visibilityState === "visible") start(); else stop(); };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quickDone, table.id]);
 
@@ -194,13 +209,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
 
   const accentColor = restaurant.accent_color || DEFAULT_ACCENT;
 
-  // Currency — DB value (NOT NULL, default SEK) is the only source of truth.
-  // CURRENCIES from lib/constants is the single map; an inline copy here drifted
-  // out of sync with the dashboard.
-  const currencySymbol = CURRENCIES[restaurant.currency] ?? restaurant.currency;
-  // Money — format consistently: no float artifacts (17.400000000000002),
-  // whole numbers stay "12", fractional show two decimals "12.50" (audit 2.2)
-  const fmtPrice = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
+  // Money — locale-aware and complete, symbol included. restaurant.currency
+  // (NOT NULL, default SEK) is the only source of truth. Swedish reads
+  // "89,50 kr"; the old `${fmtPrice(n)} ${symbol}` gave "89.50 kr" here, and
+  // "89.50 $" for a dollar venue where the symbol belongs in front. No float
+  // artifacts (17.400000000000002) and whole prices stay "89" (audit 2.2).
+  const money = (n: number) => formatMoney(n, restaurant.currency);
 
   const [readyBanner, setReadyBanner] = useState<string[]>([]); // item names that just became "done"
 
@@ -213,20 +227,32 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       try {
         const res = await fetch(`/api/orders/status?ids=${ids}`);
         const data = await res.json();
+        // A 429 or error body has no `statuses`, and indexing it threw — which
+        // aborted the whole update. Bail out and keep the last known statuses.
+        const statuses: Record<string, string> = data?.statuses ?? {};
+        if (Object.keys(statuses).length === 0) return;
         setSessionRequests(prev => {
-          const next = prev.map(r => data.statuses[r.id] ? { ...r, status: data.statuses[r.id] as SessionRequest["status"] } : r);
+          const next = prev.map(r => statuses[r.id] ? { ...r, status: statuses[r.id] as SessionRequest["status"] } : r);
           // Detect transitions to "done" — show collect notification
           const justDone = prev
-            .filter(r => r.status !== "done" && data.statuses[r.id] === "done")
+            .filter(r => r.status !== "done" && statuses[r.id] === "done")
             .map(r => r.name);
           if (justDone.length > 0 && restaurant.venue_type !== "table_service") setReadyBanner(justDone);
           return next;
         });
       } catch {}
     };
-    poll();
-    const interval = setInterval(poll, 4000);
-    return () => clearInterval(interval);
+    // Poll only while the tab is actually visible. This runs on a guest's phone,
+    // usually on mobile data, and a menu left open in a background tab was hitting
+    // the API every 4s indefinitely. Returning to the tab polls immediately, so
+    // the guest still sees current status the moment they look at it.
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (interval) return; poll(); interval = setInterval(poll, 4000); };
+    const stop = () => { if (interval) { clearInterval(interval); interval = null; } };
+    const onVisibility = () => { if (document.visibilityState === "visible") start(); else stop(); };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVisibility); };
   }, [sessionRequests.length]);
 
   useEffect(() => {
@@ -273,14 +299,32 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       } else if (data.error === "table_closed") {
         setSessionStatus("idle");
         showToast("Table is closed");
+      } else {
+        // Anything else — 429, 404, a 500 — used to match NEITHER branch, so the
+        // guest sat on the "waiting for staff" screen forever while no session
+        // had actually been created and staff saw no request at all. Always send
+        // them back to a button they can press again.
+        setSessionStatus("idle");
+        showToast(
+          res.status === 429
+            ? "Too many requests — try again in a moment"
+            : "Could not reach the restaurant — please try again"
+        );
       }
     } catch {
       setSessionStatus("idle");
+      showToast("Could not reach the restaurant — please try again");
     }
   }
 
-  async function sendRequest(type: RequestType, item?: MenuItem, note?: string, quantity?: number) {
-    if (type !== "item_request" && quickDone[type as QuickType]) return;
+  /**
+   * Quick actions only — waiter / bill / refill. It used to take `item`, `note`
+   * and `quantity` too, but the single call site has always been
+   * `sendRequest(type)`, so those built an item_name and item_id that were
+   * never populated. Dishes go through submitCart, which sends ids.
+   */
+  async function sendRequest(type: QuickType) {
+    if (quickDone[type]) return;
     const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
     if (sending || !tableActive || !sid || sessionStatus !== "active") {
       if (!tableActive) showToast("Table is closed");
@@ -293,27 +337,19 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         session_id: sid,
-        restaurant_id: restaurant.id,
         table_id: table.id,
         type,
-        item_id: item?.id ?? null,
-        item_name: item ? `${quantity && quantity > 1 ? `x${quantity} ` : ""}${item.name}` : null,
-        note: note ?? null,
       }),
     });
     const data = await res.json();
     setSending(false);
     if (data.ok) {
-      if (type !== "item_request") {
-        markQuickDone(type as QuickType, typeof data.id === "string" ? data.id : undefined);
-        showToast(QUICK_DONE_LABEL[type as QuickType]);
-      } else {
-        showToast("Request sent");
-      }
-    } else if (res.status === 409 && data.error === "duplicate_request" && type !== "item_request") {
+      markQuickDone(type, typeof data.id === "string" ? data.id : undefined);
+      showToast(QUICK_DONE_LABEL[type]);
+    } else if (res.status === 409 && data.error === "duplicate_request") {
       // Someone at the table already asked — reflect the same "requested" state
-      markQuickDone(type as QuickType);
-      showToast(QUICK_DONE_LABEL[type as QuickType]);
+      markQuickDone(type);
+      showToast(QUICK_DONE_LABEL[type]);
     } else if (data.error === "session_invalid") {
       setSessionStatus("declined");
       showToast("Session expired, please request again");
@@ -336,47 +372,41 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     }
     setSending(true);
     const snapshot = [...cart];
-    // A note only has to survive the bracket payload, so it keeps its commas and
-    // parentheses — only the delimiters themselves are stripped.
-    const flat = (t: string) => t.replace(/[[\]|\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-    // Each cart item becomes one line:
-    //   x2 Kebab Brödet [Fläsk, − lök | no mayo please]
-    //                    └ options ─┘   └ this item's note ┘
-    // Options sit in SQUARE brackets because dish names legitimately contain
-    // parentheses ("Sharing (1 pizza för 2 personer)"). The note follows a "|"
-    // inside the same group so it stays attached to ITS OWN item rather than
-    // being pooled into one blob at the bottom of the card.
-    const combinedName = snapshot.map(ci => {
-      const opts = ci.options.map(o => o.label).join(", ");
-      const n = flat(ci.note);
-      const payload = n ? `${opts} | ${n}` : opts;
-      return `x${ci.quantity} ${ci.item.name}${payload ? ` [${payload}]` : ""}`;
-    }).join("\n");
-    // Per-item notes, each tagged with its dish so the association survives.
-    const withNotes = snapshot.filter(ci => flat(ci.note));
-    const combinedNote = withNotes.length > 0
-      ? withNotes.map(ci => `${ci.item.name}: ${flat(ci.note)}`).join("; ")
-      : null;
-    const totalPrice = snapshot.reduce((s, ci) => s + ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((x, o) => x + o.priceDelta, 0)), 0);
 
+    // Send IDS ONLY. The server looks every dish and choice up, checks they
+    // belong to this restaurant, enforces required choice groups, and computes
+    // the price. Nothing here is authoritative any more — item_name and
+    // total_price are no longer accepted from the browser at all.
     const res = await fetch("/api/order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         session_id: sid,
-        restaurant_id: restaurant.id,
         table_id: table.id,
         type: "item_request",
-        item_id: null,
-        item_name: combinedName,
-        note: combinedNote,
-        total_price: totalPrice,
+        items: snapshot.map(ci => ({
+          item_id: ci.item.id,
+          quantity: ci.quantity,
+          choice_ids: ci.choiceIds,
+          removed_choice_ids: ci.removedChoiceIds,
+          extra_choice_ids: ci.extraChoiceIds,
+          note: ci.note || null,
+        })),
       }),
     });
     const data = await res.json();
     setSending(false);
     if (data.ok) {
-      saveSessionRequest(data.id ?? crypto.randomUUID(), combinedName, 1, totalPrice);
+      // Local "My Bill" summary only. Prefer the server's total when it comes
+      // back — if the two ever disagree, the server is right.
+      const localName = snapshot.map(ci => {
+        const opts = ci.options.map(o => o.label).join(", ");
+        const n = ci.note.replace(/[[\]|\r\n]+/g, " ").replace(/\s+/g, " ").trim();
+        const payload = n ? `${opts} | ${n}` : opts;
+        return `x${ci.quantity} ${ci.item.name}${payload ? ` [${payload}]` : ""}`;
+      }).join("\n");
+      const localTotal = snapshot.reduce((s, ci) => s + ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((x, o) => x + o.priceDelta, 0)), 0);
+      saveSessionRequest(data.id ?? crypto.randomUUID(), localName, 1, typeof data.total_price === "number" ? data.total_price : localTotal);
       setCart([]);
       setCartOpen(false);
       showToast("Order sent");
@@ -388,6 +418,21 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     } else if (data.error === "table_closed") {
       setTableActive(false);
       showToast("Table is closed");
+    } else if (data.error === "item_unavailable") {
+      // Sold out while it sat in the cart. Name the dish and keep the cart open —
+      // a generic "try again" leaves the guest retrying an order that can never
+      // succeed. Before this route validated anything, these simply went through.
+      setCartOpen(true);
+      showToast(`${data.detail ?? "An item"} just sold out — please remove it`);
+    } else if (data.error === "choice_unavailable") {
+      setCartOpen(true);
+      showToast(`"${data.detail ?? "An option"}" just sold out — please edit your order`);
+    } else if (data.error === "missing_choice") {
+      setCartOpen(true);
+      showToast(`Please choose: ${data.detail ?? "a required option"}`);
+    } else if (data.error === "invalid item_id" || data.error === "invalid choice_id") {
+      // The menu changed underneath this cart; reloading is the only clean fix.
+      showToast("The menu was updated — please reload and reorder");
     } else {
       showToast("Something went wrong — please try again");
     }
@@ -441,6 +486,12 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       }
     }
     const chosen: CartItem["options"] = [];
+    // Ids are collected alongside the labels — these are what the order is
+    // actually made of. Previously they were resolved to labels here and thrown
+    // away, which is why the server had nothing to price against.
+    const choiceIds: string[] = [];
+    const removedChoiceIds: string[] = [];
+    const extraChoiceIds: string[] = [];
     for (const o of itemOptions) {
       if (o.type === "allergens") continue; // informational only
       if (o.type === "ingredients") {
@@ -449,12 +500,20 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
         const kept = selIngredients[o.id] ?? available.map(c => c.id);
         const extras = extraIngredients[o.id] ?? [];
         for (const c of available) {
-          if (!kept.includes(c.id)) chosen.push({ label: `− ${c.label}`, priceDelta: 0, kind: "ingredient" });
-          else if (extras.includes(c.id)) chosen.push({ label: `+ ${c.label}`, priceDelta: 0, kind: "ingredient" });
+          if (!kept.includes(c.id)) {
+            chosen.push({ label: `− ${c.label}`, priceDelta: 0, kind: "ingredient" });
+            removedChoiceIds.push(c.id);
+          } else if (extras.includes(c.id)) {
+            chosen.push({ label: `+ ${c.label}`, priceDelta: 0, kind: "ingredient" });
+            extraChoiceIds.push(c.id);
+          }
         }
       } else if (selOptions[o.id]) {
         const c = o.choices.find(c => c.id === selOptions[o.id]);
-        if (c) chosen.push({ label: c.label, priceDelta: c.price_delta, kind: "choice" });
+        if (c) {
+          chosen.push({ label: c.label, priceDelta: c.price_delta, kind: "choice" });
+          choiceIds.push(c.id);
+        }
       }
     }
     const optKey = chosen.map(c => c.label).join("|");
@@ -463,7 +522,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
       if (existing) {
         return prev.map(c => c === existing ? { ...c, quantity: c.quantity + qty } : c);
       }
-      return [...prev, { item: noteFor.item, quantity: qty, note: noteText, options: chosen }];
+      return [...prev, { item: noteFor.item, quantity: qty, note: noteText, options: chosen, choiceIds, removedChoiceIds, extraChoiceIds }];
     });
     setNoteFor(null);
     showToast("Added to order");
@@ -523,36 +582,63 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Poll table status + session status every 3s
+  // Table open/closed and session approval used to share one 3s poll. They are
+  // split because they have completely different needs:
+  //
+  //  - session/check is keyed per session, and the guest is actively waiting for
+  //    staff to approve them, so it stays fast.
+  //  - table-status barely ever changes, and its rate limit is shared by every
+  //    phone behind the venue's WiFi. Polling it every 3s meant four guests were
+  //    enough to trigger 429s. Every 15s is plenty for "did staff close us".
+  //
+  // Both pause while the tab is hidden and re-check the moment it is shown.
   useEffect(() => {
     const check = async () => {
       try {
-        // Check table active
-        const r1 = await fetch(`/api/table-status/${table.token}`);
-        const d1 = await r1.json();
-        setTableActive(d1.is_active);
-
-        // Check session status if we have a session
-        const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
-        if (sid) {
-          const r2 = await fetch(`/api/session/check?session_id=${sid}`);
-          const d2 = await r2.json();
-          if (d2.status === "active") setSessionStatus("active");
-          else if (d2.status === "closed" || d2.status === "not_found") {
-            // Session was invalidated (table closed/reopened) — must request again
-            setSessionStatus("idle");
-            sessionStorage.removeItem(`menuqr_sid_${table.id}`);
-            setSessionId(null);
-          }
-        }
-      } catch {}
+        const res = await fetch(`/api/table-status/${table.token}`);
+        const data = await res.json();
+        // ONLY trust an explicit boolean. A 429 or an error body has no
+        // is_active field, and `setTableActive(undefined)` showed guests the
+        // "We're closed" screen on a table that was open. A failed check must
+        // never close a table — same rule the staff boards follow for orders.
+        if (typeof data.is_active === "boolean") setTableActive(data.is_active);
+      } catch { /* keep the last known state */ }
     };
-    check(); // immediate
-    const poll = setInterval(check, 3000);
-    const onVisible = () => { if (document.visibilityState === "visible") check(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { clearInterval(poll); document.removeEventListener("visibilitychange", onVisible); };
-  }, [table.id, table.token]);
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (id) return; check(); id = setInterval(check, 15_000); };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    const onVisibility = () => { if (document.visibilityState === "visible") start(); else stop(); };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVisibility); };
+  }, [table.token]);
+
+  useEffect(() => {
+    const check = async () => {
+      const sid = sessionStorage.getItem(`menuqr_sid_${table.id}`);
+      if (!sid) return;
+      try {
+        const res = await fetch(`/api/session/check?session_id=${sid}`);
+        const data = await res.json();
+        if (data.status === "active") setSessionStatus("active");
+        else if (data.status === "closed" || data.status === "not_found") {
+          // Session was invalidated (table closed/reopened) — must request again
+          setSessionStatus("idle");
+          sessionStorage.removeItem(`menuqr_sid_${table.id}`);
+          setSessionId(null);
+        }
+        // Any other body (a 429, an error) is ignored — never downgrade an
+        // approved guest because one poll failed.
+      } catch { /* keep the last known state */ }
+    };
+    let id: ReturnType<typeof setInterval> | null = null;
+    const start = () => { if (id) return; check(); id = setInterval(check, 3000); };
+    const stop = () => { if (id) { clearInterval(id); id = null; } };
+    const onVisibility = () => { if (document.visibilityState === "visible") start(); else stop(); };
+    onVisibility();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => { stop(); document.removeEventListener("visibilitychange", onVisibility); };
+  }, [table.id]);
 
 
   // --- SESSION GATE ---
@@ -697,8 +783,8 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             ["waiter", IconBell(22), "Call Waiter"],
             ["bill", IconCard(22), "Request Bill"],
             ["refill", IconRefresh(22), "Refill Drinks"],
-          ] as [string, React.ReactNode, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type as string)) as [RequestType, React.ReactNode, string][]).map(([type, iconEl, label]) => {
-            const requested = type !== "item_request" && Boolean(quickDone[type as QuickType]);
+          ] as [string, React.ReactNode, string][]).filter(([type]) => (restaurant.quick_actions ?? ["waiter","bill","refill"]).includes(type as string)) as [QuickType, React.ReactNode, string][]).map(([type, iconEl, label]) => {
+            const requested = Boolean(quickDone[type]);
             return (
             <button key={type} onClick={() => { if (!requested) sendRequest(type); }}
               aria-disabled={requested}
@@ -706,7 +792,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               onTouchStart={e => { if (!requested) (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.96)"; }}
               onTouchEnd={e => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}>
               <span aria-hidden="true" style={{ color: requested ? "var(--text-muted)" : accentColor, display: "inline-flex" }}>{requested ? IconTick(22) : iconEl}</span>
-              <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: requested ? "var(--text-muted)" : "var(--text)", lineHeight: 1.2 }}>{requested ? QUICK_DONE_LABEL[type as QuickType] : label}</span>
+              <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: requested ? "var(--text-muted)" : "var(--text)", lineHeight: 1.2 }}>{requested ? QUICK_DONE_LABEL[type] : label}</span>
             </button>
             );
           })}
@@ -876,7 +962,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                   <div style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", lineHeight: 1.35 }}>{item.name}</div>
                   {item.price ? (
                     <span style={{ fontWeight: 600, color: accentColor, fontSize: "var(--fs-sm)", background: `color-mix(in srgb, ${accentColor} 10%, transparent)`, borderRadius: "var(--radius-pill)", padding: "3px 10px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                      {fmtPrice(item.price)} {currencySymbol}
+                      {money(item.price)}
                     </span>
                   ) : null}
                 </div>
@@ -902,7 +988,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
           style={{ position: "fixed", bottom: sessionRequests.length > 0 ? 60 : 24, left: "50%", transform: "translateX(-50%)", background: accentColor, color: "white", border: "none", borderRadius: "var(--radius-pill)", padding: "14px 26px", fontWeight: 600, fontSize: "var(--fs-md)", cursor: "pointer", zIndex: 40, boxShadow: "0 6px 24px rgba(0,0,0,0.18)", display: "flex", alignItems: "center", gap: 10, animation: "gmFadeIn 0.2s ease", whiteSpace: "nowrap" }}>
           <span key={cartCount} style={{ background: "rgba(255,255,255,0.22)", borderRadius: "50%", width: 24, height: 24, display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "var(--fs-xs)", animation: "gmPulse 0.35s ease" }}>{cartCount}</span>
           View Order
-          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: "var(--fs-md)", fontWeight: 500 }}>· {fmtPrice(cartTotal)} {currencySymbol}</span>}
+          {cartTotal > 0 && <span style={{ opacity: 0.85, fontSize: "var(--fs-md)", fontWeight: 500 }}>· {money(cartTotal)}</span>}
         </button>
       )}
 
@@ -920,7 +1006,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                   <div style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)" }}>x{ci.quantity} {ci.item.name}</div>
                   {ci.options.length > 0 && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 1 }}>{ci.options.map(o => o.label).join(", ")}</div>}
                   {ci.note && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontStyle: "italic", marginTop: 2 }}>{ci.note}</div>}
-                  {ci.item.price ? <div style={{ fontSize: "var(--fs-sm)", color: accentColor, fontWeight: 600, marginTop: 2 }}>{fmtPrice(ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((s, o) => s + o.priceDelta, 0)))} {currencySymbol}</div> : null}
+                  {ci.item.price ? <div style={{ fontSize: "var(--fs-sm)", color: accentColor, fontWeight: 600, marginTop: 2 }}>{money(ci.quantity * ((ci.item.price ?? 0) + ci.options.reduce((s, o) => s + o.priceDelta, 0)))}</div> : null}
                 </div>
                 <button onClick={() => removeFromCart(idx)} aria-label={`Remove ${ci.item.name} from order`} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "var(--fs-lg)", fontWeight: 600, padding: "0 4px" }}>×</button>
               </div>
@@ -928,7 +1014,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
             {cartTotal > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 4px", fontWeight: 700, fontSize: "var(--fs-md)", color: "var(--text)" }}>
                 <span>Total</span>
-                <span style={{ color: accentColor }}>{fmtPrice(cartTotal)} {currencySymbol}</span>
+                <span style={{ color: accentColor }}>{money(cartTotal)}</span>
               </div>
             )}
             <button onClick={submitCart}
@@ -946,7 +1032,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
           <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "20px 20px 0 0", borderTop: "1px solid var(--border)", padding: "24px 20px 36px", width: "100%", maxWidth: 480, margin: "0 auto", animation: "gmSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1)" }}>
             <h3 style={{ fontWeight: 700, marginBottom: 14, fontSize: "var(--fs-lg)", fontFamily: "var(--font-display)", color: "var(--text)" }}>
               {noteFor.item.name}
-              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: "var(--fs-md)", fontFamily: "var(--font-body)", fontWeight: 600 }}>{fmtPrice(noteFor.item.price)} {currencySymbol}</span> : null}
+              {noteFor.item.price ? <span style={{ color: accentColor, marginLeft: 10, fontSize: "var(--fs-md)", fontFamily: "var(--font-body)", fontWeight: 600 }}>{money(noteFor.item.price)}</span> : null}
             </h3>
             {/* Full description — the card clamps it to two lines, so this is the
                 only place a guest can read all of it */}
@@ -1030,7 +1116,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                                 color: on ? accentColor : "var(--text)",
                               }}
                             >
-                              {c.label}{c.price_delta !== 0 ? ` ${c.price_delta > 0 ? "+" : "−"}${fmtPrice(Math.abs(c.price_delta))} ${currencySymbol}` : ""}
+                              {c.label}{c.price_delta !== 0 ? ` ${c.price_delta > 0 ? "+" : "−"}${money(Math.abs(c.price_delta))}` : ""}
                             </button>
                           );
                         })}
@@ -1074,7 +1160,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               My Bill
               {sessionRequests.some(r => r.price > 0) && (
                 <span style={{ color: accentColor, fontWeight: 700 }}>
-                  {fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}
+                  {money(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))}
                 </span>
               )}
             </span>
@@ -1105,7 +1191,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                           <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                         </div>
                         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                          {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
+                          {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{money(r.qty * r.price)}</span>}
                           <span style={{ fontSize: "var(--fs-xs)", fontWeight: 600, padding: "3px 9px", borderRadius: "var(--radius-pill)", background: pill.bg, color: pill.color, letterSpacing: "0.02em" }}>{pill.label}</span>
                         </div>
                       </div>
@@ -1124,7 +1210,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
                         <span style={{ fontWeight: 600, whiteSpace: "pre-line", color: "var(--text)" }}>{r.name}</span>
                         <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginLeft: 8 }}>{r.time}</span>
                       </div>
-                      {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{fmtPrice(r.qty * r.price)} {currencySymbol}</span>}
+                      {r.price > 0 && <span style={{ fontWeight: 600, color: accentColor }}>{money(r.qty * r.price)}</span>}
                     </div>
                   ))}
                 </div>
@@ -1134,7 +1220,7 @@ export default function GuestMenuClient({ table, restaurant, categories, items, 
               {sessionRequests.some(r => r.price > 0) && (
                 <div style={{ padding: "13px 20px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)" }}>My Total</span>
-                  <span style={{ fontWeight: 700, fontSize: "var(--fs-md)", color: accentColor }}>{fmtPrice(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))} {currencySymbol}</span>
+                  <span style={{ fontWeight: 700, fontSize: "var(--fs-md)", color: accentColor }}>{money(sessionRequests.reduce((s, r) => s + r.qty * r.price, 0))}</span>
                 </div>
               )}
             </div>

@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, MenuCategory, MenuItem, MenuItemOption, MenuItemOptionType } from "@/lib/types";
 import ContextMenu, { type ContextMenuAction } from "@/components/ContextMenu";
-import { CURRENCIES, EU_ALLERGENS } from "@/lib/constants";
+import { CURRENCIES, EU_ALLERGENS, parsePrice, formatMoney } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
@@ -286,7 +286,8 @@ export default function MenuBuilder({ restaurant }: Props) {
       if (g.type !== "choice") continue;
       for (const c of g.choices) {
         if (!c.label.trim() || !c.price.trim()) continue;
-        if (!Number.isFinite(Number(c.price.trim().replace(",", ".")))) {
+        // Negatives allowed here — a choice can legitimately take money off.
+        if (parsePrice(c.price, { allowNegative: true }) === undefined) {
           toast.error(`"${c.price}" isn't a valid price`);
           return;
         }
@@ -321,7 +322,7 @@ export default function MenuBuilder({ restaurant }: Props) {
           option_id: g.id,
           label: c.label.trim(),
           price_delta: g.type === "choice" && c.price.trim()
-            ? Number(c.price.trim().replace(",", "."))
+            ? (parsePrice(c.price, { allowNegative: true }) ?? 0)
             : 0,
           // Allergen tags are informational — never hidden by an availability flag
           is_available: g.type === "allergens" ? true : c.isAvailable,
@@ -426,12 +427,15 @@ export default function MenuBuilder({ restaurant }: Props) {
   async function quickAddItem(catId: string) {
     const q = quickAdds[catId];
     if (!q?.name.trim()) return;
+    // "89,50" is what a Swedish restaurant types. parseFloat read that as 89.
+    const price = parsePrice(q.price ?? "");
+    if (price === undefined) { toast.error(`"${q.price}" isn't a valid price`); return; }
     const { data, error } = await supabase.from("menu_items")
       .insert({
         restaurant_id: restaurant.id,
         category_id: catId,
         name: q.name.trim(),
-        price: q.price ? parseFloat(q.price) : null,
+        price,
         is_available: true,
         sort_order: items.filter(i => i.category_id === catId).length,
       })
@@ -497,7 +501,11 @@ export default function MenuBuilder({ restaurant }: Props) {
     const value = edit.field === "price" ? editValue : editValue.trim();
     const update: Record<string, unknown> = {};
     if (edit.field === "price") {
-      update.price = value ? parseFloat(value) : null;
+      // A typo used to become NaN, which JSON.stringify sends as null — so
+      // fat-fingering a price silently deleted it. Reject and keep the editor open.
+      const price = parsePrice(value);
+      if (price === undefined) { toast.error(`"${value}" isn't a valid price`); return; }
+      update.price = price;
     } else {
       update[edit.field] = value || null;
     }
@@ -1101,7 +1109,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           opacity: item.price ? 1 : 0.4,
                           minWidth: 54, textAlign: "right",
                         }}>
-                          {item.price ? `${item.price} ${currencySymbol}` : "—"}
+                          {item.price ? formatMoney(item.price, currency) : "—"}
                         </span>
                       )}
 

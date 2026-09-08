@@ -12,7 +12,11 @@ export async function GET(req: Request) {
     .slice(0, 50);
   if (ids.length === 0) return NextResponse.json({ statuses: {} });
 
-  if (!rateLimit(`orders-status:${clientIp(req)}`, 60, 60_000)) {
+  // Keyed on the guest's first order id + ip, not ip alone. Every phone behind
+  // the venue's WiFi shares one x-forwarded-for, so an ip-only key let four
+  // guests polling every 4s exhaust a single 60/min budget between them and
+  // silently stop each other's order tracking. ids[0] is stable per guest.
+  if (!rateLimit(`orders-status:${ids[0]}:${clientIp(req)}`, 120, 60_000)) {
     return tooManyRequests();
   }
 

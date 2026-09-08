@@ -13,8 +13,12 @@ export async function POST(req: Request) {
     return badRequest("missing table_token");
   }
 
-  // A real guest scans once; anything faster is abuse.
-  if (!rateLimit(`session-create:${table_token}:${clientIp(req)}`, 5, 60_000)) {
+  // The key is per TABLE + ip, so this budget is shared by everyone sitting at
+  // that table on the venue's WiFi — not by one repeat scanner. Each phone
+  // creates its own session, so a party of six is six legitimate calls, and the
+  // old limit of 5 locked the last person out of the menu for a minute. 20
+  // covers a large table plus retries while still stopping a script.
+  if (!rateLimit(`session-create:${table_token}:${clientIp(req)}`, 20, 60_000)) {
     return tooManyRequests();
   }
 

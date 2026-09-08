@@ -85,7 +85,9 @@ export default function TableManager({ restaurant }: Props) {
   useEffect(() => {
     if (tables.length === 0) return;
     const fetchPending = () =>
-      supabase.from("table_requests").select("table_id").eq("restaurant_id", restaurant.id).eq("status", "pending").then(({ data }) => {
+      // .neq payment_status — same Stripe seam as the boards, so a table's
+      // pending badge can't count an order the boards are deliberately hiding.
+      supabase.from("table_requests").select("table_id").eq("restaurant_id", restaurant.id).eq("status", "pending").neq("payment_status", "awaiting").then(({ data }) => {
         if (!data) return;
         const counts: Record<string, number> = {};
         for (const r of data) counts[r.table_id] = (counts[r.table_id] ?? 0) + 1;
@@ -227,10 +229,23 @@ export default function TableManager({ restaurant }: Props) {
   }
 
   async function deleteTable(table: TableRow) {
+    // table_requests.table_id is ON DELETE CASCADE, so this does not just remove
+    // a QR code — it permanently deletes every order that table ever took, and
+    // their revenue disappears from Stats and Request History. The old wording
+    // ("Its QR code will stop working") gave no hint of that, and removing a
+    // table from the floor plan is a casual thing for an owner to do.
+    // "Close" is almost always what they actually want, so name it.
+    const { count } = await supabase
+      .from("table_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("table_id", table.id);
+    const n = count ?? 0;
     const ok = await confirm({
       title: `Delete "${table.name}"?`,
-      message: "Its QR code will stop working. This cannot be undone.",
-      confirmLabel: "Yes, delete",
+      message: n > 0
+        ? `This permanently deletes ${n} order${n !== 1 ? "s" : ""} from this table, including their revenue in Stats and History. Its QR code stops working. This cannot be undone.\n\nTo take the table out of service without losing anything, close it instead.`
+        : "Its QR code will stop working. This cannot be undone.",
+      confirmLabel: n > 0 ? `Delete table and ${n} order${n !== 1 ? "s" : ""}` : "Yes, delete",
       danger: true,
     });
     if (!ok) return;

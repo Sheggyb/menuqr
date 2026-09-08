@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
+import { TYPE_LABEL, formatMoney } from "@/lib/constants";
 import { IconChart } from "@/components/icons";
 
 interface Props { restaurant: Restaurant }
@@ -49,7 +49,6 @@ export default function Analytics({ restaurant }: Props) {
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [range, setRange] = useState<"7d" | "30d">("7d");
   const [hovered, setHovered] = useState<number | null>(null);
-  const currencySym = currencySymbol(restaurant.currency);
 
   useEffect(() => {
     // Always fetch 30 days so switching the range needs no new API call
@@ -159,9 +158,15 @@ export default function Analytics({ restaurant }: Props) {
   // Revenue. total_price is stored per order but Stats ignored it entirely,
   // so the one number an owner cares about most was missing from the tab
   // built to show numbers. Only item_request rows carry a price.
-  const money = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
-  const revenue = inRange.reduce((s, r) => s + (r.total_price ?? 0), 0);
-  const paidOrders = inRange.filter(r => (r.total_price ?? 0) > 0).length;
+  //
+  // 'awaiting' means checkout was started and never completed. Counting those
+  // as revenue would overstate takings by every abandoned cart, so they are
+  // excluded here as well as on the boards. No-op until Stripe exists, but this
+  // is the number that would be wrong, and wrong quietly.
+  const money = (n: number) => formatMoney(n, restaurant.currency);
+  const earned = inRange.filter(r => r.payment_status !== "awaiting");
+  const revenue = earned.reduce((s, r) => s + (r.total_price ?? 0), 0);
+  const paidOrders = earned.filter(r => (r.total_price ?? 0) > 0).length;
   const avgOrder = paidOrders > 0 ? revenue / paidOrders : 0;
 
   // Daily buckets
@@ -181,7 +186,7 @@ export default function Analytics({ restaurant }: Props) {
       label,
       total: dayReqs.length,
       done: dayReqs.filter(r => r.status === "done").length,
-      revenue: dayReqs.reduce((s, r) => s + (r.total_price ?? 0), 0),
+      revenue: dayReqs.reduce((s, r) => s + (r.payment_status === "awaiting" ? 0 : r.total_price ?? 0), 0),
     });
   }
 
@@ -197,8 +202,8 @@ export default function Analytics({ restaurant }: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
         <StatCard
           label="Revenue"
-          value={`${money(revenue)} ${currencySym}`}
-          sub={paidOrders > 0 ? `${paidOrders} paid order${paidOrders !== 1 ? "s" : ""} · avg ${money(avgOrder)} ${currencySym}` : "No priced orders yet"}
+          value={money(revenue)}
+          sub={paidOrders > 0 ? `${paidOrders} paid order${paidOrders !== 1 ? "s" : ""} · avg ${money(avgOrder)}` : "No priced orders yet"}
           color="var(--accent)"
         />
         <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="var(--accent)"
@@ -233,7 +238,7 @@ export default function Analytics({ restaurant }: Props) {
                   {hovered === i && (
                     <div style={{ position: "absolute", bottom: "100%", marginBottom: 6, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 8px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
                       {d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })} — {b.total} request{b.total !== 1 ? "s" : ""}
-                      {b.revenue > 0 ? ` · ${money(b.revenue)} ${currencySym}` : ""}
+                      {b.revenue > 0 ? ` · ${money(b.revenue)}` : ""}
                     </div>
                   )}
                   <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontWeight: 700, marginBottom: 3 }}>{b.total > 0 ? b.total : ""}</div>

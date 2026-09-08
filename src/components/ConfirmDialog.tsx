@@ -70,8 +70,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
               <h3 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
                 {options.title}
               </h3>
+              {/* pre-line so a message can separate "here's what you lose" from
+                  "here's the safe alternative" instead of running them together */}
               {options.message && (
-                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5, whiteSpace: "pre-line" }}>
                   {options.message}
                 </p>
               )}

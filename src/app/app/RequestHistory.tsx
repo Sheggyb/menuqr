@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
+import { TYPE_LABEL, formatMoney } from "@/lib/constants";
 import { SkeletonList } from "@/components/Skeleton";
 import { IconHistory, IconBell, IconReceipt, IconGlass, IconDish, IconInbox, IconSearch } from "@/components/icons";
 
@@ -58,7 +58,6 @@ function dateHeader(iso: string): string {
 
 export default function RequestHistory({ restaurant }: Props) {
   const supabase = createClient();
-  const currencySym = currencySymbol(restaurant.currency);
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -206,7 +205,7 @@ export default function RequestHistory({ restaurant }: Props) {
                         <div className="feed-meta">
                           {r.total_price != null && r.total_price > 0 && (
                             <span style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap" }}>
-                              {Number.isInteger(r.total_price) ? r.total_price : r.total_price.toFixed(2)} {currencySym}
+                              {formatMoney(r.total_price, restaurant.currency)}
                             </span>
                           )}
                           <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at)}</span>

@@ -68,7 +68,11 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         .from("table_requests")
         .select("id", { count: "exact", head: true })
         .eq("restaurant_id", restaurant.id)
-        .eq("status", "pending");
+        .eq("status", "pending")
+        // Same Stripe seam as the boards. If the badge counted unpaid orders the
+        // boards hide, it would read "5" over a board showing 3 — the stuck-badge
+        // bug again, but permanent.
+        .neq("payment_status", "awaiting");
       // Keep the last known figure on failure rather than flashing 0
       if (error) return;
       setPendingCount(count ?? 0);
@@ -108,7 +112,13 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
       .single()
       .then(({ data }) => {
         if (!data) return;
-        const sig = `${data.updated_at}|${data.name}|${data.currency}|${data.accent_color}|${data.venue_type}|${JSON.stringify(data.quick_actions)}|${data.logo_url ?? ""}`;
+        // Every field SettingsPanel can write, and nothing else. There is no
+        // updated_at column on restaurants — this used to lead with one, so the
+        // signature began "undefined|" on every fetch and looked like it covered
+        // any change when it only ever covered the six fields listed here.
+        // Add a new setting? Add it here too, or the panel will not remount.
+        const sig = [data.name, data.currency, data.accent_color, data.venue_type,
+          JSON.stringify(data.quick_actions), data.logo_url ?? ""].join("|");
         // First fetch: just sync the prop, no remount needed.
         if (lastFetchedSig.current === null) {
           lastFetchedSig.current = sig;

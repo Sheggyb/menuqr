@@ -27,7 +27,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith("/app")) {
+  // The matcher covers /kitchen too, but this only tested /app — so every
+  // kitchen request paid for a getUser() whose result was then discarded.
+  // /kitchen was never actually unprotected (kitchen/page.tsx redirects on its
+  // own), but README claimed middleware gated it, and it now does.
+  const path = request.nextUrl.pathname;
+  if (!user && (path.startsWith("/app") || path.startsWith("/kitchen"))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

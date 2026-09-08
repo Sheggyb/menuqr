@@ -5,3 +5,12 @@ node_modules/
 out/
 *.log
 .DS_Store
+
+# Build artifacts. These were tracked, which is what produced the recurring
+# "chore: rebuild tsbuildinfo cache" commits — the file changes on every build.
+# Untrack them once with:
+#   git rm --cached tsconfig.tsbuildinfo
+#   git rm --cached -r scripts/__pycache__
+tsconfig.tsbuildinfo
+__pycache__/
+*.pyc

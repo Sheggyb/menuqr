@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
-import { TYPE_LABEL, currencySymbol } from "@/lib/constants";
-import { parseOrderLines } from "@/lib/order-lines";
+import { TYPE_LABEL, formatMoney } from "@/lib/constants";
+import { linesFromOrder } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable, IconAlert, IconBellOff } from "@/components/icons";
 import type { SVGProps } from "react";
@@ -72,18 +72,18 @@ function bigBtn(variant: "outline" | "filled", color: string): React.CSSProperti
 interface CardProps {
   req: TableRequest;
   leaving?: boolean;
-  currencySym: string;
+  currency: string;
   onPickUp?: () => void;
   onDone?: () => void;
   onUndo?: () => void;
 }
 
-function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: CardProps) {
+function KitchenCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardProps) {
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
   const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
   const { text: timeText, isLate } = timeAgo(req.created_at);
   const leftAccent = isLate ? LATE_ACCENT : accent;
-  const itemLines = parseOrderLines(req.item_name);
+  const itemLines = linesFromOrder(req);
 
   return (
     <div
@@ -133,7 +133,7 @@ function KitchenCard({ req, leaving, currencySym, onPickUp, onDone, onUndo }: Ca
         </span>
         {req.total_price != null && req.total_price > 0 && (
           <span style={{ display: "inline-flex", alignItems: "center", fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)", whiteSpace: "nowrap", flexShrink: 0 }}>
-            {Number.isInteger(req.total_price) ? req.total_price : req.total_price.toFixed(2)} {currencySym}
+            {formatMoney(req.total_price, currency)}
           </span>
         )}
       </div>
@@ -284,9 +284,11 @@ export default function KitchenDisplay({ restaurant }: Props) {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("table_requests")
-      .select("*, table:restaurant_tables(name)")
+      .select("*, table:restaurant_tables(name), order_items(*)")
       .eq("restaurant_id", restaurant.id)
       .neq("status", "done")
+      // Stripe seam — an unpaid ticket must never reach the kitchen
+      .neq("payment_status", "awaiting")
       .order("created_at", { ascending: true });
     if (error) {
       // Keep the last known tickets. An empty board reads as "all done" to a
@@ -401,8 +403,9 @@ export default function KitchenDisplay({ restaurant }: Props) {
     const iso = start.toISOString();
     (async () => {
       const [totalRes, doneRes] = await Promise.all([
-        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso),
-        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done"),
+        // .neq payment_status — must agree with the board above, which hides these
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).neq("payment_status", "awaiting"),
+        supabase.from("table_requests").select("id", { count: "exact", head: true }).eq("restaurant_id", restaurant.id).gte("created_at", iso).eq("status", "done").neq("payment_status", "awaiting"),
       ]);
       // Keep the previous figures on failure rather than flashing 0 / 0
       if (totalRes.error || doneRes.error) return;
@@ -548,7 +551,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
                 key={req.id}
                 req={req}
                 leaving={leavingIds.has(req.id)}
-                currencySym={currencySymbol(restaurant.currency)}
+                currency={restaurant.currency}
                 onPickUp={() => moveAnimated(req.id, "seen")}
               />
             ))}
@@ -566,7 +569,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
                 key={req.id}
                 req={req}
                 leaving={leavingIds.has(req.id)}
-                currencySym={currencySymbol(restaurant.currency)}
+                currency={restaurant.currency}
                 onDone={() => moveAnimated(req.id, "done")}
                 onUndo={() => move(req.id, "pending")}
               />
