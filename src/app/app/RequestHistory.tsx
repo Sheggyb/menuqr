@@ -5,16 +5,31 @@ import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL, formatMoney } from "@/lib/constants";
 import { SkeletonList } from "@/components/Skeleton";
 import { IconHistory, IconBell, IconReceipt, IconGlass, IconDish, IconInbox, IconSearch } from "@/components/icons";
+import { useI18n } from "@/lib/i18n/client";
+import type { Locale, TKey } from "@/lib/i18n";
 
 interface Props { restaurant: Restaurant }
+
+type TFn = (key: TKey, vars?: Record<string, string | number>) => string;
+
+const TYPE_KEY: Record<string, TKey> = {
+  waiter: "tables.type.waiter",
+  bill: "tables.type.bill",
+  refill: "tables.type.refill",
+  item_request: "tables.type.item_request",
+};
+
+function dateLocale(locale: Locale): string {
+  return locale === "sv" ? "sv-SE" : "en";
+}
 
 // Backgrounds were fixed pastels (#dcfce7 / #fef3c7 / #dbeafe) that stayed pale
 // in dark mode — three bright pills on a near-black page. Deriving them from the
 // semantic tokens makes them follow the theme.
-const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
-  done:    { bg: "var(--success-soft)", color: "var(--success)", label: "Done" },
-  pending: { bg: "var(--warning-soft)", color: "var(--warning)", label: "Pending" },
-  seen:    { bg: "var(--info-soft)",    color: "var(--info)",    label: "In Progress" },
+const STATUS_BADGE: Record<string, { bg: string; color: string; labelKey: TKey }> = {
+  done:    { bg: "var(--success-soft)", color: "var(--success)", labelKey: "history.status.done" },
+  pending: { bg: "var(--warning-soft)", color: "var(--warning)", labelKey: "history.status.pending" },
+  seen:    { bg: "var(--info-soft)",    color: "var(--info)",    labelKey: "history.status.seen" },
 };
 
 const TYPE_ICON: Record<string, typeof IconBell> = {
@@ -24,40 +39,42 @@ const TYPE_ICON: Record<string, typeof IconBell> = {
   item_request: IconDish,
 };
 
-const FILTER_CHIPS: { id: string; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "item_request", label: "Orders" },
-  { id: "waiter", label: "Waiter" },
-  { id: "bill", label: "Bill" },
-  { id: "refill", label: "Refill" },
+const FILTER_CHIPS: { id: string; labelKey: TKey }[] = [
+  { id: "all", labelKey: "common.all" },
+  { id: "item_request", labelKey: "history.filter.orders" },
+  { id: "waiter", labelKey: "tables.type.waiter" },
+  { id: "bill", labelKey: "tables.type.bill" },
+  { id: "refill", labelKey: "tables.type.refill" },
 ];
 
-function typeName(type: string): string {
-  return TYPE_LABEL[type] ?? type;
+function typeName(type: string, t: TFn): string {
+  const key = TYPE_KEY[type];
+  return key ? t(key) : TYPE_LABEL[type] ?? type;
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(iso: string, t: TFn, locale: Locale): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
+  if (min < 1) return t("history.justNow");
+  if (min < 60) return t("history.minAgo", { count: min });
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  return new Date(iso).toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" });
+  if (hr < 24) return t("history.hrAgo", { count: hr });
+  return new Date(iso).toLocaleTimeString(dateLocale(locale), { hour: "2-digit", minute: "2-digit" });
 }
 
-function dateHeader(iso: string): string {
+function dateHeader(iso: string, t: TFn, locale: Locale): string {
   const d = new Date(iso);
   const day = new Date(d); day.setHours(0, 0, 0, 0);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const diffDays = Math.round((today.getTime() - day.getTime()) / 86400000);
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  return d.toLocaleDateString("en", { month: "short", day: "numeric" });
+  if (diffDays === 0) return t("common.today");
+  if (diffDays === 1) return t("tables.yesterday");
+  return d.toLocaleDateString(dateLocale(locale), { month: "short", day: "numeric" });
 }
 
 export default function RequestHistory({ restaurant }: Props) {
   const supabase = createClient();
+  const { locale, t } = useI18n();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -103,7 +120,7 @@ export default function RequestHistory({ restaurant }: Props) {
   // Group page items under date headers
   const groups: { header: string; items: TableRequest[] }[] = [];
   for (const r of pageItems) {
-    const h = dateHeader(r.created_at);
+    const h = dateHeader(r.created_at, t, locale);
     const last = groups[groups.length - 1];
     if (last && last.header === h) last.items.push(r);
     else groups.push({ header: h, items: [r] });
@@ -116,9 +133,9 @@ export default function RequestHistory({ restaurant }: Props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <h2 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
-          <IconHistory width={18} height={18} /> Request History
+          <IconHistory width={18} height={18} /> {t("history.title")}
         </h2>
-        <button onClick={load} style={{ padding: "6px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>Refresh</button>
+        <button onClick={load} style={{ padding: "6px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}>{t("history.refresh")}</button>
       </div>
 
       {/* Search */}
@@ -128,7 +145,7 @@ export default function RequestHistory({ restaurant }: Props) {
         </span>
         <input
           type="text"
-          placeholder="Search table, item, note..."
+          placeholder={t("history.search")}
           value={search}
           onChange={e => setSearch(e.target.value)}
           style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px 8px 30px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none" }}
@@ -142,7 +159,7 @@ export default function RequestHistory({ restaurant }: Props) {
           return (
             <button key={c.id} onClick={() => setTypeFilter(c.id)}
               style={{ padding: "5px 14px", borderRadius: "var(--radius-pill)", border: `1px solid ${active ? "var(--accent)" : "var(--border)"}`, background: active ? "var(--accent)" : "var(--surface)", color: active ? "white" : "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer" }}>
-              {c.label}
+              {t(c.labelKey)}
             </button>
           );
         })}
@@ -150,12 +167,12 @@ export default function RequestHistory({ restaurant }: Props) {
         {/* Status filter — you could filter by type but not by state, so there
             was no way to answer "what never got finished?" */}
         <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: "var(--border)", margin: "0 4px" }} />
-        {([["all", "Any status"], ["pending", "Pending"], ["seen", "In Progress"], ["done", "Done"]] as [string, string][]).map(([id, label]) => {
+        {([["all", "history.status.any"], ["pending", "history.status.pending"], ["seen", "history.status.seen"], ["done", "history.status.done"]] as [string, TKey][]).map(([id, label]) => {
           const active = statusFilter === id;
           return (
             <button key={id} onClick={() => setStatusFilter(id)}
               style={{ padding: "5px 14px", borderRadius: "var(--radius-pill)", border: `1px solid ${active ? "var(--text-muted)" : "var(--border)"}`, background: active ? "var(--surface-2)" : "var(--surface)", color: active ? "var(--text)" : "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer" }}>
-              {label}
+              {t(label)}
             </button>
           );
         })}
@@ -166,11 +183,11 @@ export default function RequestHistory({ restaurant }: Props) {
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-muted)" }}>
           <div style={{ marginBottom: 8 }}><IconInbox width={32} height={32} /></div>
-          <p style={{ fontWeight: 500 }}>No requests found</p>
+          <p style={{ fontWeight: 500 }}>{t("history.empty")}</p>
         </div>
       ) : (
         <>
-          <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: 0 }}>{filtered.length} request{filtered.length !== 1 ? "s" : ""}</p>
+          <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: 0 }}>{filtered.length === 1 ? t("history.countOne") : t("history.count", { count: filtered.length })}</p>
 
           <style>{`
             .feed-entry { display: flex; align-items: flex-start; gap: 12px; }
@@ -198,7 +215,7 @@ export default function RequestHistory({ restaurant }: Props) {
                         </div>
                         <div className="feed-main" style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontWeight: 600, color: "var(--text)", fontSize: "var(--fs-sm)" }}>
-                            {tableName} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {(r.item_name || typeName(r.type)).split(/\r?\n/).filter(Boolean).join(" · ")}</span>
+                            {tableName} <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>· {(r.item_name || typeName(r.type, t)).split(/\r?\n/).filter(Boolean).join(" · ")}</span>
                           </div>
                           {r.note && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.note}</div>}
                         </div>
@@ -208,8 +225,8 @@ export default function RequestHistory({ restaurant }: Props) {
                               {formatMoney(r.total_price, restaurant.currency)}
                             </span>
                           )}
-                          <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at)}</span>
-                          <span style={{ background: badge.bg, color: badge.color, fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap" }}>{badge.label}</span>
+                          <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>{relativeTime(r.created_at, t, locale)}</span>
+                          <span style={{ background: badge.bg, color: badge.color, fontSize: "var(--fs-xs)", fontWeight: 700, padding: "2px 8px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap" }}>{t(badge.labelKey)}</span>
                         </div>
                       </div>
                     );
@@ -222,9 +239,9 @@ export default function RequestHistory({ restaurant }: Props) {
           {/* Pagination */}
           {totalPages > 1 && (
             <div style={{ display: "flex", justifyContent: "center", gap: 8, alignItems: "center" }}>
-              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1 }}>Prev</button>
-              <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Page {page + 1} of {totalPages}</span>
-              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page >= totalPages - 1 ? "default" : "pointer", opacity: page >= totalPages - 1 ? 0.4 : 1 }}>Next</button>
+              <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page === 0 ? "default" : "pointer", opacity: page === 0 ? 0.4 : 1 }}>{t("history.prev")}</button>
+              <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>{t("history.page", { page: page + 1, total: totalPages })}</span>
+              <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1} style={{ padding: "6px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", cursor: page >= totalPages - 1 ? "default" : "pointer", opacity: page >= totalPages - 1 ? 0.4 : 1 }}>{t("common.next")}</button>
             </div>
           )}
         </>

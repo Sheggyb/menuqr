@@ -7,6 +7,8 @@ import { TYPE_LABEL, formatMoney } from "@/lib/constants";
 import { linesFromOrder } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { useT } from "@/lib/i18n/client";
+import type { TKey } from "@/lib/i18n";
 import { IconBell, IconCheck, IconInbox, IconReceipt, IconHistory, IconTable, IconCheckCircle, IconClock, IconAlert, IconBellOff } from "@/components/icons";
 import type { SVGProps } from "react";
 
@@ -31,13 +33,24 @@ const TYPE_ACCENT: Record<string, string> = {
 
 const LATE_ACCENT = "#f59e0b";
 
-function timeAgo(dateStr: string): { text: string; isLate: boolean } {
+// Request-type labels are user-visible, so map each type to a translation key
+// (TYPE_LABEL's English stays as the fallback for an unknown type).
+const TYPE_KEY: Record<string, TKey> = {
+  waiter: "dash.type.waiter",
+  bill: "dash.type.bill",
+  refill: "dash.type.refill",
+  item_request: "dash.type.order",
+};
+
+type Translate = (key: TKey, vars?: Record<string, string | number>) => string;
+
+function timeAgo(dateStr: string, t: Translate): { text: string; isLate: boolean } {
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   const isLate = diff >= 300; // 5 minutes
   let text: string;
-  if (diff < 60) text = `${diff} sec`;
-  else if (diff < 3600) text = `${Math.floor(diff / 60)} min`;
-  else text = `${Math.floor(diff / 3600)} hr`;
+  if (diff < 60) text = t("dash.time.seconds", { count: diff });
+  else if (diff < 3600) text = t("dash.time.minutes", { count: Math.floor(diff / 60) });
+  else text = t("dash.time.hours", { count: Math.floor(diff / 3600) });
   return { text, isLate };
 }
 
@@ -51,9 +64,11 @@ interface CardProps {
 }
 
 function RequestCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardProps) {
+  const t = useT();
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
-  const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
-  const { text: timeText, isLate } = timeAgo(req.created_at);
+  const tableName = (req.table as { name: string } | undefined)?.name ?? t("dash.table.unknown");
+  const typeLabel = TYPE_KEY[req.type] ? t(TYPE_KEY[req.type]) : (TYPE_LABEL[req.type] ?? req.type);
+  const { text: timeText, isLate } = timeAgo(req.created_at, t);
   const leftAccent = isLate ? LATE_ACCENT : accent;
   const itemLines = linesFromOrder(req);
 
@@ -83,7 +98,7 @@ function RequestCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardP
           textTransform: "uppercase", letterSpacing: "0.03em",
           flexShrink: 0,
         }}>
-          {TYPE_LABEL[req.type] ?? req.type}
+          {typeLabel}
         </span>
         <span style={{
           display: "inline-flex", alignItems: "center", gap: 5,
@@ -127,12 +142,12 @@ function RequestCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardP
                   <span style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                     {line.removed.map((r, j) => (
                       <span key={`r${j}`} style={{ fontSize: "var(--fs-xs)", fontWeight: 700, padding: "1px 7px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #dc2626 14%, transparent)", color: "#dc2626", whiteSpace: "nowrap" }}>
-                        NO {r}
+                        {t("dash.item.no", { item: r })}
                       </span>
                     ))}
                     {line.extra.map((x, j) => (
                       <span key={`x${j}`} style={{ fontSize: "var(--fs-xs)", fontWeight: 700, padding: "1px 7px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #16a34a 14%, transparent)", color: "#16a34a", whiteSpace: "nowrap" }}>
-                        EXTRA {x}
+                        {t("dash.item.extra", { item: x })}
                       </span>
                     ))}
                   </span>
@@ -157,17 +172,17 @@ function RequestCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardP
           produce a card full of air */}
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginTop: 2 }}>
         {onPickUp && (
-          <button onClick={onPickUp} aria-label="Pick up — move to In Progress" title="Pick up" style={circleBtn("outline", "#3b82f6")}>
+          <button onClick={onPickUp} aria-label={t("dash.action.pickUpAria")} title={t("dash.action.pickUp")} style={circleBtn("outline", "#3b82f6")}>
             <IconArrowRight width={16} height={16} />
           </button>
         )}
         {onDone && (
-          <button onClick={onDone} aria-label="Mark done" title="Done" style={circleBtn("filled", "#22c55e")}>
+          <button onClick={onDone} aria-label={t("dash.action.markDone")} title={t("common.done")} style={circleBtn("filled", "#22c55e")}>
             <IconCheck width={16} height={16} strokeWidth={2.5} />
           </button>
         )}
         {onUndo && (
-          <button onClick={onUndo} aria-label="Undo — move back to New" title="Move back to New" style={circleBtn("outline", "var(--text-muted)")}>
+          <button onClick={onUndo} aria-label={t("dash.action.undoAria")} title={t("dash.action.undo")} style={circleBtn("outline", "var(--text-muted)")}>
             <IconHistory width={15} height={15} />
           </button>
         )}
@@ -231,6 +246,7 @@ export default function LiveOrders({ restaurant }: Props) {
   const supabase = createClient();
   const toast = useToast();
   const confirm = useConfirm();
+  const t = useT();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -330,7 +346,7 @@ export default function LiveOrders({ restaurant }: Props) {
   async function move(id: string, status: TableRequest["status"]) {
     const { error } = await supabase.from("table_requests").update({ status }).eq("id", id);
     if (error) {
-      toast.error("Could not update the request");
+      toast.error(t("dash.toast.updateFailed"));
       return;
     }
     if (status === "done") {
@@ -347,21 +363,21 @@ export default function LiveOrders({ restaurant }: Props) {
     if (ids.length === 0) return;
     const filtered = searchTable.trim() !== "" || filterType !== "all";
     const ok = await confirm({
-      title: "Mark all done?",
+      title: t("dash.confirm.markAllTitle"),
       message: filtered
-        ? `Mark the ${ids.length} shown request${ids.length !== 1 ? "s" : ""} as done? Requests hidden by the current filter are not affected.`
-        : `Mark all ${ids.length} as done?`,
-      confirmLabel: "Mark all done",
+        ? t(ids.length !== 1 ? "dash.confirm.markAllFiltered" : "dash.confirm.markAllFilteredOne", { count: ids.length })
+        : t("dash.confirm.markAll", { count: ids.length }),
+      confirmLabel: t("dash.action.markAllDone"),
     });
     if (!ok) return;
     const results = await Promise.all(ids.map(id => supabase.from("table_requests").update({ status: "done" }).eq("id", id)));
     if (results.some(r => r.error)) {
-      toast.error("Some requests could not be updated");
+      toast.error(t("dash.toast.markAllPartial"));
       load();
       return;
     }
     setRequests(r => r.filter(x => !ids.includes(x.id)));
-    toast.success("All requests marked done");
+    toast.success(t("dash.toast.markAllDone"));
   }
 
   function applyFilters(list: TableRequest[]) {
@@ -407,9 +423,11 @@ export default function LiveOrders({ restaurant }: Props) {
   const estWaitMin = pendingCount * 3;
 
   useEffect(() => {
-    document.title = pendingCount > 0 ? `(${pendingCount}) Live Orders — MenuQR` : "Live Orders — MenuQR";
-    return () => { document.title = "MenuQR — Digital Menu & Table Ordering"; };
-  }, [pendingCount]);
+    document.title = pendingCount > 0
+      ? t("dash.title.ordersCount", { count: pendingCount })
+      : t("dash.title.orders");
+    return () => { document.title = t("dash.title.default"); };
+  }, [pendingCount, t]);
 
   // Today stats — exact COUNT queries (no 1000-row cap, audit 2.1)
   const [todayStats, setTodayStats] = useState({ total: 0, done: 0 });
@@ -470,8 +488,10 @@ export default function LiveOrders({ restaurant }: Props) {
         }}>
           <IconAlert width={16} height={16} style={{ flexShrink: 0 }} />
           {!fetchOk
-            ? <span>Can&apos;t reach the server — showing the last orders received{lastUpdated ? ` (${Math.round((Date.now() - lastUpdated) / 1000)}s ago)` : ""}. Retrying every 12s.</span>
-            : <span>Live updates interrupted — still refreshing every 12s, but new orders won&apos;t play a sound.</span>}
+            ? <span>{lastUpdated
+                ? t("dash.conn.stale", { seconds: Math.round((Date.now() - lastUpdated) / 1000) })
+                : t("dash.conn.staleNoTime")}</span>
+            : <span>{t("dash.conn.realtimeLost")}</span>}
         </div>
       )}
 
@@ -479,7 +499,7 @@ export default function LiveOrders({ restaurant }: Props) {
       <div style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 16 }}>
         <input
           type="text"
-          placeholder="Search table..."
+          placeholder={t("dash.searchTable")}
           value={searchTable}
           onChange={e => setSearchTable(e.target.value)}
           style={{ width: 150, padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-xs)", outline: "none", flexShrink: 0 }}
@@ -489,16 +509,16 @@ export default function LiveOrders({ restaurant }: Props) {
           onChange={e => setFilterType(e.target.value)}
           style={{ width: 100, padding: "6px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-xs)", cursor: "pointer", flexShrink: 0 }}
         >
-          <option value="all">All</option>
-          <option value="waiter">Waiter</option>
-          <option value="bill">Bill</option>
-          <option value="refill">Refill</option>
-          <option value="item_request">Orders</option>
+          <option value="all">{t("common.all")}</option>
+          <option value="waiter">{t("dash.type.waiter")}</option>
+          <option value="bill">{t("dash.type.bill")}</option>
+          <option value="refill">{t("dash.type.refill")}</option>
+          <option value="item_request">{t("dash.filter.orders")}</option>
         </select>
 
         <button
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
-          title={soundEnabled ? "Sound on" : "Sound off"}
+          title={soundEnabled ? t("dash.sound.on") : t("dash.sound.off")}
           style={{ padding: "6px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontSize: "var(--fs-sm)", lineHeight: 1, flexShrink: 0, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
         >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
 
@@ -511,18 +531,18 @@ export default function LiveOrders({ restaurant }: Props) {
           background: "var(--surface)", border: "1px solid var(--border)",
           fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap", flexShrink: 0,
         }}>
-          <span>Today <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong></span>
+          <span>{t("common.today")} <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong></span>
           <span aria-hidden="true" style={{ opacity: 0.35 }}>|</span>
-          <span>Done <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.done}</strong></span>
+          <span>{t("common.done")} <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.done}</strong></span>
           <span aria-hidden="true" style={{ opacity: 0.35 }}>|</span>
-          <span>Waiting <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>{estWaitMin > 0 ? ` ~${estWaitMin}m` : ""}</span>
+          <span>{t("dash.stats.waiting")} <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{pendingCount}</strong>{estWaitMin > 0 ? ` ~${estWaitMin}m` : ""}</span>
         </span>
 
         {pendingCount > 0 && (
           <button
             onClick={markAllDone}
             style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "6px 11px", borderRadius: "var(--radius-sm)", border: "1px solid var(--success-border)", background: "transparent", color: "var(--success)", fontSize: "var(--fs-xs)", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}
-          ><IconCheck width={14} height={14} strokeWidth={2.5} /> Done ({pendingCount})</button>
+          ><IconCheck width={14} height={14} strokeWidth={2.5} /> {t("common.done")} ({pendingCount})</button>
         )}
       </div>
 
@@ -530,10 +550,10 @@ export default function LiveOrders({ restaurant }: Props) {
       <div className="lo-columns">
         {/* New */}
         <Section
-          title="New"
+          title={t("dash.section.new")}
           count={pending.length}
           icon={<IconBell width={18} height={18} />}
-          emptyText={searchTable || filterType !== "all" ? "No matching requests" : "No new orders"}
+          emptyText={searchTable || filterType !== "all" ? t("dash.empty.noMatch") : t("dash.empty.noNew")}
           isEmpty={pending.length === 0}
         >
           {pending.map(req => (
@@ -549,10 +569,10 @@ export default function LiveOrders({ restaurant }: Props) {
 
         {/* In Progress */}
         <Section
-          title="In Progress"
+          title={t("dash.section.inProgress")}
           count={seen.length}
           icon={<IconClock width={18} height={18} />}
-          emptyText={searchTable || filterType !== "all" ? "No matching requests" : "Nothing in progress"}
+          emptyText={searchTable || filterType !== "all" ? t("dash.empty.noMatch") : t("dash.empty.nothingInProgress")}
           isEmpty={seen.length === 0}
         >
           {seen.map(req => (

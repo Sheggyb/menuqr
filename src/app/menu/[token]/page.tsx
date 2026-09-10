@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getT } from "@/lib/i18n/server";
+import LangSwitcher from "@/components/LangSwitcher";
 import { notFound } from "next/navigation";
 import GuestMenuClient from "./GuestMenuClient";
 
@@ -16,8 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .eq("token", token)
     .single();
   const restaurant = table?.restaurant as { name?: string } | null;
+  const { t } = await getT();
   return {
-    title: restaurant?.name ? `${restaurant.name} – Menu` : "Menu",
+    title: restaurant?.name ? `${restaurant.name} – ${t("guest.menu")}` : t("guest.menu"),
     robots: { index: false },
   };
 }
@@ -25,6 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function GuestMenuPage({ params }: Props) {
   const { token } = await params;
   const supabase = createAdminClient();
+  const { t } = await getT();
 
   // Look up table
   const { data: table } = await supabase
@@ -41,12 +45,15 @@ export default async function GuestMenuPage({ params }: Props) {
           <path d="M21 21l-4.5-4.5" />
         </svg>
       </div>
-      <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", marginBottom: 8, color: "var(--text)", fontFamily: "var(--font-display)" }}>Table not found</h1>
+      <h1 style={{ fontWeight: 700, fontSize: "var(--fs-xl)", marginBottom: 8, color: "var(--text)", fontFamily: "var(--font-display)" }}>{t("guest.notFound.title")}</h1>
       <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", maxWidth: 320, lineHeight: 1.6 }}>
-        This QR code doesn&apos;t match any active table. Please ask a staff member for help or scan the QR code again.
+        {t("guest.notFound.body")}
       </p>
       <div style={{ marginTop: 24, padding: "10px 20px", borderRadius: "var(--radius-md)", background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", fontWeight: 500 }}>
-        If you think this is a mistake, please contact the restaurant.
+        {t("guest.notFound.hint")}
+      </div>
+      <div style={{ marginTop: 28 }}>
+        <LangSwitcher compact />
       </div>
     </div>
   );

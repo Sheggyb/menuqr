@@ -79,20 +79,6 @@ export const guest = {
   // lib/constants (EU_ALLERGENS). The constant only carries English labels, so
   // the guest-facing names live here — the guest must be able to read their own
   // allergen in their own language.
-  "guest.allergen.gluten": { en: "Cereals containing gluten", sv: "Spannmål som innehåller gluten" },
-  "guest.allergen.crustaceans": { en: "Crustaceans", sv: "Kräftdjur" },
-  "guest.allergen.eggs": { en: "Eggs", sv: "Ägg" },
-  "guest.allergen.fish": { en: "Fish", sv: "Fisk" },
-  "guest.allergen.peanuts": { en: "Peanuts", sv: "Jordnötter" },
-  "guest.allergen.soybeans": { en: "Soybeans", sv: "Sojabönor" },
-  "guest.allergen.milk": { en: "Milk", sv: "Mjölk" },
-  "guest.allergen.nuts": { en: "Tree nuts", sv: "Nötter" },
-  "guest.allergen.celery": { en: "Celery", sv: "Selleri" },
-  "guest.allergen.mustard": { en: "Mustard", sv: "Senap" },
-  "guest.allergen.sesame": { en: "Sesame", sv: "Sesamfrön" },
-  "guest.allergen.sulphites": { en: "Sulphur dioxide / sulphites", sv: "Svaveldioxid och sulfiter" },
-  "guest.allergen.lupin": { en: "Lupin", sv: "Lupin" },
-  "guest.allergen.molluscs": { en: "Molluscs", sv: "Blötdjur" },
 
   // ── Menu listing ──────────────────────────────────────────────────────
   "guest.categories.label": { en: "Menu categories", sv: "Menykategorier" },
@@ -206,4 +192,16 @@ export const guest = {
     en: "Payment not completed — order cancelled",
     sv: "Betalningen slutfördes inte — beställningen avbröts",
   },
+// Invalid QR / unknown table token (rendered by menu/[token]/page.tsx, which
+  // is a server component and reaches these through getT())
+  "guest.notFound.title": { en: "Table not found", sv: "Bordet hittades inte" },
+  "guest.notFound.body": {
+    en: "This QR code doesn't match any active table. Please ask a staff member for help or scan the QR code again.",
+    sv: "Den här QR-koden matchar inget aktivt bord. Be personalen om hjälp eller skanna koden igen.",
+  },
+  "guest.notFound.hint": {
+    en: "If you think this is a mistake, please contact the restaurant.",
+    sv: "Om du tror att något blivit fel, kontakta restaurangen.",
+  },
 } as const satisfies Record<string, Entry>;
+

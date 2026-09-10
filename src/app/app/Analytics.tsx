@@ -4,26 +4,43 @@ import { createClient } from "@/lib/supabase/client";
 import type { Restaurant, TableRequest } from "@/lib/types";
 import { TYPE_LABEL, formatMoney } from "@/lib/constants";
 import { IconChart } from "@/components/icons";
+import { useI18n, useT } from "@/lib/i18n/client";
+import type { Locale, TKey } from "@/lib/i18n";
 
 interface Props { restaurant: Restaurant }
 
-function typeName(type: string): string {
-  return TYPE_LABEL[type] ?? type;
+type TFn = (key: TKey, vars?: Record<string, string | number>) => string;
+
+const TYPE_KEY: Record<string, TKey> = {
+  waiter: "tables.type.waiter",
+  bill: "tables.type.bill",
+  refill: "tables.type.refill",
+  item_request: "tables.type.item_request",
+};
+
+function typeName(type: string, t: TFn): string {
+  const key = TYPE_KEY[type];
+  return key ? t(key) : TYPE_LABEL[type] ?? type;
+}
+
+function dateLocale(locale: Locale): string {
+  return locale === "sv" ? "sv-SE" : "en";
 }
 
 function Delta({ today, yesterday }: { today: number; yesterday: number }) {
+  const t = useT();
   let text: string;
   let color: string;
   if (today === yesterday) {
-    text = "— flat vs yesterday";
+    text = t("analytics.flat");
     color = "var(--text-muted)";
   } else if (yesterday === 0) {
-    text = `↑ +${today} vs yesterday`;
+    text = t("analytics.plusYesterday", { count: today });
     color = "var(--success)";
   } else {
     const pct = Math.round(((today - yesterday) / yesterday) * 100);
     const up = pct > 0;
-    text = `${up ? "↑" : "↓"} ${Math.abs(pct)}% vs yesterday`;
+    text = t("analytics.pctYesterday", { arrow: up ? "↑" : "↓", pct: Math.abs(pct) });
     color = up ? "var(--success)" : "var(--danger)";
   }
   return <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color }}>{text}</div>;
@@ -45,6 +62,7 @@ interface DayBucket { date: string; label: string; total: number; done: number; 
 
 export default function Analytics({ restaurant }: Props) {
   const supabase = createClient();
+  const { locale, t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [range, setRange] = useState<"7d" | "30d">("7d");
@@ -83,7 +101,7 @@ export default function Analytics({ restaurant }: Props) {
   const header = (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
       <h2 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
-        <IconChart width={18} height={18} /> Stats
+        <IconChart width={18} height={18} /> {t("analytics.title")}
       </h2>
       <div style={{ display: "flex", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", overflow: "hidden" }}>
         {(["7d", "30d"] as const).map(r => (
@@ -128,18 +146,18 @@ export default function Analytics({ restaurant }: Props) {
         <div style={{ textAlign: "center", padding: "60px 32px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)" }}>
           <div style={{ color: "var(--text-muted)", marginBottom: 16 }}><IconChart width={48} height={48} /></div>
           <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 8 }}>
-            {hasOlder ? `Nothing in the last ${days} days` : "No data yet"}
+            {hasOlder ? t("analytics.emptyRange", { days }) : t("analytics.emptyTitle")}
           </h3>
           <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", maxWidth: 320, margin: "0 auto" }}>
             {hasOlder
-              ? "There are older requests outside this range."
-              : "Analytics will appear here once guests start making requests. Share your QR codes to get started."}
+              ? t("analytics.emptyOlder")
+              : t("analytics.emptyBody")}
           </p>
           {hasOlder && range === "7d" && (
             <button
               onClick={() => setRange("30d")}
               style={{ marginTop: 16, padding: "8px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}
-            >Show last 30 days</button>
+            >{t("analytics.show30")}</button>
           )}
         </div>
       </div>
@@ -177,10 +195,10 @@ export default function Analytics({ restaurant }: Props) {
     d.setHours(0, 0, 0, 0);
     const next = new Date(d); next.setDate(next.getDate() + 1);
     const dayReqs = inRange.filter(r => {
-      const t = new Date(r.created_at).getTime();
-      return t >= d.getTime() && t < next.getTime();
+      const ts = new Date(r.created_at).getTime();
+      return ts >= d.getTime() && ts < next.getTime();
     });
-    const label = i === 0 ? "Today" : i === 1 ? "Yesterday" : d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" });
+    const label = i === 0 ? t("common.today") : i === 1 ? t("tables.yesterday") : d.toLocaleDateString(dateLocale(locale), { weekday: "short", month: "short", day: "numeric" });
     buckets.push({
       date: d.toISOString(),
       label,
@@ -201,21 +219,29 @@ export default function Analytics({ restaurant }: Props) {
       {/* Summary cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 12 }}>
         <StatCard
-          label="Revenue"
+          label={t("analytics.revenue")}
           value={money(revenue)}
-          sub={paidOrders > 0 ? `${paidOrders} paid order${paidOrders !== 1 ? "s" : ""} · avg ${money(avgOrder)}` : "No priced orders yet"}
+          sub={paidOrders > 0
+            ? (paidOrders === 1
+              ? t("analytics.paidOrderOne", { avg: money(avgOrder) })
+              : t("analytics.paidOrders", { count: paidOrders, avg: money(avgOrder) }))
+            : t("analytics.noPricedOrders")}
           color="var(--accent)"
         />
-        <StatCard label="Total requests" value={total} sub={`Last ${days} days`} color="var(--accent)"
+        <StatCard label={t("analytics.totalRequests")} value={total} sub={t("analytics.lastDays", { days })} color="var(--accent)"
           delta={yesterdayBucket ? { today: todayBucket.total, yesterday: yesterdayBucket.total } : undefined} />
-        <StatCard label="Completed" value={done} sub={`${completionRate}% done${inProgress > 0 ? ` · ${inProgress} in progress` : ""}`} color="var(--success)"
+        <StatCard label={t("analytics.completed")} value={done}
+          sub={inProgress > 0
+            ? t("analytics.donePctProgress", { pct: completionRate, count: inProgress })
+            : t("analytics.donePct", { pct: completionRate })} color="var(--success)"
           delta={yesterdayBucket ? { today: todayBucket.done, yesterday: yesterdayBucket.done } : undefined} />
-        <StatCard label="Top request" value={topType ? typeName(topType[0]) : "—"} sub={topType ? `${topType[1]} times` : undefined} color="var(--accent)" />
+        <StatCard label={t("analytics.topRequest")} value={topType ? typeName(topType[0], t) : "—"}
+          sub={topType ? (topType[1] === 1 ? t("analytics.timesOne") : t("analytics.times", { count: topType[1] })) : undefined} color="var(--accent)" />
       </div>
 
       {/* Daily bar chart */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px 20px" }}>
-        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 16px", color: "var(--text)" }}>Daily requests</h3>
+        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 16px", color: "var(--text)" }}>{t("analytics.daily")}</h3>
         <div style={{ overflowX: "auto" }}>
           <div style={{ display: "flex", gap: range === "30d" ? 4 : 6, alignItems: "flex-end", paddingBottom: 42, minWidth: range === "30d" ? 30 * 36 : 7 * 52, position: "relative" }}>
             {/* Horizontal grid lines behind bars (chart area is 90px tall above the labels) */}
@@ -225,8 +251,8 @@ export default function Analytics({ restaurant }: Props) {
             {buckets.map((b, i) => {
               const d = new Date(b.date);
               const dayNum = d.getDate();
-              const mon = d.toLocaleDateString("en", { month: "short" });
-              const weekday = d.toLocaleDateString("en", { weekday: "short" });
+              const mon = d.toLocaleDateString(dateLocale(locale), { month: "short" });
+              const weekday = d.toLocaleDateString(dateLocale(locale), { weekday: "short" });
               const labelTop = range === "7d" ? weekday : `${mon} ${dayNum}`;
               const labelBot = range === "7d" ? `${mon} ${dayNum}` : "";
               const isToday = i === buckets.length - 1;
@@ -237,7 +263,9 @@ export default function Analytics({ restaurant }: Props) {
                   style={{ flex: 1, minWidth: range === "30d" ? 32 : 46, display: "flex", flexDirection: "column", alignItems: "center", position: "relative", zIndex: 1 }}>
                   {hovered === i && (
                     <div style={{ position: "absolute", bottom: "100%", marginBottom: 6, left: "50%", transform: "translateX(-50%)", background: "var(--text)", color: "var(--bg)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 8px", borderRadius: "var(--radius-sm)", whiteSpace: "nowrap", pointerEvents: "none", zIndex: 5, boxShadow: "0 2px 8px rgba(0,0,0,0.25)" }}>
-                      {d.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" })} — {b.total} request{b.total !== 1 ? "s" : ""}
+                      {b.total === 1
+                        ? t("analytics.tipOne", { date: d.toLocaleDateString(dateLocale(locale), { weekday: "short", month: "short", day: "numeric" }) })
+                        : t("analytics.tip", { date: d.toLocaleDateString(dateLocale(locale), { weekday: "short", month: "short", day: "numeric" }), count: b.total })}
                       {b.revenue > 0 ? ` · ${money(b.revenue)}` : ""}
                     </div>
                   )}
@@ -256,14 +284,14 @@ export default function Analytics({ restaurant }: Props) {
 
       {/* By type breakdown */}
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "16px 20px" }}>
-        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 14px", color: "var(--text)" }}>Requests by type</h3>
+        <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: "0 0 14px", color: "var(--text)" }}>{t("analytics.byType")}</h3>
         {Object.keys(TYPE_LABEL).map(type => {
           const count = byType[type] ?? 0;
           const pct = total > 0 ? Math.round((count / total) * 100) : 0;
           return (
             <div key={type} style={{ marginBottom: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
-                <span>{typeName(type)}</span>
+                <span>{typeName(type, t)}</span>
                 <span style={{ color: "var(--text-muted)" }}>{count} ({pct}%)</span>
               </div>
               <div style={{ height: 6, background: "var(--border)", borderRadius: "var(--radius-pill)", overflow: "hidden" }}>

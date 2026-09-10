@@ -7,6 +7,9 @@ import { linesFromOrder } from "@/lib/order-lines";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconCheck, IconClock, IconDish, IconGlass, IconHistory, IconInbox, IconReceipt, IconTable, IconAlert, IconBellOff } from "@/components/icons";
 import type { SVGProps } from "react";
+import { useT } from "@/lib/i18n/client";
+import type { TKey } from "@/lib/i18n";
+import LangSwitcher from "@/components/LangSwitcher";
 
 interface Props {
   restaurant: Restaurant;
@@ -38,13 +41,13 @@ const FILTER_TYPES: Record<Filter, string[]> = {
   all: ["item_request", "refill", "waiter", "bill"],
 };
 
-const FILTER_LABEL: Record<Filter, string> = {
-  food: "Food",
+const FILTER_LABEL_KEY: Record<Filter, TKey> = {
+  food: "kitchen.filter.food",
   // "Drinks" would promise drink ORDERS, but drink orders are item_request rows
   // (indistinguishable from food without a category flag) — this filter only
   // shows refill requests, so the label says what it actually filters.
-  drinks: "Refills",
-  all: "All",
+  drinks: "kitchen.filter.refills",
+  all: "common.all",
 };
 
 function timeAgo(dateStr: string): { text: string; isLate: boolean } {
@@ -79,8 +82,9 @@ interface CardProps {
 }
 
 function KitchenCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardProps) {
+  const t = useT();
   const accent = TYPE_ACCENT[req.type] ?? "#6b7280";
-  const tableName = (req.table as { name: string } | undefined)?.name ?? "Unknown";
+  const tableName = (req.table as { name: string } | undefined)?.name ?? t("kitchen.table.unknown");
   const { text: timeText, isLate } = timeAgo(req.created_at);
   const leftAccent = isLate ? LATE_ACCENT : accent;
   const itemLines = linesFromOrder(req);
@@ -160,12 +164,12 @@ function KitchenCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardP
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                     {line.removed.map((r, j) => (
                       <span key={`r${j}`} style={{ fontSize: "var(--fs-k-sm)", fontWeight: 800, padding: "2px 9px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #dc2626 16%, transparent)", color: "#dc2626", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
-                        NO {r.toUpperCase()}
+                        {t("kitchen.line.no", { item: r.toUpperCase() })}
                       </span>
                     ))}
                     {line.extra.map((x, j) => (
                       <span key={`x${j}`} style={{ fontSize: "var(--fs-k-sm)", fontWeight: 800, padding: "2px 9px", borderRadius: "var(--radius-sm)", background: "color-mix(in srgb, #16a34a 16%, transparent)", color: "#16a34a", whiteSpace: "nowrap", letterSpacing: "0.02em" }}>
-                        EXTRA {x.toUpperCase()}
+                        {t("kitchen.line.extra", { item: x.toUpperCase() })}
                       </span>
                     ))}
                   </div>
@@ -191,18 +195,18 @@ function KitchenCard({ req, leaving, currency, onPickUp, onDone, onUndo }: CardP
       {/* Actions */}
       <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
         {onPickUp && (
-          <button onClick={onPickUp} aria-label="Start preparing" title="Start preparing" style={bigBtn("outline", "#3b82f6")}>
-            <IconArrowRight width={15} height={15} /> Start
+          <button onClick={onPickUp} aria-label={t("kitchen.btn.startAria")} title={t("kitchen.btn.startAria")} style={bigBtn("outline", "#3b82f6")}>
+            <IconArrowRight width={15} height={15} /> {t("kitchen.btn.start")}
           </button>
         )}
         {onDone && (
-          <button onClick={onDone} aria-label="Mark done" title="Done" style={bigBtn("filled", "#22c55e")}>
-            <IconCheck width={16} height={16} strokeWidth={2.5} /> Done
+          <button onClick={onDone} aria-label={t("kitchen.btn.doneAria")} title={t("common.done")} style={bigBtn("filled", "#22c55e")}>
+            <IconCheck width={16} height={16} strokeWidth={2.5} /> {t("common.done")}
           </button>
         )}
         {onUndo && (
-          <button onClick={onUndo} aria-label="Move back to New" title="Move back to New" style={bigBtn("outline", "var(--text-muted)")}>
-            <IconHistory width={15} height={15} /> Back
+          <button onClick={onUndo} aria-label={t("kitchen.btn.backAria")} title={t("kitchen.btn.backAria")} style={bigBtn("outline", "var(--text-muted)")}>
+            <IconHistory width={15} height={15} /> {t("common.back")}
           </button>
         )}
       </div>
@@ -249,6 +253,7 @@ function Section({ title, count, icon, emptyText, isEmpty, children }: SectionPr
 export default function KitchenDisplay({ restaurant }: Props) {
   const supabase = createClient();
   const toast = useToast();
+  const t = useT();
   const [requests, setRequests] = useState<TableRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -356,7 +361,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
     const { error } = await supabase.from("table_requests").update({ status }).eq("id", id);
     if (error) {
       // Never fail silently — the cook needs to know the tap didn't take (audit 3.4)
-      toast.error("Could not update the order — try again");
+      toast.error(t("kitchen.error.update"));
       load();
       return;
     }
@@ -451,7 +456,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
         display: "flex", alignItems: "center", gap: 16,
       }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontWeight: 800, fontSize: "var(--fs-k-md)", color: "var(--text)", letterSpacing: "-0.3px" }}>Kitchen</span>
+          <span style={{ fontWeight: 800, fontSize: "var(--fs-k-md)", color: "var(--text)", letterSpacing: "-0.3px" }}>{t("kitchen.title")}</span>
           <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{restaurant.name}</span>
         </div>
 
@@ -472,7 +477,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
               }}
             >
               {f === "food" ? <IconDish width={13} height={13} /> : f === "drinks" ? <IconGlass width={13} height={13} /> : <IconBell width={13} height={13} />}
-              {FILTER_LABEL[f]}
+              {t(FILTER_LABEL_KEY[f])}
             </button>
           ))}
         </div>
@@ -480,9 +485,12 @@ export default function KitchenDisplay({ restaurant }: Props) {
         {/* Sound toggle */}
         <button
           onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("menuqr_sound", next ? "on" : "off"); }}
-          title={soundEnabled ? "Sound on" : "Sound off"}
+          title={soundEnabled ? t("kitchen.sound.on") : t("kitchen.sound.off")}
           style={{ padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg)", cursor: "pointer", fontSize: "var(--fs-k-md)", lineHeight: 1, color: soundEnabled ? "var(--text)" : "var(--text-muted)" }}
         >{soundEnabled ? <IconBell width={16} height={16} /> : <IconBellOff width={16} height={16} />}</button>
+
+        {/* Language — Swedish / English, same one-line header row */}
+        <LangSwitcher compact />
 
         {/* Live clock */}
         <span style={{ fontSize: "var(--fs-k-md)", fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{clock}</span>
@@ -499,7 +507,7 @@ export default function KitchenDisplay({ restaurant }: Props) {
           color: "#dc2626", fontSize: "var(--fs-k-md)", fontWeight: 700,
         }}>
           <IconAlert width={18} height={18} style={{ flexShrink: 0 }} />
-          Can&apos;t reach the server — these tickets may be out of date. Retrying every 12s.
+          {t("kitchen.warn.offline")}
         </div>
       )}
       {fetchOk && !realtimeOk && (
@@ -511,39 +519,41 @@ export default function KitchenDisplay({ restaurant }: Props) {
           color: "#b45309", fontSize: "var(--fs-k-sm)", fontWeight: 600,
         }}>
           <IconAlert width={17} height={17} style={{ flexShrink: 0 }} />
-          Live updates interrupted — refreshing every 12s, no sound on new orders.
+          {t("kitchen.warn.realtime")}
         </div>
       )}
 
       {/* STATS BAR */}
       <div style={{ padding: "14px 24px 0", display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
-          Today: <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong>
+          {t("common.today")}: <strong style={{ color: "var(--text)", fontWeight: 700 }}>{todayStats.total}</strong>
         </span>
         <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
-          Done: <strong style={{ color: "#22c55e", fontWeight: 700 }}>{todayStats.done}</strong>
+          {t("common.done")}: <strong style={{ color: "#22c55e", fontWeight: 700 }}>{todayStats.done}</strong>
         </span>
         <span style={{ fontSize: "var(--fs-k-sm)", color: "var(--text-muted)" }}>
-          Waiting: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{freshCount}</strong>
+          {t("kitchen.stats.waiting")}: <strong style={{ color: "var(--accent)", fontWeight: 700 }}>{freshCount}</strong>
         </span>
         {/* The dot must reflect reality — it used to stay green during an outage */}
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, fontSize: "var(--fs-xs)", color: fetchOk ? "var(--text-muted)" : "#b45309", fontWeight: fetchOk ? 400 : 700 }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: fetchOk ? (realtimeOk ? "#22c55e" : "#f59e0b") : "#dc2626", display: "inline-block", flexShrink: 0 }} />
           {fetchOk
-            ? `${realtimeOk ? "Live" : "Polling"} · updated ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "…"}`
-            : `Offline · last update ${lastUpdated ? `${Math.max(0, Math.round((Date.now() - lastUpdated) / 1000))}s ago` : "unknown"}`}
+            ? `${t(realtimeOk ? "kitchen.live.live" : "kitchen.live.polling")} · ${t("kitchen.live.updatedAgo", { n: lastUpdated ? Math.max(0, Math.round((Date.now() - lastUpdated) / 1000)) : "…" })}`
+            : lastUpdated
+              ? t("kitchen.live.offlineAgo", { n: Math.max(0, Math.round((Date.now() - lastUpdated) / 1000)) })
+              : t("kitchen.live.offlineUnknown")}
         </span>
-        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>P = start · D = done</span>
+        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{t("kitchen.shortcuts")}</span>
       </div>
 
       {/* COLUMNS */}
       <main style={{ padding: "20px 24px 40px" }}>
         <div className="kd-columns">
           <Section
-            title="New"
+            title={t("kitchen.column.new")}
             count={fresh.length}
             icon={<IconBell width={17} height={17} />}
-            emptyText="No new orders"
+            emptyText={t("kitchen.empty.new")}
             isEmpty={fresh.length === 0}
           >
             {fresh.map(req => (
@@ -558,10 +568,10 @@ export default function KitchenDisplay({ restaurant }: Props) {
           </Section>
 
           <Section
-            title="Cooking"
+            title={t("kitchen.column.cooking")}
             count={cooking.length}
             icon={<IconClock width={17} height={17} />}
-            emptyText="Nothing on the pass"
+            emptyText={t("kitchen.empty.cooking")}
             isEmpty={cooking.length === 0}
           >
             {cooking.map(req => (

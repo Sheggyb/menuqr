@@ -8,21 +8,26 @@ import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
 import { IconTable, IconQr, IconCopy, IconDownload, IconCheck, IconUsers } from "@/components/icons";
+import { useT } from "@/lib/i18n/client";
+import type { TKey } from "@/lib/i18n";
 
 interface Props { restaurant: Restaurant }
 
-function relativeWait(createdAt: string, now: number): string {
+type TFn = (key: TKey, vars?: Record<string, string | number>) => string;
+
+function relativeWait(createdAt: string, now: number, t: TFn): string {
   const secs = Math.max(0, Math.floor((now - new Date(createdAt).getTime()) / 1000));
-  if (secs < 60) return `waiting ${secs}s`;
+  if (secs < 60) return t("tables.waiting.sec", { count: secs });
   const mins = Math.floor(secs / 60);
-  if (mins < 60) return `waiting ${mins}m`;
-  return `waiting ${Math.floor(mins / 60)}h ${mins % 60}m`;
+  if (mins < 60) return t("tables.waiting.min", { count: mins });
+  return t("tables.waiting.hour", { hours: Math.floor(mins / 60), mins: mins % 60 });
 }
 
 export default function TableManager({ restaurant }: Props) {
   const supabase = createClient();
   const toast = useToast();
   const confirm = useConfirm();
+  const t = useT();
   const [tables, setTables] = useState<TableRow[]>([]);
   const [newName, setNewName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -39,8 +44,8 @@ export default function TableManager({ restaurant }: Props) {
   // Single shared interval driving all "waiting Xm" timers
   useEffect(() => {
     if (pendingSessions.length === 0) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
   }, [pendingSessions.length]);
 
   // Context menu
@@ -56,7 +61,7 @@ export default function TableManager({ restaurant }: Props) {
   useEffect(() => {
     supabase.from("restaurant_tables").select("*").eq("restaurant_id", restaurant.id)
       .then(({ data, error }) => {
-        if (error) toast.error("Could not load tables");
+        if (error) toast.error(t("tables.error.load"));
         setTables((data ?? []).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
         setLoading(false);
       });
@@ -137,10 +142,10 @@ export default function TableManager({ restaurant }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id, action: "approve" }),
       });
-      if (!res.ok) { toast.error("Could not approve the guest"); return; }
+      if (!res.ok) { toast.error(t("tables.error.approve")); return; }
       setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
     } catch {
-      toast.error("Could not approve the guest");
+      toast.error(t("tables.error.approve"));
     }
   }
 
@@ -151,10 +156,10 @@ export default function TableManager({ restaurant }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id, action: "decline" }),
       });
-      if (!res.ok) { toast.error("Could not decline the guest"); return; }
+      if (!res.ok) { toast.error(t("tables.error.decline")); return; }
       setPendingSessions(prev => prev.filter(s => s.session_id !== session_id));
     } catch {
-      toast.error("Could not decline the guest");
+      toast.error(t("tables.error.decline"));
     }
   }
 
@@ -180,7 +185,7 @@ export default function TableManager({ restaurant }: Props) {
     const { data, error } = await supabase.from("restaurant_tables")
       .insert({ restaurant_id: restaurant.id, name: newName.trim(), token, is_active: true })
       .select().single();
-    if (error) { toast.error("Could not add the table"); return; }
+    if (error) { toast.error(t("tables.error.add")); return; }
     if (data) {
       // Re-apply the same sort as load so a new table lands in the right spot
       setTables(t => [...t, data as TableRow].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
@@ -195,27 +200,27 @@ export default function TableManager({ restaurant }: Props) {
   async function saveRename() {
     if (!renaming) return;
     const name = renaming.name.trim();
-    if (!name) { toast.error("Table name can't be empty"); return; }
+    if (!name) { toast.error(t("tables.error.emptyName")); return; }
     const { error } = await supabase.from("restaurant_tables").update({ name }).eq("id", renaming.id);
-    if (error) { toast.error("Could not rename the table"); return; }
+    if (error) { toast.error(t("tables.error.rename")); return; }
     setTables(t => t.map(x => x.id === renaming.id ? { ...x, name } : x)
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })));
     setRenaming(null);
-    toast.success("Table renamed");
+    toast.success(t("tables.toast.renamed"));
   }
 
   /** Issue a fresh token — for a QR sheet that leaked or went missing. */
   async function regenerateToken(table: TableRow) {
     const ok = await confirm({
-      title: `New QR code for "${table.name}"?`,
-      message: "The current printed QR code stops working immediately and you'll need to print a new one. Orders and history are kept.",
-      confirmLabel: "Yes, generate a new code",
+      title: t("tables.confirm.newQr.title", { name: table.name }),
+      message: t("tables.confirm.newQr.message"),
+      confirmLabel: t("tables.confirm.newQr.confirm"),
       danger: true,
     });
     if (!ok) return;
     const token = crypto.randomUUID();
     const { error } = await supabase.from("restaurant_tables").update({ token }).eq("id", table.id);
-    if (error) { toast.error("Could not generate a new QR code"); return; }
+    if (error) { toast.error(t("tables.error.newQr")); return; }
     // Any guest holding a session on the old code must request access again
     try {
       await fetch("/api/session/close-table", {
@@ -225,7 +230,7 @@ export default function TableManager({ restaurant }: Props) {
       });
     } catch { /* token is already rotated; session cleanup is best-effort */ }
     setTables(t => t.map(x => x.id === table.id ? { ...x, token } : x));
-    toast.success("New QR code generated — print it again");
+    toast.success(t("tables.toast.newQr"));
   }
 
   async function deleteTable(table: TableRow) {
@@ -241,17 +246,19 @@ export default function TableManager({ restaurant }: Props) {
       .eq("table_id", table.id);
     const n = count ?? 0;
     const ok = await confirm({
-      title: `Delete "${table.name}"?`,
+      title: t("tables.confirm.delete.title", { name: table.name }),
       message: n > 0
-        ? `This permanently deletes ${n} order${n !== 1 ? "s" : ""} from this table, including their revenue in Stats and History. Its QR code stops working. This cannot be undone.\n\nTo take the table out of service without losing anything, close it instead.`
-        : "Its QR code will stop working. This cannot be undone.",
-      confirmLabel: n > 0 ? `Delete table and ${n} order${n !== 1 ? "s" : ""}` : "Yes, delete",
+        ? (n === 1 ? t("tables.confirm.delete.ordersOne") : t("tables.confirm.delete.orders", { count: n }))
+        : t("tables.confirm.delete.none"),
+      confirmLabel: n > 0
+        ? (n === 1 ? t("tables.confirm.delete.labelOne") : t("tables.confirm.delete.label", { count: n }))
+        : t("tables.confirm.delete.yes"),
       danger: true,
     });
     if (!ok) return;
     const { error } = await supabase.from("restaurant_tables").delete().eq("id", table.id);
-    if (error) { toast.error("Could not delete the table"); return; }
-    toast.success("Table deleted");
+    if (error) { toast.error(t("tables.error.delete")); return; }
+    toast.success(t("tables.toast.deleted"));
     setTables(t => t.filter(x => x.id !== table.id));
   }
 
@@ -259,7 +266,7 @@ export default function TableManager({ restaurant }: Props) {
     const anyActive = tables.some(t => t.is_active);
     const newState = !anyActive;
     const { error } = await supabase.from("restaurant_tables").update({ is_active: newState }).eq("restaurant_id", restaurant.id);
-    if (error) { toast.error("Could not update the tables"); return; }
+    if (error) { toast.error(t("tables.error.update")); return; }
     // Closing all tables must also close their guest sessions — otherwise
     // guests jump straight back in with no re-approval once tables reopen
     if (!newState) {
@@ -276,13 +283,13 @@ export default function TableManager({ restaurant }: Props) {
 
   async function openTable(table: TableRow) {
     const { error } = await supabase.from("restaurant_tables").update({ is_active: true }).eq("id", table.id);
-    if (error) { toast.error("Could not open the table"); return; }
+    if (error) { toast.error(t("tables.error.open")); return; }
     setTables(tables.map(t => t.id === table.id ? { ...t, is_active: true } : t));
   }
 
   async function closeTable(table: TableRow) {
     const { error } = await supabase.from("restaurant_tables").update({ is_active: false }).eq("id", table.id);
-    if (error) { toast.error("Could not close the table"); return; }
+    if (error) { toast.error(t("tables.error.close")); return; }
     try {
       await fetch("/api/session/close-table", {
         method: "POST",
@@ -300,10 +307,10 @@ export default function TableManager({ restaurant }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ table_id: table.id, restaurant_id: restaurant.id }),
       });
-      if (!res.ok) { toast.error("Could not clear the table"); return; }
+      if (!res.ok) { toast.error(t("tables.error.clear")); return; }
       setPendingByTable(prev => ({ ...prev, [table.id]: 0 }));
     } catch {
-      toast.error("Could not clear the table");
+      toast.error(t("tables.error.clear"));
     }
   }
 
@@ -330,39 +337,39 @@ export default function TableManager({ restaurant }: Props) {
     const items: ContextMenuAction[] = [];
     if (table.is_active) {
       items.push({
-        label: pending > 0 ? `Clear all orders (${pending} pending marked done, guests signed out)` : "Clear all orders (guests signed out)",
+        label: pending > 0 ? t("tables.ctx.clearCount", { count: pending }) : t("tables.ctx.clear"),
         action: () => clearAndCloseTable(table),
       });
       items.push({
-        label: "Close table",
+        label: t("tables.ctx.close"),
         action: () => closeTable(table),
       });
     } else {
       items.push({
-        label: "Open table",
+        label: t("tables.ctx.open"),
         action: () => openTable(table),
       });
     }
     items.push({
-      label: "Show QR code",
+      label: t("tables.showQr"),
       action: () => showQR(table),
     });
     items.push({
-      label: "Copy link",
+      label: t("tables.copyLink"),
       action: () => copyLink(table),
     });
     items.push({ separator: true });
     items.push({
-      label: "Rename table",
+      label: t("tables.ctx.rename"),
       action: () => startRename(table),
     });
     items.push({
-      label: "Generate new QR code",
+      label: t("tables.ctx.newQr"),
       action: () => regenerateToken(table),
     });
     items.push({ separator: true });
     items.push({
-      label: "Delete table",
+      label: t("tables.ctx.delete"),
       danger: true,
       action: () => deleteTable(table),
     });
@@ -405,24 +412,24 @@ export default function TableManager({ restaurant }: Props) {
         }}>
           <div style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--text)", display: "flex", alignItems: "center", gap: 8 }}>
             <IconUsers width={16} height={16} style={{ color: "var(--accent)" }} />
-            {pendingSessions.length} guest{pendingSessions.length !== 1 ? "s" : ""} waiting
+            {pendingSessions.length === 1 ? t("tables.pending.guestOne") : t("tables.pending.guests", { count: pendingSessions.length })}
           </div>
           {pendingSessions.map(s => (
             <div key={s.session_id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "6px 0", borderTop: "1px solid var(--border)" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, minWidth: 0 }}>
-                <span style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text)" }}>{s.table?.name ?? "Unknown table"}</span>
-                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{relativeWait(s.created_at, now)}</span>
+                <span style={{ fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text)" }}>{s.table?.name ?? t("tables.unknownTable")}</span>
+                <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{relativeWait(s.created_at, now, t)}</span>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => approveSession(s.session_id)}
                   style={{ background: "var(--accent)", color: "#fff", border: "none", borderRadius: "var(--radius-sm)", padding: "6px 16px", fontSize: "var(--fs-sm)", fontWeight: 600, cursor: "pointer" }}
-                >Approve</button>
+                >{t("tables.approve")}</button>
                 <button
                   onClick={() => declineSession(s.session_id)}
-                  aria-label="Decline guest access request"
+                  aria-label={t("tables.declineAria")}
                   style={{ background: "transparent", color: "var(--text-muted)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "6px 14px", fontSize: "var(--fs-sm)", fontWeight: 500, cursor: "pointer" }}
-                >Decline</button>
+                >{t("tables.decline")}</button>
               </div>
             </div>
           ))}
@@ -432,17 +439,17 @@ export default function TableManager({ restaurant }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", display: "flex", alignItems: "center", gap: 10, margin: 0 }}>
           <IconTable width={20} height={20} style={{ color: "var(--text-muted)" }} />
-          Tables
+          {t("tables.title")}
         </h2>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {tables.length > 0 && (
             <button onClick={toggleAll} style={{ fontSize: "var(--fs-sm)", padding: "6px 14px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", cursor: "pointer", fontWeight: 600 }}>
-              {tables.some(t => t.is_active) ? "Close all" : "Open all"}
+              {tables.some(x => x.is_active) ? t("tables.closeAll") : t("tables.openAll")}
             </button>
           )}
           <Link href="/app/print-qr" style={{ fontSize: "var(--fs-sm)", padding: "6px 14px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", textDecoration: "none", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6 }}>
             <IconQr width={14} height={14} />
-            Print all QR codes
+            {t("tables.printAll")}
           </Link>
         </div>
       </div>
@@ -452,30 +459,30 @@ export default function TableManager({ restaurant }: Props) {
         <input
           value={newName}
           onChange={e => setNewName(e.target.value)}
-          placeholder="Add a table, e.g. Table 1, Bar Seat A…"
+          placeholder={t("tables.add.placeholder")}
           onKeyDown={e => e.key === "Enter" && addTable()}
           style={{ flex: 1 }}
         />
-        <button className="btn-primary" onClick={addTable} style={{ whiteSpace: "nowrap" }}>Add</button>
+        <button className="btn-primary" onClick={addTable} style={{ whiteSpace: "nowrap" }}>{t("tables.add.button")}</button>
       </div>
 
       {tables.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 16px", color: "var(--text-muted)" }}>
           <IconTable width={32} height={32} style={{ color: "var(--text-muted)", opacity: 0.6, marginBottom: 10 }} />
-          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>No tables yet</p>
-          <p style={{ fontSize: "var(--fs-sm)", margin: 0 }}>Add a table above to generate a QR code for guests.</p>
+          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>{t("tables.empty.title")}</p>
+          <p style={{ fontSize: "var(--fs-sm)", margin: 0 }}>{t("tables.empty.body")}</p>
         </div>
       ) : (
         <>
           {/* STATUS GRID — read-only */}
           <div className="card" style={{ padding: "18px 22px" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: 0 }}>Table Status</h3>
+              <h3 style={{ fontWeight: 700, fontSize: "var(--fs-sm)", margin: 0 }}>{t("tables.status.heading")}</h3>
               <div style={{ display: "flex", gap: 14, fontSize: "var(--fs-xs)", color: "var(--text-muted)", flexWrap: "wrap" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#22c55e")} />Idle</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#f59e0b")} />Has requests</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#dc2626")} />Urgent (3+)</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#9ca3af")} />Closed</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#22c55e")} />{t("tables.status.idle")}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#f59e0b")} />{t("tables.status.hasRequests")}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#dc2626")} />{t("tables.status.urgent")}</span>
+                <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={ringStyle("#9ca3af")} />{t("tables.closed")}</span>
               </div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))", gap: 10 }}>
@@ -494,14 +501,14 @@ export default function TableManager({ restaurant }: Props) {
                       padding: "14px 10px",
                       textAlign: "center",
                     }}
-                    title={`${table.name} — ${!table.is_active ? "Closed" : pending > 0 ? `${pending} pending` : "Open"}`}
+                    title={`${table.name} — ${!table.is_active ? t("tables.closed") : pending > 0 ? t("tables.pending.count", { count: pending }) : t("tables.open")}`}
                   >
                     <span style={{ ...ringStyle(ringColor, isUrgent), marginBottom: 8 }} />
                     <div style={{ color: !table.is_active ? "var(--text-muted)" : "var(--text)", marginBottom: 4 }}>
                       <IconTable width={18} height={18} style={{ opacity: table.is_active ? 0.8 : 0.4 }} />
                     </div>
                     <div style={{ fontSize: "var(--fs-xs)", fontWeight: 600, color: !table.is_active ? "var(--text-muted)" : "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{table.name}</div>
-                    {pending > 0 && <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: isUrgent ? "#dc2626" : "#f59e0b", marginTop: 3 }}>{pending} pending</div>}
+                    {pending > 0 && <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: isUrgent ? "#dc2626" : "#f59e0b", marginTop: 3 }}>{t("tables.pending.count", { count: pending })}</div>}
                   </div>
                 );
               })}
@@ -532,27 +539,27 @@ export default function TableManager({ restaurant }: Props) {
                         onKeyDown={e => { if (e.key === "Enter") saveRename(); if (e.key === "Escape") setRenaming(null); }}
                         style={{ width: 160, padding: "5px 9px", fontSize: "var(--fs-sm)", fontWeight: 700, borderRadius: "var(--radius-sm)" }}
                       />
-                      <button onClick={saveRename} style={{ padding: "5px 11px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--accent)", color: "#fff", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>Save</button>
-                      <button onClick={() => setRenaming(null)} style={{ padding: "5px 9px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>Cancel</button>
+                      <button onClick={saveRename} style={{ padding: "5px 11px", borderRadius: "var(--radius-sm)", border: "none", background: "var(--accent)", color: "#fff", fontSize: "var(--fs-xs)", fontWeight: 700, cursor: "pointer" }}>{t("common.save")}</button>
+                      <button onClick={() => setRenaming(null)} style={{ padding: "5px 9px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>{t("common.cancel")}</button>
                     </span>
                   ) : (
                     <span
                       onDoubleClick={() => startRename(table)}
-                      title="Double-click to rename"
+                      title={t("tables.renameHint")}
                       style={{ fontWeight: 700, cursor: "text" }}
                     >{table.name}</span>
                   )}
                   {pendingByTable[table.id] > 0 && (
                     <span style={{ marginLeft: 8, fontSize: "var(--fs-xs)", padding: "2px 8px", borderRadius: "var(--radius-pill)", border: "1px solid var(--accent)", color: "var(--accent)", fontWeight: 700 }}>
-                      {pendingByTable[table.id]} waiting
+                      {t("tables.waiting.count", { count: pendingByTable[table.id] })}
                     </span>
                   )}
                   <span style={{ marginLeft: 8, fontSize: "var(--fs-xs)", padding: "2px 8px", borderRadius: "var(--radius-pill)", border: `1px solid ${table.is_active ? "#22c55e55" : "var(--border)"}`, color: table.is_active ? "#22c55e" : "var(--text-muted)", fontWeight: 600 }}>
-                    {table.is_active ? "Open" : "Closed"}
+                    {table.is_active ? t("tables.open") : t("tables.closed")}
                   </span>
                   {lastRequests[table.id] && (
                     <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3 }}>
-                      Last request: {new Date(lastRequests[table.id]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {t("tables.lastRequest", { time: new Date(lastRequests[table.id]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
                     </div>
                   )}
                 </div>
@@ -560,17 +567,17 @@ export default function TableManager({ restaurant }: Props) {
                 <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <button
                     onClick={() => copyLink(table)}
-                    aria-label={copiedId === table.id ? "Link copied" : `Copy menu link for ${table.name}`}
+                    aria-label={copiedId === table.id ? t("tables.linkCopied") : t("tables.copyAria", { name: table.name })}
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: copiedId === table.id ? "#22c55e" : "var(--text-muted)" }}
-                    title={copiedId === table.id ? "Copied" : "Copy link"}
+                    title={copiedId === table.id ? t("common.copied") : t("tables.copyLink")}
                   >
                     {copiedId === table.id ? <IconCheck width={14} height={14} /> : <IconCopy width={14} height={14} />}
                   </button>
                   <button
                     onClick={() => showQR(table)}
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px 10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)" }}
-                    title="Show QR code"
-                    aria-label={`Show QR code for ${table.name}`}
+                    title={t("tables.showQr")}
+                    aria-label={t("tables.showQrAria", { name: table.name })}
                   >
                     <IconQr width={14} height={14} />
                   </button>
@@ -578,8 +585,8 @@ export default function TableManager({ restaurant }: Props) {
                   <button
                     onClick={(e) => { e.stopPropagation(); openCtxMenu(e, buildTableCtxMenu(table)); }}
                     style={{ fontSize: "var(--fs-md)", padding: "5px 9px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontWeight: 700, lineHeight: 1 }}
-                    title="More options"
-                    aria-label={`More options for ${table.name}`}
+                    title={t("tables.moreOptions")}
+                    aria-label={t("tables.moreOptionsAria", { name: table.name })}
                   >⋮</button>
                 </div>
               </div>
@@ -594,9 +601,9 @@ export default function TableManager({ restaurant }: Props) {
           <div onClick={e => e.stopPropagation()} className="card" style={{ width: "100%", maxWidth: 380, textAlign: "center", padding: "24px 24px 20px" }}>
             <h3 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: "0 0 16px" }}>{qrModal.name}</h3>
             {qrDataUrl ? (
-              <img src={qrDataUrl} alt={`QR code for ${qrModal.name}`} style={{ width: 260, height: 260, margin: "0 auto 16px", display: "block", borderRadius: "var(--radius-md)" }} />
+              <img src={qrDataUrl} alt={t("tables.qrAlt", { name: qrModal.name })} style={{ width: 260, height: 260, margin: "0 auto 16px", display: "block", borderRadius: "var(--radius-md)" }} />
             ) : (
-              <div style={{ width: 260, height: 260, margin: "0 auto 16px", background: "var(--surface-2)", borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>Generating…</div>
+              <div style={{ width: 260, height: 260, margin: "0 auto 16px", background: "var(--surface-2)", borderRadius: "var(--radius-md)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>{t("tables.generating")}</div>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center", marginBottom: 18 }}>
               <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: "var(--fs-xs)", color: "var(--text-muted)", wordBreak: "break-all", textAlign: "left" }}>
@@ -604,8 +611,8 @@ export default function TableManager({ restaurant }: Props) {
               </span>
               <button
                 onClick={() => copyModalLink(qrModal)}
-                aria-label={modalCopied ? "Link copied" : "Copy link"}
-                title={modalCopied ? "Copied" : "Copy link"}
+                aria-label={modalCopied ? t("tables.linkCopied") : t("tables.copyLink")}
+                title={modalCopied ? t("common.copied") : t("tables.copyLink")}
                 style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "5px 8px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: modalCopied ? "#22c55e" : "var(--text-muted)", flexShrink: 0 }}
               >
                 {modalCopied ? <IconCheck width={14} height={14} /> : <IconCopy width={14} height={14} />}
@@ -619,9 +626,9 @@ export default function TableManager({ restaurant }: Props) {
                 style={{ opacity: qrDataUrl ? 1 : 0.5, cursor: qrDataUrl ? "pointer" : "default", display: "inline-flex", alignItems: "center", gap: 7 }}
               >
                 <IconDownload width={15} height={15} />
-                {qrDataUrl ? "Download PNG" : "Generating…"}
+                {qrDataUrl ? t("tables.downloadPng") : t("tables.generating")}
               </button>
-              <button className="btn-primary" onClick={() => setQrModal(null)}>Done</button>
+              <button className="btn-primary" onClick={() => setQrModal(null)}>{t("common.done")}</button>
             </div>
           </div>
         </div>

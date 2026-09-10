@@ -24,6 +24,23 @@ export const common = {
   "common.switchToSwedish": { en: "Switch to Swedish", sv: "Byt till svenska" },
   "common.switchToEnglish": { en: "Switch to English", sv: "Byt till engelska" },
 
+  // ── EU 1169/2011 Annex II allergens (shared by the guest menu and the
+  //    Menu Builder picker — see lib/i18n/allergens.ts) ───────────────────
+  "allergen.gluten": { en: "Cereals containing gluten", sv: "Spannmål som innehåller gluten" },
+  "allergen.crustaceans": { en: "Crustaceans", sv: "Kräftdjur" },
+  "allergen.eggs": { en: "Eggs", sv: "Ägg" },
+  "allergen.fish": { en: "Fish", sv: "Fisk" },
+  "allergen.peanuts": { en: "Peanuts", sv: "Jordnötter" },
+  "allergen.soybeans": { en: "Soybeans", sv: "Soja" },
+  "allergen.milk": { en: "Milk", sv: "Mjölk" },
+  "allergen.nuts": { en: "Tree nuts", sv: "Nötter" },
+  "allergen.celery": { en: "Celery", sv: "Selleri" },
+  "allergen.mustard": { en: "Mustard", sv: "Senap" },
+  "allergen.sesame": { en: "Sesame", sv: "Sesam" },
+  "allergen.sulphites": { en: "Sulphur dioxide / sulphites", sv: "Svaveldioxid/sulfiter" },
+  "allergen.lupin": { en: "Lupin", sv: "Lupin" },
+  "allergen.molluscs": { en: "Molluscs", sv: "Blötdjur" },
+
   // ── Site-wide metadata (browser tab, search results, link previews) ─────
   "meta.title": { en: "MenuQR — QR code menus & live table orders", sv: "MenuQR — QR-menyer och live-beställningar vid bordet" },
   "meta.description": {

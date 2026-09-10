@@ -13,6 +13,9 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/Toast";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 import { useTheme } from "@/lib/theme";
+import { useI18n } from "@/lib/i18n/client";
+import type { TKey } from "@/lib/i18n";
+import LangSwitcher from "@/components/LangSwitcher";
 import { IconBolt, IconFork, IconTable, IconChart, IconHistory, IconGear, IconSun, IconMoon } from "@/components/icons";
 import type { SVGProps } from "react";
 
@@ -20,13 +23,13 @@ type Tab = "orders" | "menu" | "tables" | "analytics" | "history" | "settings";
 
 // One definition for both navs — desktop and mobile previously used different
 // icon languages (inline SVG vs emoji) for the same six destinations.
-const TABS: { id: Tab; label: string; short: string; Icon: (p: SVGProps<SVGSVGElement>) => React.ReactElement }[] = [
-  { id: "orders",    label: "Live Orders", short: "Orders",   Icon: IconBolt },
-  { id: "menu",      label: "Menu",        short: "Menu",     Icon: IconFork },
-  { id: "tables",    label: "Tables",      short: "Tables",   Icon: IconTable },
-  { id: "analytics", label: "Stats",       short: "Stats",    Icon: IconChart },
-  { id: "history",   label: "History",     short: "History",  Icon: IconHistory },
-  { id: "settings",  label: "Settings",    short: "Settings", Icon: IconGear },
+const TABS: { id: Tab; labelKey: TKey; shortKey: TKey; Icon: (p: SVGProps<SVGSVGElement>) => React.ReactElement }[] = [
+  { id: "orders",    labelKey: "dash.tab.orders",   shortKey: "dash.tab.orders.short",   Icon: IconBolt },
+  { id: "menu",      labelKey: "dash.tab.menu",     shortKey: "dash.tab.menu.short",     Icon: IconFork },
+  { id: "tables",    labelKey: "dash.tab.tables",   shortKey: "dash.tab.tables.short",   Icon: IconTable },
+  { id: "analytics", labelKey: "dash.tab.stats",    shortKey: "dash.tab.stats.short",    Icon: IconChart },
+  { id: "history",   labelKey: "dash.tab.history",  shortKey: "dash.tab.history.short",  Icon: IconHistory },
+  { id: "settings",  labelKey: "dash.tab.settings", shortKey: "dash.tab.settings.short", Icon: IconGear },
 ];
 
 
@@ -40,6 +43,7 @@ interface Props {
 export default function AppShell({ user, restaurant: initialRestaurant, paymentsAvailable = false }: Props) {
   const supabase = createClient();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { locale, t } = useI18n();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
   const [tab, setTab] = useState<Tab>("orders");
   const [restaurantVersion, setRestaurantVersion] = useState(0);
@@ -54,14 +58,17 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
   useEffect(() => {
     const fmt = () => {
       const now = new Date();
-      const date = now.toLocaleDateString("en", { weekday: "short", month: "short", day: "numeric" });
-      const time = now.toLocaleTimeString("en", { hour: "2-digit", minute: "2-digit" });
+      // Locale-aware so a Swedish dashboard reads "tors 10 sep" rather than
+      // "Thu, Sep 10" (the header clock is the most visible date in the app)
+      const tag = locale === "sv" ? "sv-SE" : "en-GB";
+      const date = now.toLocaleDateString(tag, { weekday: "short", month: "short", day: "numeric" });
+      const time = now.toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
       setClock(`${date} · ${time}`);
     };
     fmt();
     clockRef.current = setInterval(fmt, 10000);
     return () => { if (clockRef.current) clearInterval(clockRef.current); };
-  }, []);
+  }, [locale]);
 
   useEffect(() => {
     if (!restaurant) return;
@@ -163,17 +170,18 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
         {clock && <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", display: "none", marginRight: "auto" }} className="header-clock">{clock}</span>}
         <style>{`.header-clock { display: inline !important; } @media(max-width:639px){.header-clock{display:none!important;}}`}</style>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <LangSwitcher compact />
           <a
             href="/kitchen"
             target="_blank"
             rel="noopener noreferrer"
-            title="Open kitchen display in a new tab"
+            title={t("dash.header.kitchenTitle")}
             style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", padding: "5px 10px", lineHeight: 1, textDecoration: "none" }}
-          >Kitchen</a>
+          >{t("dash.header.kitchen")}</a>
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={resolvedTheme === "dark" ? t("dash.header.theme.light") : t("dash.header.theme.dark")}
+            aria-label={resolvedTheme === "dark" ? t("dash.header.theme.light") : t("dash.header.theme.dark")}
             style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", background: "none", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", cursor: "pointer", padding: "5px 9px", lineHeight: 1 }}
           >
             {resolvedTheme === "dark" ? <IconSun width={16} height={16} /> : <IconMoon width={16} height={16} />}
@@ -184,13 +192,13 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
               window.location.href = "/";
             }}
             style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer" }}
-          >Sign out</button>
+          >{t("dash.header.signOut")}</button>
         </div>
       </header>
 
       {/* TABS — sticky top on desktop, fixed bottom on mobile */}
-      <nav aria-label="Main navigation" style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", gap: 2 }} className="desktop-tabs">
-        {TABS.map(({ id, label, Icon }) => {
+      <nav aria-label={t("dash.nav.main")} style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "0 32px", display: "flex", gap: 2 }} className="desktop-tabs">
+        {TABS.map(({ id, labelKey, Icon }) => {
           const active = tab === id;
           return (
             <button
@@ -214,7 +222,7 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
               }}
             >
               <Icon width={15} height={15} />
-              {label}
+              {t(labelKey)}
               {id === "orders" && pendingCount > 0 && (
                 <span style={{ background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", padding: "1px 6px", borderRadius: "var(--radius-pill)", fontWeight: 700, lineHeight: 1.5 }}>{pendingCount}</span>
               )}
@@ -224,8 +232,8 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
       </nav>
 
       {/* MOBILE BOTTOM NAV */}
-      <nav aria-label="Mobile navigation" className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
-        {TABS.map(({ id, short, Icon }) => (
+      <nav aria-label={t("dash.nav.mobile")} className="mobile-tabs" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "var(--surface)", borderTop: "1px solid var(--border)", display: "flex", zIndex: 100, paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        {TABS.map(({ id, shortKey, Icon }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
@@ -251,7 +259,7 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
             {id === "orders" && pendingCount > 0 && (
               <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", padding: "1px 4px", borderRadius: "var(--radius-pill)", fontWeight: 700 }}>{pendingCount}</span>
             )}
-            {short}
+            {t(shortKey)}
           </button>
         ))}
       </nav>
@@ -263,12 +271,12 @@ export default function AppShell({ user, restaurant: initialRestaurant, payments
 
       {/* CONTENT */}
       <main style={{ padding: "28px 24px" }}>
-        {tab === "orders" && <ErrorBoundary key={`orders-${restaurantVersion}`} fallbackTitle="Failed to load orders"><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "menu" && <ErrorBoundary key={`menu-${restaurantVersion}`} fallbackTitle="Failed to load menu"><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "tables" && <ErrorBoundary key={`tables-${restaurantVersion}`} fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "analytics" && <ErrorBoundary key={`analytics-${restaurantVersion}`} fallbackTitle="Failed to load analytics"><Analytics restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "history" && <ErrorBoundary key={`history-${restaurantVersion}`} fallbackTitle="Failed to load history"><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "settings" && <ErrorBoundary key={`settings-${restaurantVersion}`} fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} paymentsAvailable={paymentsAvailable} /></ErrorBoundary>}
+        {tab === "orders" && <ErrorBoundary key={`orders-${restaurantVersion}`} fallbackTitle={t("dash.error.orders")}><LiveOrders restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "menu" && <ErrorBoundary key={`menu-${restaurantVersion}`} fallbackTitle={t("dash.error.menu")}><MenuBuilder restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "tables" && <ErrorBoundary key={`tables-${restaurantVersion}`} fallbackTitle={t("dash.error.tables")}><TableManager restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "analytics" && <ErrorBoundary key={`analytics-${restaurantVersion}`} fallbackTitle={t("dash.error.analytics")}><Analytics restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "history" && <ErrorBoundary key={`history-${restaurantVersion}`} fallbackTitle={t("dash.error.history")}><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "settings" && <ErrorBoundary key={`settings-${restaurantVersion}`} fallbackTitle={t("dash.error.settings")}><SettingsPanel restaurant={restaurant} paymentsAvailable={paymentsAvailable} /></ErrorBoundary>}
       </main>
     </div>
     </ConfirmProvider>

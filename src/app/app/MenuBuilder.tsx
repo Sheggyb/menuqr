@@ -9,6 +9,8 @@ import { useToast } from "@/components/Toast";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { Skeleton, SkeletonList } from "@/components/Skeleton";
 import { IconSearch, IconDish, IconAlert, IconCopy, IconCheck, IconX } from "@/components/icons";
+import { useT } from "@/lib/i18n/client";
+import { ALLERGEN_KEY } from "@/lib/i18n/allergens";
 
 interface Props { restaurant: Restaurant }
 
@@ -62,6 +64,7 @@ interface QuickAdd {
 
 export default function MenuBuilder({ restaurant }: Props) {
   const supabase = createClient();
+  const t = useT();
   const toast = useToast();
   const confirm = useConfirm();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -128,7 +131,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     const { error } = await supabase.from("menu_categories")
       .update({ name: editCatName.trim(), icon: editCatIcon })
       .eq("id", editingCatId);
-    if (error) { toast.error("Could not save the category"); return; }
+    if (error) { toast.error(t("menuBuilder.cat.toast.saveFailed")); return; }
     setCategories(prev => prev.map(c =>
       c.id === editingCatId ? { ...c, name: editCatName.trim(), icon: editCatIcon } : c
     ));
@@ -259,7 +262,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     // Saving zero named groups is only meaningful as "delete everything" — which
     // is a legitimate action when the item already has groups.
     if (namedGroups.length === 0 && existingGroups.length === 0) {
-      toast.error("Enter a group name first");
+      toast.error(t("menuBuilder.options.groupNameRequired"));
       return;
     }
 
@@ -274,7 +277,7 @@ export default function MenuBuilder({ restaurant }: Props) {
       for (const c of g.choices) {
         const label = c.label.trim();
         if (label && /[,[\]]/.test(label)) {
-          toast.error(`"${label}" can't contain , [ or ] — it would break kitchen tickets`);
+          toast.error(t("menuBuilder.options.invalidLabel", { label }));
           return;
         }
       }
@@ -288,7 +291,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         if (!c.label.trim() || !c.price.trim()) continue;
         // Negatives allowed here — a choice can legitimately take money off.
         if (parsePrice(c.price, { allowNegative: true }) === undefined) {
-          toast.error(`"${c.price}" isn't a valid price`);
+          toast.error(t("menuBuilder.price.invalid", { value: c.price }));
           return;
         }
       }
@@ -309,7 +312,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     }));
     if (groupRows.length > 0) {
       const { error: gErr } = await supabase.from("menu_item_options").upsert(groupRows);
-      if (gErr) { toast.error("Could not save the options"); return; }
+      if (gErr) { toast.error(t("menuBuilder.options.saveFailed")); return; }
     }
 
     // 2) Upsert choices
@@ -332,7 +335,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     });
     if (choiceRows.length > 0) {
       const { error: cErr } = await supabase.from("menu_item_option_choices").upsert(choiceRows);
-      if (cErr) { toast.error("Could not save the choices"); return; }
+      if (cErr) { toast.error(t("menuBuilder.options.saveChoicesFailed")); return; }
     }
 
     // 3) Delete removed groups (their choices cascade) then removed choices
@@ -340,7 +343,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     const removedGroups = existingGroups.filter(o => !keptGroupIds.has(o.id));
     if (removedGroups.length > 0) {
       const { error: dErr } = await supabase.from("menu_item_options").delete().in("id", removedGroups.map(g => g.id));
-      if (dErr) { toast.error("Could not remove a deleted group"); await load(); return; }
+      if (dErr) { toast.error(t("menuBuilder.options.removeGroupFailed")); await load(); return; }
     }
     // Only look at groups that still exist — choices under a deleted group are
     // already gone via cascade, and including them would delete by luck.
@@ -351,12 +354,12 @@ export default function MenuBuilder({ restaurant }: Props) {
       .filter(c => !keptChoiceIds.has(c.id));
     if (removedChoices.length > 0) {
       const { error: dcErr } = await supabase.from("menu_item_option_choices").delete().in("id", removedChoices.map(c => c.id));
-      if (dcErr) { toast.error("Could not remove a deleted choice"); await load(); return; }
+      if (dcErr) { toast.error(t("menuBuilder.options.removeChoiceFailed")); await load(); return; }
     }
 
     setOptionsEditor(null);
-    if (droppedEmpty > 0) toast.success(`Options saved (${droppedEmpty} empty group${droppedEmpty > 1 ? "s" : ""} skipped — groups need a name)`);
-    else toast.success("Options saved");
+    if (droppedEmpty > 0) toast.success(t(droppedEmpty > 1 ? "menuBuilder.options.savedSkippedMany" : "menuBuilder.options.savedSkippedOne", { count: droppedEmpty }));
+    else toast.success(t("menuBuilder.options.saved"));
     await load();
   }
 
@@ -397,8 +400,8 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   async function deleteCategory(id: string) {
     const { error } = await supabase.from("menu_categories").delete().eq("id", id);
-    if (error) { toast.error("Could not delete the category"); return; }
-    toast.success("Category deleted");
+    if (error) { toast.error(t("menuBuilder.cat.toast.deleteFailed")); return; }
+    toast.success(t("menuBuilder.cat.toast.deleted"));
     setCategories(c => c.filter(x => x.id !== id));
     setItems(i => i.filter(x => x.category_id !== id));
     if (selectedCatId === id) {
@@ -412,7 +415,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     const { data, error } = await supabase.from("menu_categories")
       .insert({ restaurant_id: restaurant.id, name: newCatName.trim(), icon: newCatIcon, sort_order: categories.length })
       .select().single();
-    if (error) { toast.error("Could not add the category"); return; }
+    if (error) { toast.error(t("menuBuilder.cat.toast.addFailed")); return; }
     if (data) {
       const cat = data as MenuCategory;
       setCategories(c => [...c, cat]);
@@ -429,7 +432,7 @@ export default function MenuBuilder({ restaurant }: Props) {
     if (!q?.name.trim()) return;
     // "89,50" is what a Swedish restaurant types. parseFloat read that as 89.
     const price = parsePrice(q.price ?? "");
-    if (price === undefined) { toast.error(`"${q.price}" isn't a valid price`); return; }
+    if (price === undefined) { toast.error(t("menuBuilder.price.invalid", { value: q.price })); return; }
     const { data, error } = await supabase.from("menu_items")
       .insert({
         restaurant_id: restaurant.id,
@@ -440,7 +443,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         sort_order: items.filter(i => i.category_id === catId).length,
       })
       .select().single();
-    if (error) { toast.error("Could not add the item"); return; }
+    if (error) { toast.error(t("menuBuilder.item.toast.addFailed")); return; }
     if (data) {
       const item = data as MenuItem;
       setItems(i => [...i, item]);
@@ -461,7 +464,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         sort_order: items.filter(i => i.category_id === item.category_id).length,
       })
       .select().single();
-    if (error) { toast.error("Could not duplicate the item"); return; }
+    if (error) { toast.error(t("menuBuilder.item.toast.duplicateFailed")); return; }
     if (data) {
       const newItem = data as MenuItem;
       setItems(i => [...i, newItem]);
@@ -470,22 +473,22 @@ export default function MenuBuilder({ restaurant }: Props) {
 
   async function toggleItem(item: MenuItem) {
     const { error } = await supabase.from("menu_items").update({ is_available: !item.is_available }).eq("id", item.id);
-    if (error) { toast.error("Could not update the item"); return; }
+    if (error) { toast.error(t("menuBuilder.item.toast.updateFailed")); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === item.id ? { ...x, is_available: !x.is_available } : x);
     setItems(updater);
   }
 
   async function deleteItem(item: MenuItem) {
     const ok = await confirm({
-      title: `Delete "${item.name || "Untitled"}"?`,
-      message: "This cannot be undone.",
-      confirmLabel: "Yes, delete",
+      title: t("menuBuilder.item.confirmDelete.title", { name: item.name || t("menuBuilder.item.untitled") }),
+      message: t("menuBuilder.confirm.cannotUndo"),
+      confirmLabel: t("menuBuilder.confirm.yesDelete"),
       danger: true,
     });
     if (!ok) return;
     const { error } = await supabase.from("menu_items").delete().eq("id", item.id);
-    if (error) { toast.error("Could not delete the item"); return; }
-    toast.success("Item deleted");
+    if (error) { toast.error(t("menuBuilder.item.toast.deleteFailed")); return; }
+    toast.success(t("menuBuilder.item.toast.deleted"));
     setItems(i => i.filter(x => x.id !== item.id));
   }
 
@@ -504,13 +507,13 @@ export default function MenuBuilder({ restaurant }: Props) {
       // A typo used to become NaN, which JSON.stringify sends as null — so
       // fat-fingering a price silently deleted it. Reject and keep the editor open.
       const price = parsePrice(value);
-      if (price === undefined) { toast.error(`"${value}" isn't a valid price`); return; }
+      if (price === undefined) { toast.error(t("menuBuilder.price.invalid", { value })); return; }
       update.price = price;
     } else {
       update[edit.field] = value || null;
     }
     const { error } = await supabase.from("menu_items").update(update).eq("id", edit.itemId);
-    if (error) { toast.error("Could not save changes"); setEdit(null); return; }
+    if (error) { toast.error(t("menuBuilder.item.toast.saveFailed")); setEdit(null); return; }
     const updater = (i: MenuItem[]) => i.map(x => x.id === edit.itemId ? { ...x, ...update } as MenuItem : x);
     setItems(updater);
     setEdit(null);
@@ -585,7 +588,7 @@ export default function MenuBuilder({ restaurant }: Props) {
         sort_order: i,
       })));
     if (error) {
-      toast.error("Could not save the new order");
+      toast.error(t("menuBuilder.toast.reorderFailed"));
       await load(); // reload from server — don't trust the local snapshot
     }
   }
@@ -673,14 +676,14 @@ export default function MenuBuilder({ restaurant }: Props) {
               style={{ flex: 1, minWidth: 120 }}
               value={newCatName}
               onChange={e => setNewCatName(e.target.value)}
-              placeholder="Category name…"
+              placeholder={t("menuBuilder.cat.namePlaceholder")}
               onKeyDown={e => { if (e.key === "Enter") addCategory(); if (e.key === "Escape") { setAddingCategory(false); setNewCatName(""); } }}
             />
-            <button className="btn-primary" onClick={addCategory} style={{ whiteSpace: "nowrap", fontSize: "var(--fs-sm)", padding: "8px 16px" }}>Add</button>
+            <button className="btn-primary" onClick={addCategory} style={{ whiteSpace: "nowrap", fontSize: "var(--fs-sm)", padding: "8px 16px" }}>{t("menuBuilder.cat.add")}</button>
             <button
               onClick={() => { setAddingCategory(false); setNewCatName(""); }}
               style={{ padding: "8px 14px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}
-            >Cancel</button>
+            >{t("common.cancel")}</button>
           </div>
         </div>
       )}
@@ -689,13 +692,13 @@ export default function MenuBuilder({ restaurant }: Props) {
       {categories.length === 0 ? (
         <div style={{ textAlign: "center", padding: "64px 16px", color: "var(--text-muted)", background: "var(--surface)", borderRadius: "var(--radius-lg)", border: "2px dashed var(--border)" }}>
           <div style={{ marginBottom: 12 }}><IconDish width={36} height={36} style={{ color: "var(--text-muted)", opacity: 0.7 }} /></div>
-          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>Your menu is empty</p>
-          <p style={{ fontSize: "var(--fs-sm)", marginBottom: 16 }}>Start by adding your first category</p>
+          <p style={{ fontWeight: 600, fontSize: "var(--fs-md)", color: "var(--text)", marginBottom: 4 }}>{t("menuBuilder.empty.title")}</p>
+          <p style={{ fontSize: "var(--fs-sm)", marginBottom: 16 }}>{t("menuBuilder.empty.subtitle")}</p>
           <button
             className="btn-primary"
             onClick={() => setAddingCategory(true)}
             style={{ whiteSpace: "nowrap", fontSize: "var(--fs-sm)", padding: "8px 18px" }}
-          >+ Category</button>
+          >{t("menuBuilder.cat.addNew")}</button>
         </div>
       ) : (
         <div className="menu-builder-layout">
@@ -706,11 +709,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                 <button
                   onClick={() => setAddingCategory(true)}
                   style={{ padding: "5px 10px", borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-xs)", whiteSpace: "nowrap", flexShrink: 0, height: 28 }}
-                >+ Category</button>
+                >{t("menuBuilder.cat.addNew")}</button>
               </div>
             )}
             <div className="menu-sidebar-label">
-              Categories
+              {t("menuBuilder.cat.listLabel")}
             </div>
             {categories.map((cat, idx) => {
               const active = cat.id === selectedCatId && !searchQuery;
@@ -797,18 +800,18 @@ export default function MenuBuilder({ restaurant }: Props) {
                             sort_order: i,
                           })));
                         if (error) {
-                          toast.error("Could not save the new order");
+                          toast.error(t("menuBuilder.toast.reorderFailed"));
                           await load();
                         }
                       }}
                       onContextMenu={(e) => openCtxMenu(e, [
                         {
-                          label: "Edit name & icon",
+                          label: t("menuBuilder.cat.edit"),
                           action: () => startEditCat(cat),
                         },
                         { separator: true },
                         {
-                          label: "Delete category",
+                          label: t("menuBuilder.cat.delete"),
                           danger: true,
                           action: () => setConfirmDeleteCat(cat.id),
                         },
@@ -851,7 +854,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                 fontWeight: 500, textAlign: "left", width: "100%",
               }}
             >
-              + Add category
+              {t("menuBuilder.cat.addLong")}
             </button>
           </div>
 
@@ -863,7 +866,7 @@ export default function MenuBuilder({ restaurant }: Props) {
               <IconSearch width={14} height={14} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
               <input
                 type="text"
-                placeholder="Search menu..."
+                placeholder={t("menuBuilder.search.placeholder")}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{ height: 34, padding: "0 10px 0 30px", width: "100%", fontSize: "var(--fs-sm)", borderRadius: "var(--radius-sm)", boxSizing: "border-box" }}
@@ -877,28 +880,28 @@ export default function MenuBuilder({ restaurant }: Props) {
                   &quot;{searchQuery}&quot;
                 </h3>
                 <span style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>
-                  {displayItems.length} result{displayItems.length !== 1 ? "s" : ""}
+                  {t(displayItems.length !== 1 ? "menuBuilder.search.resultMany" : "menuBuilder.search.resultOne", { count: displayItems.length })}
                 </span>
                 <button
                   onClick={() => setSearchQuery("")}
                   className="mb-text-link"
                   style={{ marginLeft: "auto", color: "var(--text-muted)" }}
-                >Clear</button>
+                >{t("menuBuilder.search.clear")}</button>
               </div>
             ) : activeCat ? (
               <div style={{ marginBottom: 18, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                 <h3
                   onContextMenu={(e) => openCtxMenu(e, [
-                    { label: "Edit name & icon", action: () => startEditCat(activeCat) },
+                    { label: t("menuBuilder.cat.edit"), action: () => startEditCat(activeCat) },
                     { separator: true },
-                    { label: "Delete category", danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
+                    { label: t("menuBuilder.cat.delete"), danger: true, action: () => setConfirmDeleteCat(activeCat.id) },
                   ])}
                   style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10 }}
                 >
                   <span style={{ fontSize: "var(--fs-xl)", flexShrink: 0 }}>{activeCat.icon}</span>
                   <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{activeCat.name}</span>
                   <span style={{ fontWeight: 500, color: "var(--text-muted)", fontSize: "var(--fs-sm)", flexShrink: 0 }}>
-                    {filteredItems.length} item{filteredItems.length !== 1 ? "s" : ""}
+                    {t(filteredItems.length !== 1 ? "menuBuilder.item.countMany" : "menuBuilder.item.countOne", { count: filteredItems.length })}
                   </span>
                 </h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, flexShrink: 0 }}>
@@ -906,13 +909,13 @@ export default function MenuBuilder({ restaurant }: Props) {
                     onClick={() => setConfirmDeleteCat(activeCat.id)}
                     className="mb-text-link"
                     style={{ color: "var(--text-muted)", fontWeight: 500 }}
-                  >Delete category</button>
+                  >{t("menuBuilder.cat.delete")}</button>
                   <button
                     onClick={() => setShowQuickAdd(s => !s)}
                     className="mb-text-link"
                     style={{ color: "var(--accent)" }}
                   >
-                    {showQuickAdd ? "Cancel" : "+ Add item"}
+                    {showQuickAdd ? t("common.cancel") : t("menuBuilder.item.add")}
                   </button>
                 </div>
               </div>
@@ -928,7 +931,7 @@ export default function MenuBuilder({ restaurant }: Props) {
               }}>
                 <input
                   autoFocus
-                  placeholder="Item name"
+                  placeholder={t("menuBuilder.item.namePlaceholder")}
                   value={quickAdds[selectedCatId]?.name ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], name: e.target.value } }))}
                   onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
@@ -938,7 +941,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder={`Price (${currencySymbol})`}
+                  placeholder={t("menuBuilder.item.pricePlaceholder", { symbol: currencySymbol })}
                   value={quickAdds[selectedCatId]?.price ?? ""}
                   onChange={e => setQuickAdds(prev => ({ ...prev, [selectedCatId]: { ...prev[selectedCatId], price: e.target.value } }))}
                   onKeyDown={e => { if (e.key === "Enter") quickAddItem(selectedCatId); if (e.key === "Escape") setShowQuickAdd(false); }}
@@ -947,12 +950,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                 <button
                   onClick={() => quickAddItem(selectedCatId)}
                   style={{ height: 34, padding: "0 16px", borderRadius: "var(--radius-sm)", background: "var(--accent)", color: "white", border: "none", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)", whiteSpace: "nowrap" }}
-                >Add</button>
+                >{t("menuBuilder.cat.add")}</button>
                 <button
                   onClick={() => setShowQuickAdd(false)}
                   className="mb-text-link"
                   style={{ color: "var(--text-muted)", padding: "0 6px" }}
-                >Cancel</button>
+                >{t("common.cancel")}</button>
               </div>
             )}
 
@@ -962,20 +965,20 @@ export default function MenuBuilder({ restaurant }: Props) {
                 <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
                   <IconSearch width={24} height={24} style={{ color: "var(--text-muted)", opacity: 0.7, marginBottom: 10 }} />
                   <p style={{ fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--text)", margin: 0 }}>
-                    No items match &quot;{searchQuery}&quot;
+                    {t("menuBuilder.search.noMatch", { query: searchQuery })}
                   </p>
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "56px 16px", color: "var(--text-muted)", flex: 1 }}>
                   <div style={{ fontSize: "var(--fs-xl)", marginBottom: 10, opacity: 0.8 }}>{activeCat?.icon}</div>
                   <p style={{ fontSize: "var(--fs-sm)", fontWeight: 500, color: "var(--text-muted)", margin: "0 0 6px" }}>
-                    No items yet
+                    {t("menuBuilder.item.noItems")}
                   </p>
                   <button
                     onClick={() => setShowQuickAdd(true)}
                     className="mb-text-link"
                     style={{ color: "var(--accent)" }}
-                  >Add your first item</button>
+                  >{t("menuBuilder.item.addFirst")}</button>
                 </div>
               )
             ) : (
@@ -997,33 +1000,33 @@ export default function MenuBuilder({ restaurant }: Props) {
                         if (isEditing) return;
                         openCtxMenu(e, [
                           {
-                            label: "Edit name",
+                            label: t("menuBuilder.item.editName"),
                             action: () => startEdit(item.id, "name", item.name),
                           },
                           {
-                            label: "Edit description",
+                            label: t("menuBuilder.item.editDescription"),
                             action: () => startEdit(item.id, "description", item.description ?? ""),
                           },
                           {
-                            label: "Edit price",
+                            label: t("menuBuilder.item.editPrice"),
                             action: () => startEdit(item.id, "price", item.price?.toString() ?? ""),
                           },
                           { separator: true },
                           {
-                            label: item.is_available ? "Mark as hidden" : "Mark as available",
+                            label: item.is_available ? t("menuBuilder.item.markHidden") : t("menuBuilder.item.markAvailable"),
                             action: () => toggleItem(item),
                           },
                           {
-                            label: "Duplicate item",
+                            label: t("menuBuilder.item.duplicate"),
                             action: () => duplicateItem(item),
                           },
                           {
-                            label: "Options (choices)",
+                            label: t("menuBuilder.item.options"),
                             action: () => openOptionsEditor(item),
                           },
                           { separator: true },
                           {
-                            label: "Delete item",
+                            label: t("menuBuilder.item.delete"),
                             danger: true,
                             action: () => deleteItem(item),
                           },
@@ -1048,7 +1051,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                       <IconGrip
                         size={16}
                         style={{ color: "var(--text-muted)", cursor: "grab", flexShrink: 0, opacity: 0.7 }}
-                        aria-label="Drag to reorder"
+                        aria-label={t("menuBuilder.item.dragHandle")}
                       />
 
                       {/* Item info */}
@@ -1065,7 +1068,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           />
                         ) : (
                           <span style={{ fontWeight: 600, fontSize: "var(--fs-md)", display: "block" }}>
-                            {item.name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>Untitled</span>}
+                            {item.name || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>{t("menuBuilder.item.untitled")}</span>}
                           </span>
                         )}
                         {isEditing && edit.field === "description" ? (
@@ -1077,7 +1080,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                             onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") cancelEdit(); }}
                             className="mb-edit-input"
                             style={{ fontSize: "var(--fs-sm)", padding: "2px 8px", width: "100%", marginTop: 4 }}
-                            placeholder="Description…"
+                            placeholder={t("menuBuilder.item.descriptionPlaceholder")}
                           />
                         ) : (
                           item.description && (
@@ -1126,7 +1129,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           {/* Availability pill */}
                           <button
                             onClick={() => toggleItem(item)}
-                            title={item.is_available ? "Available — click to hide" : "Hidden — click to show"}
+                            title={item.is_available ? t("menuBuilder.item.availableTitle") : t("menuBuilder.item.hiddenTitle")}
                             style={{
                               fontSize: "var(--fs-xs)", padding: "3px 10px", borderRadius: "var(--radius-pill)",
                               border: "none",
@@ -1137,19 +1140,19 @@ export default function MenuBuilder({ restaurant }: Props) {
                               cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap",
                             }}
                           >
-                            {item.is_available ? "On" : "Off"}
+                            {item.is_available ? t("menuBuilder.item.availablePill") : t("menuBuilder.item.unavailablePill")}
                           </button>
                           {/* Duplicate */}
                           <button
                             className="mb-icon-btn"
                             onClick={(e) => { e.stopPropagation(); duplicateItem(item); }}
-                            title="Duplicate item"
+                            title={t("menuBuilder.item.duplicate")}
                           ><IconCopy width={15} height={15} /></button>
                           {/* Delete */}
                           <button
                             className="mb-icon-btn danger"
                             onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
-                            title="Delete item"
+                            title={t("menuBuilder.item.delete")}
                           ><IconTrash size={15} /></button>
                         </div>
                       )}
@@ -1188,22 +1191,22 @@ export default function MenuBuilder({ restaurant }: Props) {
               >
                 <div style={{ textAlign: "center", marginBottom: 12 }}><IconAlert width={32} height={32} style={{ color: "#dc2626" }} /></div>
                 <h3 style={{ fontWeight: 800, fontSize: "var(--fs-lg)", textAlign: "center", margin: "0 0 8px", color: "var(--text)" }}>
-                  Delete &ldquo;{cat.icon} {cat.name}&rdquo;?
+                  {t("menuBuilder.cat.deleteConfirm.title", { icon: cat.icon, name: cat.name })}
                 </h3>
                 <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", textAlign: "center", margin: "0 0 24px", lineHeight: 1.5 }}>
                   {itemCount > 0
-                    ? `This will also delete all ${itemCount} item${itemCount !== 1 ? "s" : ""} in this category. This cannot be undone.`
-                    : "This cannot be undone."}
+                    ? t(itemCount !== 1 ? "menuBuilder.cat.deleteConfirm.bodyMany" : "menuBuilder.cat.deleteConfirm.bodyOne", { count: itemCount })
+                    : t("menuBuilder.confirm.cannotUndo")}
                 </p>
                 <div style={{ display: "flex", gap: 10 }}>
                   <button
                     onClick={() => setConfirmDeleteCat(null)}
                     style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}
-                  >Cancel</button>
+                  >{t("common.cancel")}</button>
                   <button
                     onClick={() => { deleteCategory(confirmDeleteCat); setConfirmDeleteCat(null); }}
                     style={{ flex: 1, padding: "12px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}
-                  >Yes, delete</button>
+                  >{t("menuBuilder.confirm.yesDelete")}</button>
                 </div>
               </div>
             </div>
@@ -1257,14 +1260,14 @@ export default function MenuBuilder({ restaurant }: Props) {
         <>
           <div onClick={() => setOptionsEditor(null)} style={{ position: "fixed", inset: 0, zIndex: 9990, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
             <div onClick={e => e.stopPropagation()} style={{ background: "var(--surface)", borderRadius: "var(--radius-xl)", padding: "24px", maxWidth: 480, width: "100%", maxHeight: "80vh", overflowY: "auto", boxShadow: "0 8px 40px rgba(0,0,0,0.4)", animation: "modalFadeIn 0.15s ease" }}>
-              <h3 style={{ fontWeight: 800, fontSize: "var(--fs-md)", margin: "0 0 4px", color: "var(--text)" }}>Options — {optionsEditor.item.name}</h3>
+              <h3 style={{ fontWeight: 800, fontSize: "var(--fs-md)", margin: "0 0 4px", color: "var(--text)" }}>{t("menuBuilder.options.title", { name: optionsEditor.item.name })}</h3>
               <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: "0 0 16px", lineHeight: 1.5 }}>
-                <strong>Choice</strong> — guest picks one (e.g. meat on kebabs).{" "}
-                <strong>Ingredients</strong> — all included, guest removes or adds extra.{" "}
-                <strong>Allergens</strong> — shown to guests; required by EU food-information rules.
+                <strong>{t("menuBuilder.options.type.choice")}</strong> {t("menuBuilder.options.help.choice")}{" "}
+                <strong>{t("menuBuilder.options.type.ingredients")}</strong> {t("menuBuilder.options.help.ingredients")}{" "}
+                <strong>{t("menuBuilder.options.type.allergens")}</strong> {t("menuBuilder.options.help.allergens")}
               </p>
               {optionDrafts.length === 0 && (
-                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: "0 0 12px" }}>No options yet — add a group below.</p>
+                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: "0 0 12px" }}>{t("menuBuilder.options.empty")}</p>
               )}
               <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
                 {optionDrafts.map((g, gi) => (
@@ -1273,36 +1276,36 @@ export default function MenuBuilder({ restaurant }: Props) {
                       <input
                         value={g.name}
                         onChange={e => patchGroup(gi, { name: e.target.value })}
-                        placeholder={g.type === "ingredients" ? "Group name (e.g. Ingredients)" : g.type === "allergens" ? "Group name (e.g. Allergens)" : "Group name (e.g. Meat choice)"}
+                        placeholder={t(g.type === "ingredients" ? "menuBuilder.options.groupName.ingredients" : g.type === "allergens" ? "menuBuilder.options.groupName.allergens" : "menuBuilder.options.groupName.choice")}
                         style={{ flex: 1, padding: "7px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none" }}
                       />
-                      <button onClick={() => removeOptionGroup(gi)} aria-label="Remove group" style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
+                      <button onClick={() => removeOptionGroup(gi)} aria-label={t("menuBuilder.options.removeGroup")} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                       <div style={{ display: "flex", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 2 }}>
                         {([
-                          ["choice", "Choice"],
-                          ["ingredients", "Ingredients"],
-                          ["allergens", "Allergens"],
-                        ] as [MenuItemOptionType, string][]).map(([t, label]) => (
-                          <button key={t} type="button" onClick={() => patchGroup(gi, {
-                            type: t,
+                          ["choice", "menuBuilder.options.type.choice"],
+                          ["ingredients", "menuBuilder.options.type.ingredients"],
+                          ["allergens", "menuBuilder.options.type.allergens"],
+                        ] as const).map(([tp, labelKey]) => (
+                          <button key={tp} type="button" onClick={() => patchGroup(gi, {
+                            type: tp,
                             // Give the group a sensible name so it can't be dropped
                             // for being unnamed
-                            ...(g.name.trim() ? {} : { name: t === "allergens" ? "Allergens" : t === "ingredients" ? "Ingredients" : "" }),
+                            ...(g.name.trim() ? {} : { name: tp === "allergens" ? "Allergens" : tp === "ingredients" ? "Ingredients" : "" }),
                           })}
-                            style={{ padding: "4px 10px", borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer", fontSize: "var(--fs-xs)", fontWeight: 600, background: g.type === t ? "var(--accent)" : "transparent", color: g.type === t ? "#fff" : "var(--text-muted)" }}>{label}</button>
+                            style={{ padding: "4px 10px", borderRadius: "var(--radius-sm)", border: "none", cursor: "pointer", fontSize: "var(--fs-xs)", fontWeight: 600, background: g.type === tp ? "var(--accent)" : "transparent", color: g.type === tp ? "#fff" : "var(--text-muted)" }}>{t(labelKey)}</button>
                         ))}
                       </div>
                       {g.type === "choice" ? (
                         <label style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "var(--fs-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <input type="checkbox" checked={g.isRequired} onChange={e => patchGroup(gi, { isRequired: e.target.checked })} />
-                          Required
+                          {t("menuBuilder.options.required")}
                         </label>
                       ) : g.type === "ingredients" ? (
-                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Guests tap to remove or add extra</span>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{t("menuBuilder.options.ingredientsHint")}</span>
                       ) : (
-                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Shown to guests, not selectable</span>
+                        <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{t("menuBuilder.options.allergensHint")}</span>
                       )}
                     </div>
                     {g.type === "allergens" ? (
@@ -1323,7 +1326,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                                 background: on ? "color-mix(in srgb, #dc2626 12%, transparent)" : "var(--surface)",
                                 color: on ? "#dc2626" : "var(--text-muted)",
                               }}
-                            >{a.label}</button>
+                            >{ALLERGEN_KEY[a.id] ? t(ALLERGEN_KEY[a.id]) : a.label}</button>
                           );
                         })}
                       </div>
@@ -1334,7 +1337,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           <input
                             value={c.label}
                             onChange={e => patchChoice(gi, ci, { label: e.target.value })}
-                            placeholder={g.type === "ingredients" ? "Ingredient (e.g. Lök)" : "Choice (e.g. Fläsk)"}
+                            placeholder={t(g.type === "ingredients" ? "menuBuilder.choice.ingredientPlaceholder" : "menuBuilder.choice.placeholder")}
                             style={{ flex: 1, padding: "6px 10px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text)", fontSize: "var(--fs-sm)", outline: "none", textDecoration: c.isAvailable ? "none" : "line-through", opacity: c.isAvailable ? 1 : 0.6 }}
                           />
                           {g.type === "choice" && (
@@ -1350,7 +1353,7 @@ export default function MenuBuilder({ restaurant }: Props) {
                           <button
                             type="button"
                             onClick={() => patchChoice(gi, ci, { isAvailable: !c.isAvailable })}
-                            title={c.isAvailable ? "Available — click to mark sold out" : "Sold out — click to make available"}
+                            title={c.isAvailable ? t("menuBuilder.choice.availableTitle") : t("menuBuilder.choice.soldOutTitle")}
                             aria-pressed={!c.isAvailable}
                             style={{
                               fontSize: "var(--fs-xs)", padding: "3px 9px", borderRadius: "var(--radius-pill)", border: "none", cursor: "pointer",
@@ -1358,12 +1361,12 @@ export default function MenuBuilder({ restaurant }: Props) {
                               background: c.isAvailable ? "color-mix(in srgb, #22c55e 15%, transparent)" : "color-mix(in srgb, #f43f5e 15%, transparent)",
                               color: c.isAvailable ? "#22c55e" : "#f43f5e",
                             }}
-                          >{c.isAvailable ? "On" : "Sold out"}</button>
-                          <button onClick={() => removeChoice(gi, ci)} aria-label="Remove choice" style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
+                          >{c.isAvailable ? t("menuBuilder.choice.availablePill") : t("menuBuilder.choice.soldOutPill")}</button>
+                          <button onClick={() => removeChoice(gi, ci)} aria-label={t("menuBuilder.choice.remove")} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "var(--fs-md)", padding: "2px 4px" }}>×</button>
                         </div>
                       ))}
                       <button type="button" onClick={() => addChoice(gi)} style={{ alignSelf: "flex-start", padding: "5px 10px", borderRadius: "var(--radius-md)", border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: "var(--fs-xs)", cursor: "pointer" }}>
-                        + Add {g.type === "ingredients" ? "ingredient" : "choice"}
+                        {t(g.type === "ingredients" ? "menuBuilder.choice.addIngredient" : "menuBuilder.choice.addChoice")}
                       </button>
                     </div>
                     )}
@@ -1371,11 +1374,11 @@ export default function MenuBuilder({ restaurant }: Props) {
                 ))}
               </div>
               <button type="button" onClick={addOptionGroup} style={{ width: "100%", padding: "9px", borderRadius: "var(--radius-md)", border: "1px dashed var(--border)", background: "none", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer", marginBottom: 16 }}>
-                + Add option group
+                {t("menuBuilder.options.addGroup")}
               </button>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setOptionsEditor(null)} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Cancel</button>
-                <button onClick={saveOptions} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "none", background: "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}>Save options</button>
+                <button onClick={() => setOptionsEditor(null)} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", cursor: "pointer", fontWeight: 600, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>{t("common.cancel")}</button>
+                <button onClick={saveOptions} style={{ flex: 1, padding: "11px", borderRadius: "var(--radius-md)", border: "none", background: "var(--accent)", color: "white", cursor: "pointer", fontWeight: 700, fontSize: "var(--fs-sm)" }}>{t("menuBuilder.options.save")}</button>
               </div>
             </div>
           </div>
