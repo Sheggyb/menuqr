@@ -18,12 +18,16 @@ create table if not exists restaurants (
   venue_type text not null default 'table_service'
     check (venue_type in ('table_service','cafe','takeaway')),
   currency text not null default 'SEK',
+  accepts_payments boolean not null default true,
   created_at timestamptz default now()
 );
 -- Upgrade path for databases created from the old schema
 alter table restaurants add column if not exists quick_actions text[] not null default '{waiter,bill,refill}';
 alter table restaurants add column if not exists venue_type text not null default 'table_service';
 alter table restaurants add column if not exists currency text not null default 'SEK';
+-- Pre-pay gate switch. true = the guest menu routes orders through Stripe and the
+-- ticket only reaches the kitchen once paid; false = order straight through as before.
+alter table restaurants add column if not exists accepts_payments boolean not null default true;
 
 alter table restaurants enable row level security;
 drop policy if exists "Owner full access" on restaurants;

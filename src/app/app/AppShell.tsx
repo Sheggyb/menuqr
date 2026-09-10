@@ -33,9 +33,11 @@ const TABS: { id: Tab; label: string; short: string; Icon: (p: SVGProps<SVGSVGEl
 interface Props {
   user: { id: string; email?: string };
   restaurant: Restaurant | null;
+  /** Server-side: is a Stripe key configured on this deployment? */
+  paymentsAvailable?: boolean;
 }
 
-export default function AppShell({ user, restaurant: initialRestaurant }: Props) {
+export default function AppShell({ user, restaurant: initialRestaurant, paymentsAvailable = false }: Props) {
   const supabase = createClient();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(initialRestaurant);
@@ -266,7 +268,7 @@ export default function AppShell({ user, restaurant: initialRestaurant }: Props)
         {tab === "tables" && <ErrorBoundary key={`tables-${restaurantVersion}`} fallbackTitle="Failed to load tables"><TableManager restaurant={restaurant} /></ErrorBoundary>}
         {tab === "analytics" && <ErrorBoundary key={`analytics-${restaurantVersion}`} fallbackTitle="Failed to load analytics"><Analytics restaurant={restaurant} /></ErrorBoundary>}
         {tab === "history" && <ErrorBoundary key={`history-${restaurantVersion}`} fallbackTitle="Failed to load history"><RequestHistory restaurant={restaurant} /></ErrorBoundary>}
-        {tab === "settings" && <ErrorBoundary key={`settings-${restaurantVersion}`} fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} /></ErrorBoundary>}
+        {tab === "settings" && <ErrorBoundary key={`settings-${restaurantVersion}`} fallbackTitle="Failed to load settings"><SettingsPanel restaurant={restaurant} paymentsAvailable={paymentsAvailable} /></ErrorBoundary>}
       </main>
     </div>
     </ConfirmProvider>

@@ -4,42 +4,88 @@ import { createClient } from "@/lib/supabase/client";
 import type { Restaurant } from "@/lib/types";
 import { CURRENCIES, DEFAULT_ACCENT } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
-import { IconBell, IconReceipt, IconGlass, IconAlert, IconCheck, IconTable, IconDish } from "@/components/icons";
+import { IconBell, IconReceipt, IconGlass, IconAlert, IconCheck, IconTable, IconDish, IconCard, IconStore, IconBolt } from "@/components/icons";
 
-interface Props { restaurant: Restaurant }
+interface Props {
+  restaurant: Restaurant;
+  /** Server-side: is a Stripe key configured on this deployment? */
+  paymentsAvailable?: boolean;
+}
 
-function Section({ title, first, children }: { title: string; first?: boolean; children: React.ReactNode }) {
+const ACCENT_PRESETS = [
+  "#E85D2F", "#dc2626", "#d97706", "#059669",
+  "#0d9488", "#2563eb", "#7c3aed", "#db2777",
+];
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+type Tab = "general" | "menu" | "payments" | "danger";
+
+const TABS: { id: Tab; label: string; Icon: (p: { width?: number; height?: number; style?: React.CSSProperties }) => React.ReactElement }[] = [
+  { id: "general", label: "General", Icon: IconStore },
+  { id: "menu", label: "Guest menu", Icon: IconDish },
+  { id: "payments", label: "Payments", Icon: IconCard },
+  { id: "danger", label: "Danger zone", Icon: IconAlert },
+];
+
+/** A titled block inside a tab. */
+function Card({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
     <section
       style={{
-        borderTop: first ? "none" : "1px solid var(--border)",
-        paddingTop: first ? 0 : 24,
-        marginTop: first ? 0 : 4,
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "20px 22px",
       }}
     >
-      <div
-        style={{
-          fontSize: "var(--fs-xs)",
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.09em",
-          color: "var(--text-muted)",
-          marginBottom: 16,
-        }}
-      >
-        {title}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: "var(--fs-md)", fontWeight: 700, color: "var(--text)" }}>{title}</div>
+        {desc && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>{desc}</div>}
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>{children}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>{children}</div>
     </section>
   );
 }
 
-const ACCENT_PRESETS = ["#E85D2F", "#2563eb", "#059669", "#7c3aed", "#db2777"];
-const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+/** Labelled row with a control on the right — for toggles. */
+function Row({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)" }}>{title}</div>
+        {desc && <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3, lineHeight: 1.5 }}>{desc}</div>}
+      </div>
+      <div style={{ flexShrink: 0 }}>{children}</div>
+    </div>
+  );
+}
 
-export default function SettingsPanel({ restaurant }: Props) {
+function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={on}
+      style={{
+        width: 52, height: 28, borderRadius: "var(--radius-pill)", flexShrink: 0,
+        background: on ? "var(--accent)" : "var(--border)",
+        border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
+      }}
+    >
+      <div style={{
+        width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
+        position: "absolute", top: 3, left: on ? 27 : 3,
+        transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+      }} />
+    </button>
+  );
+}
+
+export default function SettingsPanel({ restaurant, paymentsAvailable = false }: Props) {
   const supabase = createClient();
   const toast = useToast();
+  const [tab, setTab] = useState<Tab>("general");
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || DEFAULT_ACCENT);
   const [logoUrl, setLogoUrl] = useState(restaurant.logo_url ?? "");
@@ -51,6 +97,8 @@ export default function SettingsPanel({ restaurant }: Props) {
   );
   // Currency — DB value is NOT NULL (default SEK), so it's the only source of truth
   const [currency, setCurrency] = useState(() => restaurant.currency || "SEK");
+  // Payments at the table (column defaults to true — behaviour is unchanged until switched off)
+  const [acceptsPayments, setAcceptsPayments] = useState(restaurant.accepts_payments !== false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -68,21 +116,22 @@ export default function SettingsPanel({ restaurant }: Props) {
     return localStorage.getItem("menuqr_sound") !== "off";
   });
 
+  function playPing() {
+    try {
+      const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880; gain.gain.value = 0.15;
+      osc.start(); osc.stop(ctx.currentTime + 0.15);
+    } catch { /* ignore */ }
+  }
+
   function toggleSound() {
     const next = !soundEnabled;
     setSoundEnabled(next);
     localStorage.setItem("menuqr_sound", next ? "on" : "off");
-    // Play a test beep if turning on
-    if (next) {
-      try {
-        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.frequency.value = 880; gain.gain.value = 0.15;
-        osc.start(); osc.stop(ctx.currentTime + 0.15);
-      } catch { /* ignore */ }
-    }
+    if (next) playPing();
   }
 
   const ALL_ACTIONS = [
@@ -103,10 +152,10 @@ export default function SettingsPanel({ restaurant }: Props) {
     savedTimer.current = setTimeout(() => setSaved(false), 2000);
   }
 
-  // Auto-save routine — accepts overrides so chip/venue/preset changes persist
-  // the new value immediately (state updates are async).
+  // Auto-save routine — accepts overrides so toggles persist immediately
+  // (state updates are async).
   async function persist(override: Partial<{
-    name: string; accent: string; logoUrl: string;
+    name: string; accent: string; logoUrl: string; acceptsPayments: boolean;
     quickActions: string[]; venueType: Restaurant["venue_type"]; currency: string;
   }> = {}) {
     const finalAccent = (override.accent ?? accent).trim();
@@ -118,27 +167,28 @@ export default function SettingsPanel({ restaurant }: Props) {
     }
     setAccentError("");
     const finalLogo = (override.logoUrl ?? logoUrl).trim();
-    // Logo URL must be an absolute http(s) URL — a relative path or javascript:
-    // would render a broken image (or worse) in the guest header
+    // Logo URL must be an absolute http(s) URL
     if (finalLogo && !/^https?:\/\/.+/.test(finalLogo)) {
       toast.error("Logo URL must start with http:// or https:// — not saved");
       return;
     }
-    const payload = {
-      name: (override.name ?? name).trim(),
-      accent_color: finalAccent,
-      logo_url: finalLogo || null,
-      quick_actions: override.quickActions ?? quickActions,
-      venue_type: override.venueType ?? venueType,
-      currency: override.currency ?? currency,
-    };
-    if (!payload.name) {
+    const finalName = (override.name ?? name).trim();
+    if (!finalName) {
       // Blanking the name saves nothing — say so instead of failing silently
       setNameError("Restaurant name can't be empty");
       toast.error("Restaurant name can't be empty");
       return;
     }
     setNameError("");
+    const payload = {
+      name: finalName,
+      accent_color: finalAccent,
+      logo_url: finalLogo || null,
+      quick_actions: override.quickActions ?? quickActions,
+      venue_type: override.venueType ?? venueType,
+      currency: override.currency ?? currency,
+      accepts_payments: override.acceptsPayments ?? acceptsPayments,
+    };
     setSaving(true);
     setError("");
     const { error: err } = await supabase
@@ -162,6 +212,12 @@ export default function SettingsPanel({ restaurant }: Props) {
     persist({ quickActions: next });
   }
 
+  function togglePayments() {
+    const next = !acceptsPayments;
+    setAcceptsPayments(next);
+    persist({ acceptsPayments: next });
+  }
+
   async function handleDelete() {
     if (deleteInput !== restaurant.name) {
       setDeleteError("Restaurant name does not match.");
@@ -169,8 +225,8 @@ export default function SettingsPanel({ restaurant }: Props) {
     }
     setDeleting(true);
     setDeleteError("");
-    // Child tables (table_requests, menu_items, menu_categories, restaurant_tables)
-    // cascade on delete in the schema — deleting the restaurant row removes everything.
+    // Child tables cascade on delete in the schema — deleting the restaurant
+    // row removes everything.
     const { error: err } = await supabase.from("restaurants").delete().eq("id", restaurant.id);
     if (err) {
       setDeleteError(err.message);
@@ -182,12 +238,17 @@ export default function SettingsPanel({ restaurant }: Props) {
 
   const labelStyle: React.CSSProperties = { fontSize: "var(--fs-sm)", fontWeight: 600, display: "block", marginBottom: 6, color: "var(--text)" };
   const inputStyle: React.CSSProperties = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: "var(--fs-md)", outline: "none" };
-  const metaStyle: React.CSSProperties = { fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: "6px 0 0" };
+  const metaStyle: React.CSSProperties = { fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: "6px 0 0", lineHeight: 1.5 };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 620 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)" }}>Settings</h2>
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 760 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)" }}>Settings</h2>
+          <p style={{ margin: "4px 0 0", fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
+            {restaurant.name} · changes save automatically
+          </p>
+        </div>
         <div
           aria-live="polite"
           style={{
@@ -202,11 +263,49 @@ export default function SettingsPanel({ restaurant }: Props) {
         </div>
       </div>
 
-      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)", padding: "24px 28px" }}>
-        <form onSubmit={e => { e.preventDefault(); persist(); }} style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      {/* ── TABS ── */}
+      <div
+        role="tablist"
+        aria-label="Settings sections"
+        style={{
+          display: "flex", gap: 6, flexWrap: "wrap",
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: "var(--radius-pill)", padding: 5,
+        }}
+      >
+        {TABS.map(({ id, label, Icon }) => {
+          const active = tab === id;
+          return (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(id)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                padding: "8px 16px", borderRadius: "var(--radius-pill)", cursor: "pointer",
+                border: "none", fontWeight: 600, fontSize: "var(--fs-sm)",
+                background: active
+                  ? id === "danger" ? "color-mix(in srgb, #dc2626 12%, transparent)" : "color-mix(in srgb, var(--accent) 13%, transparent)"
+                  : "transparent",
+                color: active ? (id === "danger" ? "#dc2626" : "var(--accent)") : "var(--text-muted)",
+                transition: "background 0.15s, color 0.15s",
+              }}
+            >
+              <Icon width={15} height={15} /> {label}
+            </button>
+          );
+        })}
+      </div>
 
-          {/* ── Restaurant ── */}
-          <Section title="Restaurant" first>
+      {error && (
+        <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{error}</p>
+      )}
+
+      {/* ── GENERAL ── */}
+      {tab === "general" && (
+        <form onSubmit={e => { e.preventDefault(); persist(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card title="Identity" desc="How your restaurant appears to guests and staff.">
             <div>
               <label style={labelStyle}>Restaurant name</label>
               <input
@@ -217,50 +316,6 @@ export default function SettingsPanel({ restaurant }: Props) {
                 style={{ ...inputStyle, border: nameError ? "1px solid #dc2626" : "1px solid var(--border)" }}
               />
               {nameError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: "6px 0 0" }}>{nameError}</p>}
-            </div>
-
-            <div>
-              <label style={labelStyle}>Accent color</label>
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <div
-                  aria-hidden
-                  style={{
-                    width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
-                    background: accent, border: "1px solid var(--border)",
-                    boxShadow: "inset 0 0 0 2px var(--surface)",
-                  }}
-                />
-                <input
-                  value={accent}
-                  onChange={e => {
-                    setAccent(e.target.value);
-                    if (HEX_RE.test(e.target.value.trim())) setAccentError("");
-                  }}
-                  onBlur={() => persist()}
-                  placeholder="#E85D2F"
-                  style={{ ...inputStyle, width: 130, fontFamily: "monospace", fontSize: "var(--fs-sm)", border: accentError ? "1px solid #dc2626" : "1px solid var(--border)" }}
-                />
-              </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                {ACCENT_PRESETS.map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { setAccent(c); setAccentError(""); persist({ accent: c }); }}
-                    aria-label={`Use ${c}`}
-                    title={c}
-                    style={{
-                      width: 24, height: 24, borderRadius: "50%", cursor: "pointer",
-                      background: c, padding: 0,
-                      border: accent.toLowerCase() === c.toLowerCase()
-                        ? "2px solid var(--text)"
-                        : "1px solid var(--border)",
-                    }}
-                  />
-                ))}
-              </div>
-              {accentError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: "6px 0 0" }}>{accentError}</p>}
-              <p style={metaStyle}>Used on guest menus as the brand color.</p>
             </div>
 
             <div>
@@ -278,7 +333,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "center",
                       minHeight: 64, padding: "6px 10px",
-                      background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
+                      background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)",
                     }}
                   >
                     <img
@@ -291,21 +346,82 @@ export default function SettingsPanel({ restaurant }: Props) {
                     />
                   </div>
                   {logoError ? (
-                    <span style={{ color: "#dc2626", fontSize: "var(--fs-xs)" }}>Couldn't load that image — check the URL</span>
+                    <span style={{ color: "#dc2626", fontSize: "var(--fs-xs)" }}>Couldn&apos;t load that image — check the URL</span>
                   ) : (
                     <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                      Preview — shown in the guest menu header and dashboard header. Height-capped, never cropped.
+                      Shown in the guest menu header and the dashboard header.
                     </span>
                   )}
                 </div>
               )}
             </div>
-          </Section>
+          </Card>
 
-          {/* ── Venue ── */}
-          <Section title="Venue">
-            <p style={{ ...metaStyle, marginTop: 0 }}>Controls which features are available to your guests.</p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          <Card title="Brand colour" desc="Used across the guest menu, buttons and highlights.">
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div
+                aria-hidden
+                style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: accent, border: "1px solid var(--border)",
+                  boxShadow: "inset 0 0 0 2px var(--surface)",
+                }}
+              />
+              <input
+                value={accent}
+                onChange={e => {
+                  setAccent(e.target.value);
+                  if (HEX_RE.test(e.target.value.trim())) setAccentError("");
+                }}
+                onBlur={() => persist()}
+                placeholder="#E85D2F"
+                style={{ ...inputStyle, width: 140, fontFamily: "monospace", fontSize: "var(--fs-sm)", border: accentError ? "1px solid #dc2626" : "1px solid var(--border)" }}
+              />
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {ACCENT_PRESETS.map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => { setAccent(c); setAccentError(""); persist({ accent: c }); }}
+                    aria-label={`Use ${c}`}
+                    title={c}
+                    style={{
+                      width: 26, height: 26, borderRadius: "50%", cursor: "pointer",
+                      background: c, padding: 0,
+                      border: accent.toLowerCase() === c.toLowerCase()
+                        ? "2px solid var(--text)"
+                        : "1px solid var(--border)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            {accentError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{accentError}</p>}
+          </Card>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{
+                padding: "9px 16px", borderRadius: "var(--radius-md)", cursor: "pointer",
+                border: "1px solid var(--border)", background: "var(--surface)",
+                color: "var(--text-muted)", fontSize: "var(--fs-sm)", fontWeight: 500,
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? "Saving…" : "Save now"}
+            </button>
+            <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Changes also save when you click away.</span>
+          </div>
+        </form>
+      )}
+
+      {/* ── GUEST MENU ── */}
+      {tab === "menu" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card title="Service style" desc="Controls which features your guests see.">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
               {VENUE_TYPES.map(v => {
                 const selected = venueType === v.id;
                 return (
@@ -318,7 +434,7 @@ export default function SettingsPanel({ restaurant }: Props) {
                       display: "flex", flexDirection: "column", gap: 8,
                       padding: 14, borderRadius: "var(--radius-lg)",
                       border: `1px solid ${selected ? "var(--accent)" : "var(--border)"}`,
-                      background: selected ? "color-mix(in srgb, var(--accent) 10%, var(--surface))" : "var(--surface-2)",
+                      background: selected ? "color-mix(in srgb, var(--accent) 10%, var(--surface-2))" : "var(--surface-2)",
                       color: "var(--text)", transition: "border-color 0.15s, background 0.15s",
                     }}
                   >
@@ -329,40 +445,37 @@ export default function SettingsPanel({ restaurant }: Props) {
                 );
               })}
             </div>
-          </Section>
+          </Card>
 
-          {/* ── Guest menu ── */}
-          <Section title="Guest menu">
-            <div>
-              <label style={labelStyle}>Quick actions</label>
-              <p style={{ ...metaStyle, marginTop: 0, marginBottom: 10 }}>Choose which buttons guests can see and use.</p>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {ALL_ACTIONS.map(({ id, label, Icon, desc }) => {
-                  const on = quickActions.includes(id);
-                  return (
-                    <button
-                      type="button"
-                      key={id}
-                      onClick={() => toggleAction(id)}
-                      title={desc}
-                      aria-pressed={on}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 7,
-                        padding: "8px 14px", borderRadius: "var(--radius-pill)", cursor: "pointer",
-                        fontWeight: 500, fontSize: "var(--fs-sm)",
-                        border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`,
-                        background: on ? "color-mix(in srgb, var(--accent) 14%, var(--surface))" : "var(--surface-2)",
-                        color: on ? "var(--accent)" : "var(--text-muted)",
-                        transition: "background 0.15s, color 0.15s, border-color 0.15s",
-                      }}
-                    >
-                      <Icon width={15} height={15} /> {label}
-                    </button>
-                  );
-                })}
-              </div>
+          <Card title="Quick actions" desc="Buttons guests can tap at the table.">
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {ALL_ACTIONS.map(({ id, label, Icon, desc }) => {
+                const on = quickActions.includes(id);
+                return (
+                  <button
+                    type="button"
+                    key={id}
+                    onClick={() => toggleAction(id)}
+                    title={desc}
+                    aria-pressed={on}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 7,
+                      padding: "8px 14px", borderRadius: "var(--radius-pill)", cursor: "pointer",
+                      fontWeight: 500, fontSize: "var(--fs-sm)",
+                      border: `1px solid ${on ? "var(--accent)" : "var(--border)"}`,
+                      background: on ? "color-mix(in srgb, var(--accent) 14%, var(--surface-2))" : "var(--surface-2)",
+                      color: on ? "var(--accent)" : "var(--text-muted)",
+                      transition: "background 0.15s, color 0.15s, border-color 0.15s",
+                    }}
+                  >
+                    <Icon width={15} height={15} /> {label}
+                  </button>
+                );
+              })}
             </div>
+          </Card>
 
+          <Card title="Menu display">
             <div>
               <label style={labelStyle}>Currency</label>
               <select
@@ -378,112 +491,176 @@ export default function SettingsPanel({ restaurant }: Props) {
                   <option key={code} value={code}>{sym} — {code}</option>
                 ))}
               </select>
-              <p style={metaStyle}>Shown on guest menus next to prices.</p>
+              <p style={metaStyle}>Prices are formatted for this currency&apos;s locale — 89,50 kr or $89.50.</p>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-              <div>
-                <div style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "var(--text)" }}>Sound alerts</div>
-                <div style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: 3 }}>Play an audio ping when a new order comes in. Stored per browser.</div>
-              </div>
-              <button
-                type="button"
-                onClick={toggleSound}
-                style={{
-                  width: 52, height: 28, borderRadius: "var(--radius-pill)", flexShrink: 0,
-                  background: soundEnabled ? "var(--accent)" : "var(--border)",
-                  border: "none", cursor: "pointer", position: "relative", transition: "background 0.2s",
-                }}
-                aria-label={soundEnabled ? "Disable sound" : "Enable sound"}
-                aria-pressed={soundEnabled}
-              >
-                <div style={{
-                  width: 22, height: 22, borderRadius: "50%", background: "var(--surface)",
-                  position: "absolute", top: 3, left: soundEnabled ? 27 : 3,
-                  transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                }} />
-              </button>
-            </div>
-
-            {error && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{error}</p>}
-            {/* Fallback explicit save — changes also auto-save on blur/toggle */}
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: "7px 14px", borderRadius: "var(--radius-md)", cursor: "pointer",
-                  border: "1px solid var(--border)", background: "var(--surface-2)",
-                  color: "var(--text-muted)", fontSize: "var(--fs-sm)", fontWeight: 500,
-                  opacity: saving ? 0.6 : 1,
-                }}
-              >
-                {saving ? "Saving…" : "Save now"}
-              </button>
-              <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Changes save automatically.</span>
-            </div>
-          </Section>
-
-          {/* ── Danger zone ── */}
-          <Section title="Danger zone">
-            {!deleteConfirm ? (
-              <div>
+            <Row title="Sound alerts" desc="Play a ping when a new order arrives. Stored per browser.">
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   type="button"
-                  onClick={() => setDeleteConfirm(true)}
+                  onClick={playPing}
                   style={{
-                    display: "inline-flex", alignItems: "center", gap: 7,
-                    background: "none", border: "none", padding: 0, cursor: "pointer",
-                    color: "#dc2626", fontSize: "var(--fs-sm)", fontWeight: 600, textDecoration: "underline",
+                    padding: "6px 12px", borderRadius: "var(--radius-pill)", cursor: "pointer",
+                    border: "1px solid var(--border)", background: "var(--surface-2)",
+                    color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600,
                   }}
                 >
-                  <IconAlert width={15} height={15} /> Delete this restaurant
+                  Test
                 </button>
-                <p style={{ ...metaStyle }}>
-                  Permanently removes {restaurant.name} and all its data — tables, menu, requests. This cannot be undone.
-                </p>
+                <Switch on={soundEnabled} onToggle={toggleSound} label={soundEnabled ? "Disable sound" : "Enable sound"} />
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
-                  <IconAlert width={16} height={16} />
-                  <span style={{ fontWeight: 700, fontSize: "var(--fs-md)" }}>Delete this restaurant</span>
-                </div>
-                <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: 0 }}>
-                  Permanently delete <strong style={{ color: "var(--text)" }}>{restaurant.name}</strong> and all its data — tables, menu, requests. This cannot be undone.
-                </p>
-                <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "#dc2626" }}>
-                  Type <strong>{restaurant.name}</strong> to confirm:
-                </label>
-                <input
-                  value={deleteInput}
-                  onChange={e => setDeleteInput(e.target.value)}
-                  placeholder={restaurant.name}
-                  style={{ ...inputStyle, background: "var(--surface)", border: "2px solid #fecaca" }}
+            </Row>
+          </Card>
+
+          <Card title="Shortcuts">
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <a
+                href="/kitchen"
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  padding: "9px 14px", borderRadius: "var(--radius-md)", textDecoration: "none",
+                  border: "1px solid var(--border)", background: "var(--surface-2)",
+                  color: "var(--text)", fontSize: "var(--fs-sm)", fontWeight: 600,
+                }}
+              >
+                <IconDish width={15} height={15} /> Open kitchen screen
+              </a>
+              <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>
+                Tables and QR codes live in the Tables tab.
+              </span>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ── PAYMENTS ── */}
+      {tab === "payments" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <Card
+            title="Payments at the table"
+            desc="Guests pay by card from their phone before the order is sent."
+          >
+            <Row
+              title="Accept card payments"
+              desc={
+                paymentsAvailable
+                  ? acceptsPayments
+                    ? "On — orders only reach the kitchen once the payment has gone through."
+                    : "Off — guests order as usual and pay you however you already take payment."
+                  : "Unavailable — no payment provider is configured on this deployment yet."
+              }
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{
+                  fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+                  color: paymentsAvailable && acceptsPayments ? "var(--success)" : "var(--text-muted)",
+                }}>
+                  {paymentsAvailable && acceptsPayments ? "On" : "Off"}
+                </span>
+                <Switch
+                  on={paymentsAvailable && acceptsPayments}
+                  onToggle={() => { if (paymentsAvailable) togglePayments(); }}
+                  label={acceptsPayments ? "Disable payments" : "Enable payments"}
                 />
-                {deleteError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{deleteError}</p>}
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={handleDelete}
-                    disabled={deleting}
-                    style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
-                  >
-                    {deleting ? "Deleting..." : "Yes, delete everything"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setDeleteConfirm(false); setDeleteInput(""); setDeleteError(""); }}
-                    style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}
-                  >
-                    Cancel
-                  </button>
-                </div>
               </div>
-            )}
-          </Section>
-        </form>
-      </div>
+            </Row>
+          </Card>
+
+          <Card title="How it works" desc="The pre-pay gate keeps unpaid food off the pass.">
+            <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                "Guest fills their cart and taps Pay & order.",
+                "The server prices the order from your menu — never from the phone.",
+                "The guest pays on the card page (test mode uses 4242 4242 4242 4242).",
+                "Only after the payment confirms does the ticket appear on Live Orders and the kitchen screen.",
+              ].map((t, i) => (
+                <li key={i} style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>{t}</li>
+              ))}
+            </ol>
+            <p style={{ ...metaStyle, marginTop: 0 }}>
+              Abandoned checkouts are removed automatically — they never reach the kitchen and never count in your stats.
+            </p>
+          </Card>
+
+          <Card title="Fees" desc="You keep the order value; MenuQR charges a small fee per paid order.">
+            <p style={{ ...metaStyle, marginTop: 0 }}>
+              No monthly subscription. Card processing fees are set by the payment provider on top of the per-order fee.
+            </p>
+          </Card>
+
+          {!paymentsAvailable && (
+            <p style={{ ...metaStyle, marginTop: 0, display: "flex", alignItems: "center", gap: 6 }}>
+              <IconBolt width={14} height={14} /> Payments will appear here as soon as the provider keys are added.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── DANGER ── */}
+      {tab === "danger" && (
+        <Card title="Delete restaurant" desc={`Permanently removes ${restaurant.name} and all of its data.`}>
+          {!deleteConfirm ? (
+            <div>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  padding: "9px 16px", borderRadius: "var(--radius-md)", cursor: "pointer",
+                  border: "1px solid color-mix(in srgb, #dc2626 40%, var(--border))",
+                  background: "color-mix(in srgb, #dc2626 8%, transparent)",
+                  color: "#dc2626", fontSize: "var(--fs-sm)", fontWeight: 700,
+                }}
+              >
+                <IconAlert width={15} height={15} /> Delete this restaurant
+              </button>
+              <p style={metaStyle}>
+                Removes tables, menu, orders and history. This cannot be undone.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
+                <IconAlert width={16} height={16} />
+                <span style={{ fontWeight: 700, fontSize: "var(--fs-md)" }}>This cannot be undone</span>
+              </div>
+              <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
+                Deleting <strong style={{ color: "var(--text)" }}>{restaurant.name}</strong> also removes every
+                table, menu item and past order.
+              </p>
+              <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "#dc2626" }}>
+                Type <strong>{restaurant.name}</strong> to confirm:
+              </label>
+              <input
+                value={deleteInput}
+                onChange={e => setDeleteInput(e.target.value)}
+                placeholder={restaurant.name}
+                style={{ ...inputStyle, border: "2px solid #fecaca" }}
+              />
+              {deleteError && <p style={{ color: "#dc2626", fontSize: "var(--fs-sm)", margin: 0 }}>{deleteError}</p>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
+                >
+                  {deleting ? "Deleting..." : "Yes, delete everything"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setDeleteConfirm(false); setDeleteInput(""); setDeleteError(""); }}
+                  style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

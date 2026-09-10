@@ -8,6 +8,7 @@ export interface Restaurant {
   quick_actions: string[];
   venue_type: "table_service" | "cafe" | "takeaway";
   currency: string; // NOT NULL in schema, default 'SEK'
+  accepts_payments: boolean; // NOT NULL in schema, default true
   created_at: string;
 }
 

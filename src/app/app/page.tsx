@@ -13,5 +13,5 @@ export default async function AppPage() {
     .eq("owner_id", user.id)
     .single();
 
-  return <AppShell user={user} restaurant={restaurant} />;
+  return <AppShell user={user} restaurant={restaurant} paymentsAvailable={!!process.env.STRIPE_SECRET_KEY} />;
 }
