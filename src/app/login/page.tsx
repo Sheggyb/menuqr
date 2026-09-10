@@ -4,8 +4,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { IconDish, IconAlert } from "@/components/icons";
+import LangSwitcher from "@/components/LangSwitcher";
+import { useT } from "@/lib/i18n/client";
 
 function LoginForm() {
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -64,12 +67,16 @@ function LoginForm() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ width: 52, height: 52, borderRadius: "var(--radius-lg)", background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
           <div style={{ fontWeight: 900, fontSize: "var(--fs-xl)", color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
-          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", margin: 0 }}>Welcome back! Log in to your account</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", margin: 0 }}>{t("auth.login.subtitle")}</p>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <LangSwitcher />
         </div>
 
         <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Email address</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>{t("auth.login.email")}</label>
             <input
               className="login-input"
               type="email"
@@ -81,7 +88,7 @@ function LoginForm() {
             />
           </div>
           <div>
-            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>Password</label>
+            <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, marginBottom: 6, display: "block", color: "var(--text)" }}>{t("auth.login.password")}</label>
             <input
               className="login-input"
               type="password"
@@ -100,20 +107,20 @@ function LoginForm() {
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "var(--fs-sm)", color: "var(--text)", cursor: "pointer" }}>
             <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
               style={{ width: 16, height: 16, accentColor: "var(--accent)", cursor: "pointer" }} />
-            Remember me
+            {t("auth.login.rememberMe")}
           </label>
           <button
             type="submit"
             disabled={loading}
             style={{ width: "100%", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: "var(--fs-md)", opacity: loading ? 0.75 : 1, transition: "opacity 0.15s", marginTop: 4 }}
           >
-            {loading ? "Logging in…" : "Log in →"}
+            {loading ? t("auth.login.submitting") : t("auth.login.submit")}
           </button>
         </form>
 
         <p style={{ textAlign: "center", marginTop: 20, fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
-          No account yet?{" "}
-          <Link href="/signup" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>Sign up</Link>
+          {t("auth.login.noAccount")}{" "}
+          <Link href="/signup" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>{t("landing.footer.signup")}</Link>
         </p>
       </div>
     </div>

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme";
+import { I18nProvider } from "@/lib/i18n/client";
+import { getLocale, getT } from "@/lib/i18n/server";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,33 +19,35 @@ const siteUrl =
     ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
     : "http://localhost:3000");
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: {
-    default: "MenuQR — QR code menus & live table orders",
-    template: "%s · MenuQR",
-  },
-  description:
-    "Give every table a QR code. Guests scan, browse your menu with EU allergen labelling, order and pay from the phone — orders arrive live on your dashboard and kitchen screen.",
-  openGraph: {
-    siteName: "MenuQR",
-    type: "website",
-    locale: "en_US",
-    title: "MenuQR — QR code menus & live table orders",
-    description:
-      "Give every table a QR code. Guests scan, browse your allergen-labelled menu, and order with a tap — orders arrive live on your dashboard.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "MenuQR — QR code menus & live table orders",
-    description:
-      "QR menus with EU allergen labelling and live table ordering. Guests scan, browse and order with a tap.",
-  },
-  icons: {
-    icon: "/favicon.svg",
-  },
-  manifest: "/manifest.json",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { locale, t } = await getT();
+  const title = t("meta.title");
+  const description = t("meta.description");
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: "%s · MenuQR",
+    },
+    description,
+    openGraph: {
+      siteName: "MenuQR",
+      type: "website",
+      locale: locale === "sv" ? "sv_SE" : "en_US",
+      title,
+      description: t("meta.ogDescription"),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: t("meta.twitterDescription"),
+    },
+    icons: {
+      icon: "/favicon.svg",
+    },
+    manifest: "/manifest.json",
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -51,25 +55,34 @@ export const viewport: Viewport = {
   themeColor: "#E85D2F",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Locale comes from the cookie (set by LangSwitcher) with the browser's
+  // Accept-Language as the fallback, so the server renders the right language
+  // on first paint — no English flash before the client takes over.
+  const locale = await getLocale();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         {/* Blocking theme script — stamps the saved/system theme class before
-            first paint so dark-mode users never see a light flash (audit 2.4).
-            Mirrors ThemeProvider's apply() logic. */}
+            first paint so dark-mode users never see a light flash (audit 2.4),
+            and so the public pages can open light regardless of the OS setting.
+            Mirrors ThemeProvider's apply() logic: an explicit choice always wins;
+            with no choice, public pages open light and the app opens system. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("menuqr_theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.add(d?"dark":"light");}catch(e){document.documentElement.classList.add("light");}})();`,
+            __html: `(function(){try{var s=localStorage.getItem("menuqr_theme");var p=location.pathname;var pub=!(p.indexOf("/app")===0||p.indexOf("/kitchen")===0||p.indexOf("/menu")===0);var t=s||(pub?"light":"system");var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var r=document.documentElement;r.classList.add(d?"dark":"light");}catch(e){document.documentElement.classList.add("light");}})();`,
           }}
         />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <I18nProvider initialLocale={locale}>
+          <ThemeProvider>{children}</ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

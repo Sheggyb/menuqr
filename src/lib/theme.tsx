@@ -3,6 +3,19 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
 
+/**
+ * Theme for a visitor who has never touched the theme toggle: public pages
+ * (landing / login / signup / legal) open LIGHT regardless of the OS setting so
+ * the marketing page always presents its intended look; the staff app, kitchen
+ * and guest menu follow the OS. Any explicit choice overrides this forever.
+ */
+function publicPageDefaultTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const p = window.location.pathname;
+  const isApp = p.startsWith("/app") || p.startsWith("/kitchen") || p.startsWith("/menu");
+  return isApp ? "system" : "light";
+}
+
 interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: "light" | "dark";
@@ -20,8 +33,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    const stored = (localStorage.getItem("menuqr_theme") as Theme) || "system";
-    setThemeState(stored);
+    const stored = localStorage.getItem("menuqr_theme") as Theme | null;
+    if (stored) { setThemeState(stored); return; }
+    // No explicit choice yet: public pages (landing/login/signup/legal) open
+    // light regardless of the OS setting; the app pages follow the OS.
+    setThemeState(publicPageDefaultTheme());
   }, []);
 
   useEffect(() => {

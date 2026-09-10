@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { getT } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Log in",
-  description: "Log in to your MenuQR account to manage your menu and live orders.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getT();
+  return {
+    title: t("auth.meta.loginTitle"),
+    description: t("auth.meta.loginDescription"),
+  };
+}
 
 export default function LoginLayout({ children }: { children: React.ReactNode }) {
   return children;

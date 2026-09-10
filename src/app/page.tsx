@@ -3,57 +3,88 @@ import {
   IconBolt, IconFork, IconUsers, IconChart, IconMoonStars, IconCurrency,
   IconCheck, IconAlert, IconQr, IconPhone, IconPrinter,
 } from "@/components/icons";
+import { getT } from "@/lib/i18n/server";
+import type { TKey } from "@/lib/i18n";
+import LangSwitcher from "@/components/LangSwitcher";
 
-const features = [
+type IconType = React.ComponentType<React.SVGProps<SVGSVGElement>>;
+
+const features: { Icon: IconType; title: TKey; text: TKey }[] = [
   {
-    Icon: IconAlert, title: "EU allergen declarations",
-    text: "Tag the 14 Annex II allergens per dish from a fixed list. Guests see them while choosing, and can hide every dish containing one.",
+    Icon: IconAlert, title: "landing.features.allergens.title",
+    text: "landing.features.allergens.text",
   },
   {
-    Icon: IconBolt, title: "Live orders",
-    text: "Guest requests appear on your dashboard the moment they tap — no refresh, no delay, with a separate kitchen screen.",
+    Icon: IconBolt, title: "landing.features.orders.title",
+    text: "landing.features.orders.text",
   },
   {
-    Icon: IconFork, title: "Menu builder",
-    text: "Categories, items, prices, option groups and per-ingredient choices. Edit anything and guests see it instantly.",
+    Icon: IconFork, title: "landing.features.builder.title",
+    text: "landing.features.builder.text",
   },
   {
-    Icon: IconUsers, title: "Approve who can order",
-    text: "Guests request access when they scan. You approve each one, so only people actually at the table reach your kitchen.",
+    Icon: IconUsers, title: "landing.features.approve.title",
+    text: "landing.features.approve.text",
   },
   {
-    Icon: IconChart, title: "Analytics",
-    text: "Revenue, daily trends, completion rates and request types — plus a searchable history of everything ordered.",
+    Icon: IconChart, title: "landing.features.stats.title",
+    text: "landing.features.stats.text",
   },
   {
-    Icon: IconCurrency, title: "Ten currencies",
-    text: "Prices format the way your guests expect them — 89,50 kr in Sweden, 89,50 € in Berlin, $89.50 in New York.",
+    Icon: IconCurrency, title: "landing.features.currency.title",
+    text: "landing.features.currency.text",
   },
   {
-    Icon: IconMoonStars, title: "Light and dark",
-    text: "The dashboard, kitchen screen and guest menu all follow the device theme automatically.",
+    Icon: IconMoonStars, title: "landing.features.theme.title",
+    text: "landing.features.theme.text",
   },
   {
-    Icon: IconQr, title: "QR codes per table",
-    text: "Every table gets its own code, printable in one click. Rotate a code any time without losing that table's history.",
+    Icon: IconQr, title: "landing.features.qr.title",
+    text: "landing.features.qr.text",
   },
 ];
 
-const steps = [
-  { step: "1", Icon: IconFork, title: "Build your menu", text: "Add your restaurant, then your categories, dishes, prices and allergens. No setup call, no onboarding fee." },
-  { step: "2", Icon: IconPrinter, title: "Print your QR codes", text: "Every table gets its own code. Print the sheet in one click and put them on the tables." },
-  { step: "3", Icon: IconPhone, title: "Take orders live", text: "Guests scan, browse and order from their own phone. Orders land on your dashboard and kitchen screen in real time." },
+const steps: { step: string; Icon: IconType; title: TKey; text: TKey }[] = [
+  { step: "1", Icon: IconFork, title: "landing.how.step1.title", text: "landing.how.step1.text" },
+  { step: "2", Icon: IconPrinter, title: "landing.how.step2.title", text: "landing.how.step2.text" },
+  { step: "3", Icon: IconPhone, title: "landing.how.step3.title", text: "landing.how.step3.text" },
 ];
 
-const faqs = [
-  { q: "Do guests need to download an app?", a: "No. Guests scan the QR code with their phone camera and the menu opens in the browser. No download, no account, no login." },
-  { q: "Do I need any special hardware?", a: "No. You need a printer for the QR codes and any device with a browser — phone, tablet or laptop — to watch orders come in. The kitchen screen is just a browser tab." },
-  { q: "How does the allergen feature work?", a: "Each dish can carry tags from the 14 allergens listed in Annex II of EU Regulation 1169/2011. It is a fixed list rather than free text, so it stays consistent across your menu. Guests see the tags on the item card while they are choosing, and can filter the whole menu to hide anything containing an allergen." },
-  { q: "Can guests customise a dish?", a: "Yes. Set up choice groups (pick your meat) and ingredient lists (tap to remove the onion, or ask for extra). Each guest can also add a free-text note to an individual dish, and it prints on that dish's own line of the ticket." },
-  { q: "How do orders arrive?", a: "Orders appear live on your dashboard and on the kitchen screen as guests place them. Pick one up, mark it done, and it clears — one tap, or a single keypress on the kitchen screen." },
-  { q: "Can I edit my menu anytime?", a: "Yes. Change items, prices, descriptions or availability whenever you like — guests always see the latest version instantly. Sold out? Toggle the dish, or just one of its options, and it disappears from the menu." },
-  { q: "What does it cost?", a: "There is no monthly fee and no contract. You pay a small fee per order your guests pay for — if a table doesn't order, you pay nothing. Menus, QR codes, allergen tagging and the live orders dashboard are included." },
-  { q: "Can I take payments through MenuQR?", a: "Yes. Guests can pay by card at checkout directly from their phone — the order only reaches your kitchen once the payment has gone through, so no unpaid food leaves the pass. Swish is next on the list." },
+const faqs: { q: TKey; a: TKey }[] = [
+  { q: "landing.faq.q1", a: "landing.faq.a1" },
+  { q: "landing.faq.q2", a: "landing.faq.a2" },
+  { q: "landing.faq.q3", a: "landing.faq.a3" },
+  { q: "landing.faq.q4", a: "landing.faq.a4" },
+  { q: "landing.faq.q5", a: "landing.faq.a5" },
+  { q: "landing.faq.q6", a: "landing.faq.a6" },
+  { q: "landing.faq.q7", a: "landing.faq.a7" },
+  { q: "landing.faq.q8", a: "landing.faq.a8" },
+];
+
+const heroBullets: TKey[] = ["landing.hero.bullet1", "landing.hero.bullet2", "landing.hero.bullet3"];
+const allergenBullets: TKey[] = [
+  "landing.allergens.bullet1", "landing.allergens.bullet2",
+  "landing.allergens.bullet3", "landing.allergens.bullet4",
+];
+const annexTwo: TKey[] = [
+  "landing.allergens.list1", "landing.allergens.list2", "landing.allergens.list3", "landing.allergens.list4",
+  "landing.allergens.list5", "landing.allergens.list6", "landing.allergens.list7", "landing.allergens.list8",
+  "landing.allergens.list9", "landing.allergens.list10", "landing.allergens.list11", "landing.allergens.list12",
+  "landing.allergens.list13", "landing.allergens.list14",
+];
+/** Demo dishes in the hero phone — illustrative, not customer data. */
+const mockDishes: [TKey, string, TKey[]][] = [
+  ["landing.mock.dish1", "129 kr", ["landing.mock.allergenMilk"]],
+  ["landing.mock.dish2", "145 kr", ["landing.mock.allergenGluten", "landing.mock.allergenMilk"]],
+  ["landing.mock.dish3", "139 kr", ["landing.mock.allergenGluten", "landing.mock.allergenSesame"]],
+];
+const planItems: TKey[] = [
+  "landing.pricing.item1", "landing.pricing.item2", "landing.pricing.item3", "landing.pricing.item4",
+  "landing.pricing.item5", "landing.pricing.item6", "landing.pricing.item7", "landing.pricing.item8",
+];
+const roadmapItems: TKey[] = [
+  "landing.pricing.roadmap1", "landing.pricing.roadmap2", "landing.pricing.roadmap3",
+  "landing.pricing.roadmap4", "landing.pricing.roadmap5", "landing.pricing.roadmap6",
 ];
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -65,7 +96,9 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { t } = await getT();
+
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "var(--font-body)" }}>
       <style>{`
@@ -140,16 +173,17 @@ export default function LandingPage() {
         {/* In-page nav. This is a long page and the header previously offered no
             way down it except scrolling. */}
         <div className="nav-links" style={{ display: "flex", gap: 26, alignItems: "center" }}>
-          <a href="#how" className="nav-link">How it works</a>
-          <a href="#allergens" className="nav-link">Allergens</a>
-          <a href="#features" className="nav-link">Features</a>
-          <a href="#pricing" className="nav-link">Pricing</a>
-          <a href="#faq" className="nav-link">FAQ</a>
+          <a href="#how" className="nav-link">{t("landing.nav.how")}</a>
+          <a href="#allergens" className="nav-link">{t("landing.nav.allergens")}</a>
+          <a href="#features" className="nav-link">{t("landing.nav.features")}</a>
+          <a href="#pricing" className="nav-link">{t("landing.nav.pricing")}</a>
+          <a href="#faq" className="nav-link">{t("landing.nav.faq")}</a>
         </div>
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <Link href="/login" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 600, fontSize: "var(--fs-sm)" }}>Log in</Link>
-          <Link href="/signup" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-sm)" }}>Get started</Link>
+          <LangSwitcher compact />
+          <Link href="/login" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 600, fontSize: "var(--fs-sm)" }}>{t("landing.nav.login")}</Link>
+          <Link href="/signup" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-sm)" }}>{t("landing.nav.getStarted")}</Link>
         </div>
       </nav>
 
@@ -163,27 +197,26 @@ export default function LandingPage() {
               color: "var(--accent)", borderRadius: "var(--radius-pill)",
               padding: "5px 14px", fontSize: "var(--fs-xs)", fontWeight: 700,
             }}>
-              <IconAlert width={13} height={13} /> Allergen-ready for EU 1169/2011
+              <IconAlert width={13} height={13} /> {t("landing.hero.badge")}
             </div>
 
             <h1 className="lp-h1" style={{ marginTop: 0, marginBottom: 20, color: "var(--text)" }}>
-              Digital menus &amp; <span style={{ color: "var(--accent)" }}>live table ordering</span> for your restaurant
+              {t("landing.hero.titleBefore")}<span style={{ color: "var(--accent)" }}>{t("landing.hero.titleAccent")}</span>{t("landing.hero.titleAfter")}
             </h1>
 
             <p className="lp-lead" style={{ color: "var(--text-muted)", margin: "0 0 34px", maxWidth: 500 }}>
-              Guests scan a QR code at their table, browse your menu — allergens and all — and tap to order.
-              No download, no login, no friction.
+              {t("landing.hero.lead")}
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link href="/signup" className="btn-hero">Get started</Link>
-              <Link href="#how" className="btn-ghost">See how it works</Link>
+              <Link href="/signup" className="btn-hero">{t("landing.hero.ctaPrimary")}</Link>
+              <Link href="#how" className="btn-ghost">{t("landing.hero.ctaSecondary")}</Link>
             </div>
 
             <div style={{ marginTop: 20, display: "flex", gap: 18, flexWrap: "wrap", fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
-              {["No app for guests", "Order & pay from the phone", "Set up in one evening"].map(t => (
-                <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                  <IconCheck width={14} height={14} style={{ color: "var(--success)" }} /> {t}
+              {heroBullets.map(k => (
+                <span key={k} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <IconCheck width={14} height={14} style={{ color: "var(--success)" }} /> {t(k)}
                 </span>
               ))}
             </div>
@@ -196,26 +229,22 @@ export default function LandingPage() {
               <div style={{ borderRadius: 28, overflow: "hidden", border: "1px solid var(--border)", background: "var(--bg)" }}>
                 <div style={{ background: "var(--accent)", padding: "18px 16px 14px" }}>
                   <div style={{ color: "white", fontWeight: 800, fontSize: "var(--fs-md)" }}>Café Solsken</div>
-                  <div style={{ color: "rgba(255,255,255,0.82)", fontSize: "var(--fs-xs)", marginTop: 2 }}>Table 4 · Menu</div>
+                  <div style={{ color: "rgba(255,255,255,0.82)", fontSize: "var(--fs-xs)", marginTop: 2 }}>{t("landing.mock.tableMenu")}</div>
                 </div>
 
                 <div style={{ display: "flex", gap: 6, padding: "10px 12px 6px" }}>
-                  <span style={{ background: "var(--accent)", color: "white", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 700, padding: "4px 10px" }}>Mains</span>
-                  <span style={{ background: "var(--surface-2)", color: "var(--text-muted)", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 10px" }}>Drinks</span>
-                  <span style={{ background: "var(--surface-2)", color: "var(--text-muted)", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 10px" }}>Desserts</span>
+                  <span style={{ background: "var(--accent)", color: "white", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 700, padding: "4px 10px" }}>{t("landing.mock.mains")}</span>
+                  <span style={{ background: "var(--surface-2)", color: "var(--text-muted)", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 10px" }}>{t("landing.mock.drinks")}</span>
+                  <span style={{ background: "var(--surface-2)", color: "var(--text-muted)", borderRadius: "var(--radius-pill)", fontSize: "var(--fs-xs)", fontWeight: 600, padding: "4px 10px" }}>{t("landing.mock.desserts")}</span>
                 </div>
 
-                {([
-                  ["Grilled halloumi bowl", "129 kr", ["Milk"]],
-                  ["Pasta al limone", "145 kr", ["Gluten", "Milk"]],
-                  ["Smash burger & fries", "139 kr", ["Gluten", "Sesame"]],
-                ] as [string, string, string[]][]).map(([name, price, tags]) => (
-                  <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "8px 12px 0", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
+                {mockDishes.map(([nameKey, price, tagKeys]) => (
+                  <div key={nameKey} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "8px 12px 0", padding: "10px 12px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-lg)" }}>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)" }}>{name}</div>
+                      <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--text)" }}>{t(nameKey)}</div>
                       <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
-                        {tags.map(t => (
-                          <span key={t} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--warning)", background: "var(--warning-soft)", border: "1px solid var(--warning-border)", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>{t}</span>
+                        {tagKeys.map(tk => (
+                          <span key={tk} style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--warning)", background: "var(--warning-soft)", border: "1px solid var(--warning-border)", borderRadius: "var(--radius-sm)", padding: "1px 5px" }}>{t(tk)}</span>
                         ))}
                       </div>
                       <div style={{ fontSize: "var(--fs-xs)", fontWeight: 700, color: "var(--accent)", marginTop: 5 }}>{price}</div>
@@ -225,7 +254,7 @@ export default function LandingPage() {
                 ))}
 
                 <div style={{ padding: "14px 12px 16px" }}>
-                  <div style={{ background: "var(--accent)", color: "white", textAlign: "center", borderRadius: "var(--radius-pill)", padding: "9px 0", fontSize: "var(--fs-xs)", fontWeight: 700 }}>View Order · 2 items</div>
+                  <div style={{ background: "var(--accent)", color: "white", textAlign: "center", borderRadius: "var(--radius-pill)", padding: "9px 0", fontSize: "var(--fs-xs)", fontWeight: 700 }}>{t("landing.mock.viewOrder")}</div>
                 </div>
               </div>
             </div>
@@ -233,14 +262,14 @@ export default function LandingPage() {
             <div aria-hidden="true" className="order-pop">
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
                 <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--success)", flexShrink: 0 }} />
-                <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--success)" }}>New order</span>
-                <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>Table 4</span>
+                <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.09em", color: "var(--success)" }}>{t("landing.mock.newOrder")}</span>
+                <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>{t("landing.mock.table")}</span>
               </div>
               <div style={{ fontSize: "var(--fs-xs)", color: "var(--text)", fontWeight: 700, lineHeight: 1.5 }}>
-                2× Grilled halloumi bowl
+                {t("landing.mock.orderLine")}
               </div>
               <div style={{ marginTop: 5, display: "inline-block", fontSize: 9, fontWeight: 800, letterSpacing: "0.04em", color: "var(--danger)", background: "var(--danger-soft)", borderRadius: "var(--radius-sm)", padding: "2px 6px" }}>
-                NO ONION
+                {t("landing.mock.noOnion")}
               </div>
               <div style={{ marginTop: 9, fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--text)" }}>258 kr</div>
             </div>
@@ -252,19 +281,19 @@ export default function LandingPage() {
       <section id="how" className="lp-section" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
         <div className="lp-inner">
           <div style={{ textAlign: "center", marginBottom: 44 }}>
-            <Eyebrow>Getting started</Eyebrow>
-            <h2 className="lp-h2" style={{ margin: "0 0 10px", color: "var(--text)" }}>Live in an evening</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>No hardware. No integration. No setup call.</p>
+            <Eyebrow>{t("landing.how.eyebrow")}</Eyebrow>
+            <h2 className="lp-h2" style={{ margin: "0 0 10px", color: "var(--text)" }}>{t("landing.how.title")}</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>{t("landing.how.sub")}</p>
           </div>
           <div className="grid-auto">
             {steps.map(({ step, Icon, title, text }) => (
               <div key={title} className="card card-on-surface">
                 <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
                   <div className="icon-tile" style={{ marginBottom: 0, width: 38, height: 38 }}><Icon width={19} height={19} /></div>
-                  <span style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em" }}>STEP {step}</span>
+                  <span style={{ fontSize: "var(--fs-xs)", fontWeight: 800, color: "var(--text-muted)", letterSpacing: "0.1em" }}>{t("landing.how.step", { n: step })}</span>
                 </div>
-                <h3 style={{ fontWeight: 700, margin: "0 0 7px", fontSize: "var(--fs-lg)", color: "var(--text)" }}>{title}</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.6, margin: 0 }}>{text}</p>
+                <h3 style={{ fontWeight: 700, margin: "0 0 7px", fontSize: "var(--fs-lg)", color: "var(--text)" }}>{t(title)}</h3>
+                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.6, margin: 0 }}>{t(text)}</p>
               </div>
             ))}
           </div>
@@ -275,54 +304,44 @@ export default function LandingPage() {
       <section id="allergens" className="lp-section">
         <div className="lp-inner" style={{ display: "flex", gap: 52, alignItems: "center", flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 380px" }}>
-            <Eyebrow>The part nobody else does properly</Eyebrow>
-            <h2 className="lp-h2" style={{ margin: "0 0 16px", color: "var(--text)" }}>Allergens, handled</h2>
+            <Eyebrow>{t("landing.allergens.eyebrow")}</Eyebrow>
+            <h2 className="lp-h2" style={{ margin: "0 0 16px", color: "var(--text)" }}>{t("landing.allergens.title")}</h2>
             <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.7, margin: "0 0 18px" }}>
-              Since 2014, EU Regulation 1169/2011 has required allergen information for non-prepacked
-              food — restaurants, cafés, takeaways and food trucks included. It has to be available at
-              the point the guest chooses.
+              {t("landing.allergens.p1")}
             </p>
             <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.7, margin: "0 0 22px" }}>
-              A paper menu can&apos;t do that well. MenuQR can: tag each dish from the fixed list of 14
-              Annex&nbsp;II allergens, and every guest sees them on the card before they order — or filters
-              the menu down to what is safe for them.
+              {t("landing.allergens.p2")}
             </p>
             <ul style={{ listStyle: "none", padding: 0, margin: "0 0 26px", display: "flex", flexDirection: "column", gap: 11 }}>
-              {[
-                "A fixed picker, not free text — consistent across your whole menu",
-                "Shown on the item card, not buried in a sub-page",
-                "Guests filter the menu to hide anything with milk, gluten, nuts…",
-                "Ingredient-level control: a guest can remove the onion themselves",
-              ].map(t => (
-                <li key={t} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: "var(--fs-md)", color: "var(--text)", lineHeight: 1.55 }}>
-                  <IconCheck width={16} height={16} style={{ color: "var(--success)", flexShrink: 0, marginTop: 3 }} /> {t}
+              {allergenBullets.map(k => (
+                <li key={k} style={{ display: "flex", gap: 10, alignItems: "flex-start", fontSize: "var(--fs-md)", color: "var(--text)", lineHeight: 1.55 }}>
+                  <IconCheck width={16} height={16} style={{ color: "var(--success)", flexShrink: 0, marginTop: 3 }} /> {t(k)}
                 </li>
               ))}
             </ul>
             <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: 0, fontStyle: "italic" }}>
-              MenuQR gives you the tools to publish allergen information. Confirming that what you
-              publish is correct stays with you.
+              {t("landing.allergens.disclaimer")}
             </p>
           </div>
 
           <div aria-hidden="true" style={{ flex: "1 1 300px", maxWidth: 400 }}>
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: 24, boxShadow: "var(--shadow-card)" }}>
               <div style={{ fontSize: "var(--fs-sm)", fontWeight: 700, color: "var(--text-muted)", marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.09em" }}>
-                Annex II · the 14
+                {t("landing.allergens.cardHead")}
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                {["Gluten", "Crustaceans", "Eggs", "Fish", "Peanuts", "Soybeans", "Milk", "Tree nuts", "Celery", "Mustard", "Sesame", "Sulphites", "Lupin", "Molluscs"].map(a => (
-                  <span key={a} style={{
+                {annexTwo.map(k => (
+                  <span key={k} style={{
                     fontSize: "var(--fs-xs)", fontWeight: 600, padding: "6px 12px",
                     borderRadius: "var(--radius-pill)", background: "var(--surface-2)",
                     border: "1px solid var(--border)", color: "var(--text)",
-                  }}>{a}</span>
+                  }}>{t(k)}</span>
                 ))}
               </div>
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 9 }}>
                 <IconAlert width={16} height={16} style={{ color: "var(--warning)", flexShrink: 0 }} />
                 <span style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                  Required by law since December 2014
+                  {t("landing.allergens.requiredByLaw")}
                 </span>
               </div>
             </div>
@@ -334,15 +353,15 @@ export default function LandingPage() {
       <section id="features" className="lp-section" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
         <div className="lp-inner">
           <div style={{ textAlign: "center", marginBottom: 44 }}>
-            <Eyebrow>Features</Eyebrow>
-            <h2 className="lp-h2" style={{ margin: 0, color: "var(--text)" }}>Everything you need, nothing you don&apos;t</h2>
+            <Eyebrow>{t("landing.features.eyebrow")}</Eyebrow>
+            <h2 className="lp-h2" style={{ margin: 0, color: "var(--text)" }}>{t("landing.features.title")}</h2>
           </div>
           <div className="grid-auto">
             {features.map(({ Icon, title, text }) => (
               <div key={title} className="card card-on-surface">
                 <div className="icon-tile"><Icon width={21} height={21} /></div>
-                <h3 style={{ fontWeight: 700, margin: "0 0 7px", fontSize: "var(--fs-md)", color: "var(--text)" }}>{title}</h3>
-                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", lineHeight: 1.6, margin: 0 }}>{text}</p>
+                <h3 style={{ fontWeight: 700, margin: "0 0 7px", fontSize: "var(--fs-md)", color: "var(--text)" }}>{t(title)}</h3>
+                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", lineHeight: 1.6, margin: 0 }}>{t(text)}</p>
               </div>
             ))}
           </div>
@@ -353,53 +372,37 @@ export default function LandingPage() {
       <section id="pricing" className="lp-section">
         <div className="lp-narrow">
           <div style={{ textAlign: "center", marginBottom: 44 }}>
-            <Eyebrow>Pricing</Eyebrow>
-            <h2 className="lp-h2" style={{ margin: "0 0 10px", color: "var(--text)" }}>Simple pricing</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>No monthly fee. You pay a small fee per order your guests pay for.</p>
+            <Eyebrow>{t("landing.pricing.eyebrow")}</Eyebrow>
+            <h2 className="lp-h2" style={{ margin: "0 0 10px", color: "var(--text)" }}>{t("landing.pricing.title")}</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>{t("landing.pricing.sub")}</p>
           </div>
 
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start" }}>
             <div style={{ flex: "1 1 300px", position: "relative", background: "var(--surface)", border: "2px solid var(--accent)", borderRadius: "var(--radius-xl)", padding: "30px 26px", boxShadow: "0 8px 34px color-mix(in srgb, var(--accent) 15%, transparent)" }}>
               <div style={{ position: "absolute", top: -12, left: 26, background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
-                Available now
+                {t("landing.pricing.availableNow")}
               </div>
-              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Pay as you go</div>
-              <div style={{ fontSize: 38, fontWeight: 900, color: "var(--accent)", lineHeight: 1.1 }}>No monthly fee</div>
-              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>you pay only when your guests pay</div>
+              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>{t("landing.pricing.planName")}</div>
+              <div style={{ fontSize: 38, fontWeight: 900, color: "var(--accent)", lineHeight: 1.1 }}>{t("landing.pricing.planPrice")}</div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>{t("landing.pricing.planNote")}</div>
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 26px", display: "flex", flexDirection: "column", gap: 11 }}>
-                {[
-                  "Your restaurant, your branding",
-                  "Unlimited tables & QR codes",
-                  "Unlimited menu items",
-                  "EU allergen tagging & filtering",
-                  "Live orders + kitchen screen",
-                  "Card & Swish payments at the table",
-                  "Revenue, stats & order history",
-                  "Light/dark and ten currencies",
-                ].map((f) => (
-                  <li key={f} style={{ fontSize: "var(--fs-md)", color: "var(--text)", display: "flex", gap: 9, alignItems: "flex-start", lineHeight: 1.5 }}>
-                    <IconCheck width={16} height={16} style={{ color: "var(--success)", flexShrink: 0, marginTop: 3 }} /> {f}
+                {planItems.map((k) => (
+                  <li key={k} style={{ fontSize: "var(--fs-md)", color: "var(--text)", display: "flex", gap: 9, alignItems: "flex-start", lineHeight: 1.5 }}>
+                    <IconCheck width={16} height={16} style={{ color: "var(--success)", flexShrink: 0, marginTop: 3 }} /> {t(k)}
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" style={{ display: "block", textAlign: "center", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-md)" }}>Get started</Link>
+              <Link href="/signup" style={{ display: "block", textAlign: "center", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-md)" }}>{t("landing.pricing.cta")}</Link>
             </div>
 
             <div style={{ flex: "1 1 280px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "30px 26px" }}>
-              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Grows with you</div>
-              <div style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "var(--text)", lineHeight: 1.1 }}>On the roadmap</div>
-              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>asked for by restaurants, built next</div>
+              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>{t("landing.pricing.roadmapName")}</div>
+              <div style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "var(--text)", lineHeight: 1.1 }}>{t("landing.pricing.roadmapPrice")}</div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>{t("landing.pricing.roadmapNote")}</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 11 }}>
-                {[
-                  "Swish and card in one checkout",
-                  "Multiple locations",
-                  "Staff accounts & roles",
-                  "Multi-language menus",
-                  "Custom domain",
-                  "Priority support",
-                ].map((f) => (
-                  <li key={f} style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", display: "flex", gap: 9, alignItems: "flex-start", lineHeight: 1.5 }}>
-                    <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>•</span> {f}
+                {roadmapItems.map((k) => (
+                  <li key={k} style={{ fontSize: "var(--fs-md)", color: "var(--text-muted)", display: "flex", gap: 9, alignItems: "flex-start", lineHeight: 1.5 }}>
+                    <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 1 }}>•</span> {t(k)}
                   </li>
                 ))}
               </ul>
@@ -412,14 +415,14 @@ export default function LandingPage() {
       <section id="faq" className="lp-section" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)" }}>
         <div className="lp-narrow">
           <div style={{ textAlign: "center", marginBottom: 40 }}>
-            <Eyebrow>Questions</Eyebrow>
-            <h2 className="lp-h2" style={{ margin: 0, color: "var(--text)" }}>Frequently asked</h2>
+            <Eyebrow>{t("landing.faq.eyebrow")}</Eyebrow>
+            <h2 className="lp-h2" style={{ margin: 0, color: "var(--text)" }}>{t("landing.faq.title")}</h2>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {faqs.map((f) => (
               <details key={f.q} className="faq-item">
-                <summary>{f.q}</summary>
-                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.65, margin: "14px 0 0" }}>{f.a}</p>
+                <summary>{t(f.q)}</summary>
+                <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", lineHeight: 1.65, margin: "14px 0 0" }}>{t(f.a)}</p>
               </details>
             ))}
           </div>
@@ -428,12 +431,12 @@ export default function LandingPage() {
 
       {/* ─── CTA ─────────────────────────────────────────── */}
       <section style={{ background: "var(--accent)", padding: "84px 32px", textAlign: "center" }}>
-        <h2 className="lp-h2" style={{ color: "white", marginTop: 0, marginBottom: 14 }}>Set up your menu tonight</h2>
+        <h2 className="lp-h2" style={{ color: "white", marginTop: 0, marginBottom: 14 }}>{t("landing.cta.title")}</h2>
         <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "var(--fs-lg)", margin: "0 auto 34px", maxWidth: 460, lineHeight: 1.6 }}>
-          Take orders tomorrow. No monthly fee, no contract — you pay only when your guests pay.
+          {t("landing.cta.text")}
         </p>
         <Link href="/signup" style={{ display: "inline-block", padding: "17px 44px", borderRadius: "var(--radius-lg)", background: "white", color: "var(--accent)", textDecoration: "none", fontWeight: 800, fontSize: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.18)" }}>
-          Create your menu now
+          {t("landing.cta.button")}
         </Link>
       </section>
 
@@ -443,27 +446,27 @@ export default function LandingPage() {
           <div>
             <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--accent)", marginBottom: 10 }}>MenuQR</div>
             <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", lineHeight: 1.65, margin: 0, maxWidth: 240 }}>
-              QR code menus, allergen declarations and live table ordering for restaurants and cafés.
+              {t("landing.footer.tagline")}
             </p>
           </div>
           {([
-            { head: "Product", links: [["How it works", "/#how"], ["Allergens", "/#allergens"], ["Features", "/#features"], ["Pricing", "/#pricing"], ["FAQ", "/#faq"]] },
-            { head: "Account", links: [["Log in", "/login"], ["Sign up", "/signup"]] },
-            { head: "Legal", links: [["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]] },
-          ] as { head: string; links: [string, string][] }[]).map(({ head, links }) => (
-            <div key={head}>
-              <div style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--text)", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>{head}</div>
+            { id: "product", head: "landing.footer.product", links: [["landing.nav.how", "/#how"], ["landing.nav.allergens", "/#allergens"], ["landing.nav.features", "/#features"], ["landing.nav.pricing", "/#pricing"], ["landing.nav.faq", "/#faq"]] },
+            { id: "account", head: "landing.footer.account", links: [["landing.nav.login", "/login"], ["landing.footer.signup", "/signup"]] },
+            { id: "legal", head: "landing.footer.legal", links: [["landing.footer.privacy", "/privacy"], ["landing.footer.terms", "/terms"]] },
+          ] as { id: string; head: TKey; links: [TKey, string][] }[]).map(({ id, head, links }) => (
+            <div key={id}>
+              <div style={{ fontWeight: 700, fontSize: "var(--fs-sm)", color: "var(--text)", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.08em" }}>{t(head)}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                 {links.map(([label, href]) => (
-                  <Link key={label} href={href} className="footer-link">{label}</Link>
+                  <Link key={label} href={href} className="footer-link">{t(label)}</Link>
                 ))}
-                {head === "Legal" && <a href="mailto:hello@menuqr.app" className="footer-link">hello@menuqr.app</a>}
+                {id === "legal" && <a href="mailto:hello@menuqr.app" className="footer-link">hello@menuqr.app</a>}
               </div>
             </div>
           ))}
         </div>
         <p style={{ maxWidth: 1060, margin: "36px auto 0", paddingTop: 20, borderTop: "1px solid var(--border)", color: "var(--text-muted)", fontSize: "var(--fs-sm)" }}>
-          © {new Date().getFullYear()} MenuQR. All rights reserved.
+          {t("landing.footer.copyright", { year: new Date().getFullYear() })}
         </p>
       </footer>
     </main>
