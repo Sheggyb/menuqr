@@ -83,7 +83,7 @@ export default function SignupPage() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ width: 52, height: 52, borderRadius: "var(--radius-lg)", background: "var(--accent)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#fff", marginBottom: 12 }}><IconDish width={26} height={26} /></div>
           <div style={{ fontWeight: 900, fontSize: "var(--fs-xl)", color: "var(--accent)", letterSpacing: "-0.5px", marginBottom: 4 }}>MenuQR</div>
-          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", margin: 0 }}>Create your free account — no credit card needed</p>
+          <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-sm)", margin: 0 }}>Create your account — takes a minute</p>
         </div>
 
         <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -119,7 +119,7 @@ export default function SignupPage() {
           )}
           <button type="submit" disabled={loading}
             style={{ width: "100%", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", border: "none", cursor: loading ? "default" : "pointer", fontWeight: 700, fontSize: "var(--fs-md)", opacity: loading ? 0.75 : 1, marginTop: 4 }}>
-            {loading ? "Creating account…" : "Create free account →"}
+            {loading ? "Creating account…" : "Create account →"}
           </button>
           <p style={{ textAlign: "center", fontSize: "var(--fs-xs)", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
             By creating an account you agree to our{" "}
@@ -134,7 +134,7 @@ export default function SignupPage() {
           <Link href="/login" style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "none" }}>Log in</Link>
         </p>
         <p style={{ textAlign: "center", marginTop: 12, fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>
-          Free forever • No credit card • Cancel anytime
+          No monthly fee • Pay only per paid order • Cancel anytime
         </p>
       </div>
     </div>
