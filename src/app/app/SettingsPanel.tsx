@@ -5,6 +5,8 @@ import type { Restaurant } from "@/lib/types";
 import { CURRENCIES, DEFAULT_ACCENT } from "@/lib/constants";
 import { useToast } from "@/components/Toast";
 import { IconBell, IconReceipt, IconGlass, IconAlert, IconCheck, IconTable, IconDish, IconCard, IconStore, IconBolt } from "@/components/icons";
+import { useT } from "@/lib/i18n/client";
+import type { TKey } from "@/lib/i18n";
 
 interface Props {
   restaurant: Restaurant;
@@ -20,11 +22,11 @@ const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 type Tab = "general" | "menu" | "payments" | "danger";
 
-const TABS: { id: Tab; label: string; Icon: (p: { width?: number; height?: number; style?: React.CSSProperties }) => React.ReactElement }[] = [
-  { id: "general", label: "General", Icon: IconStore },
-  { id: "menu", label: "Guest menu", Icon: IconDish },
-  { id: "payments", label: "Payments", Icon: IconCard },
-  { id: "danger", label: "Danger zone", Icon: IconAlert },
+const TABS: { id: Tab; labelKey: TKey; Icon: (p: { width?: number; height?: number; style?: React.CSSProperties }) => React.ReactElement }[] = [
+  { id: "general", labelKey: "settings.tab.general", Icon: IconStore },
+  { id: "menu", labelKey: "settings.tab.menu", Icon: IconDish },
+  { id: "payments", labelKey: "settings.tab.payments", Icon: IconCard },
+  { id: "danger", labelKey: "settings.tab.danger", Icon: IconAlert },
 ];
 
 /** A titled block inside a tab. */
@@ -85,6 +87,7 @@ function Switch({ on, onToggle, label }: { on: boolean; onToggle: () => void; la
 export default function SettingsPanel({ restaurant, paymentsAvailable = false }: Props) {
   const supabase = createClient();
   const toast = useToast();
+  const t = useT();
   const [tab, setTab] = useState<Tab>("general");
   const [name, setName] = useState(restaurant.name);
   const [accent, setAccent] = useState(restaurant.accent_color || DEFAULT_ACCENT);
@@ -135,15 +138,15 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
   }
 
   const ALL_ACTIONS = [
-    { id: "waiter", label: "Call waiter", Icon: IconBell, desc: "Guest can call a staff member to the table" },
-    { id: "bill", label: "Request bill", Icon: IconReceipt, desc: "Guest can request the bill at the table" },
-    { id: "refill", label: "Refill drinks", Icon: IconGlass, desc: "Guest can request a drink refill" },
+    { id: "waiter", label: t("settings.action.waiter.label"), Icon: IconBell, desc: t("settings.action.waiter.desc") },
+    { id: "bill", label: t("settings.action.bill.label"), Icon: IconReceipt, desc: t("settings.action.bill.desc") },
+    { id: "refill", label: t("settings.action.refill.label"), Icon: IconGlass, desc: t("settings.action.refill.desc") },
   ];
 
   const VENUE_TYPES = [
-    { id: "table_service", label: "Table service", desc: "Sit-down — guests order at the table", Icon: IconTable },
-    { id: "cafe", label: "Café / counter", desc: "Order at counter, notified when ready", Icon: IconDish },
-    { id: "takeaway", label: "Takeaway / pickup", desc: "Order ahead, kitchen notifies", Icon: IconReceipt },
+    { id: "table_service", label: t("settings.venue.table.label"), desc: t("settings.venue.table.desc"), Icon: IconTable },
+    { id: "cafe", label: t("settings.venue.cafe.label"), desc: t("settings.venue.cafe.desc"), Icon: IconDish },
+    { id: "takeaway", label: t("settings.venue.takeaway.label"), desc: t("settings.venue.takeaway.desc"), Icon: IconReceipt },
   ] as const;
 
   function flashSaved() {
@@ -161,22 +164,22 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
     const finalAccent = (override.accent ?? accent).trim();
     // Never persist an invalid accent color — the guest menu uses it raw as a CSS color
     if (!HEX_RE.test(finalAccent)) {
-      setAccentError("Enter a valid hex color, e.g. #E85D2F");
-      toast.error("Invalid accent color — not saved");
+      setAccentError(t("settings.error.accent"));
+      toast.error(t("settings.error.accentToast"));
       return;
     }
     setAccentError("");
     const finalLogo = (override.logoUrl ?? logoUrl).trim();
     // Logo URL must be an absolute http(s) URL
     if (finalLogo && !/^https?:\/\/.+/.test(finalLogo)) {
-      toast.error("Logo URL must start with http:// or https:// — not saved");
+      toast.error(t("settings.error.logoToast"));
       return;
     }
     const finalName = (override.name ?? name).trim();
     if (!finalName) {
       // Blanking the name saves nothing — say so instead of failing silently
-      setNameError("Restaurant name can't be empty");
-      toast.error("Restaurant name can't be empty");
+      setNameError(t("settings.error.nameEmpty"));
+      toast.error(t("settings.error.nameEmpty"));
       return;
     }
     setNameError("");
@@ -198,7 +201,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
     setSaving(false);
     if (err) {
       setError(err.message);
-      toast.error("Could not save changes");
+      toast.error(t("settings.error.save"));
     } else {
       flashSaved();
     }
@@ -220,7 +223,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
 
   async function handleDelete() {
     if (deleteInput !== restaurant.name) {
-      setDeleteError("Restaurant name does not match.");
+      setDeleteError(t("settings.error.deleteMismatch"));
       return;
     }
     setDeleting(true);
@@ -244,9 +247,9 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
     <div style={{ display: "flex", flexDirection: "column", gap: 18, maxWidth: 760 }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)" }}>Settings</h2>
+          <h2 style={{ fontWeight: 700, fontSize: "var(--fs-lg)", margin: 0, color: "var(--text)" }}>{t("settings.title")}</h2>
           <p style={{ margin: "4px 0 0", fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
-            {restaurant.name} · changes save automatically
+            {t("settings.subtitle", { name: restaurant.name })}
           </p>
         </div>
         <div
@@ -259,21 +262,21 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
           }}
         >
           <IconCheck width={15} height={15} />
-          <span>Saved</span>
+          <span>{t("common.saved")}</span>
         </div>
       </div>
 
       {/* ── TABS ── */}
       <div
         role="tablist"
-        aria-label="Settings sections"
+        aria-label={t("settings.tabs.aria")}
         style={{
           display: "flex", gap: 6, flexWrap: "wrap",
           background: "var(--surface)", border: "1px solid var(--border)",
           borderRadius: "var(--radius-pill)", padding: 5,
         }}
       >
-        {TABS.map(({ id, label, Icon }) => {
+        {TABS.map(({ id, labelKey, Icon }) => {
           const active = tab === id;
           return (
             <button
@@ -292,7 +295,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                 transition: "background 0.15s, color 0.15s",
               }}
             >
-              <Icon width={15} height={15} /> {label}
+              <Icon width={15} height={15} /> {t(labelKey)}
             </button>
           );
         })}
@@ -305,9 +308,9 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
       {/* ── GENERAL ── */}
       {tab === "general" && (
         <form onSubmit={e => { e.preventDefault(); persist(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Card title="Identity" desc="How your restaurant appears to guests and staff.">
+          <Card title={t("settings.identity.title")} desc={t("settings.identity.desc")}>
             <div>
-              <label style={labelStyle}>Restaurant name</label>
+              <label style={labelStyle}>{t("settings.field.name")}</label>
               <input
                 value={name}
                 onChange={e => { setName(e.target.value); if (e.target.value.trim()) setNameError(""); }}
@@ -319,7 +322,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
             </div>
 
             <div>
-              <label style={labelStyle}>Logo URL</label>
+              <label style={labelStyle}>{t("settings.field.logoUrl")}</label>
               <input
                 value={logoUrl}
                 onChange={e => { setLogoUrl(e.target.value); setLogoError(false); }}
@@ -338,7 +341,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   >
                     <img
                       src={logoUrl.trim()}
-                      alt="Logo preview"
+                      alt={t("settings.logo.alt")}
                       referrerPolicy="no-referrer"
                       onLoad={() => setLogoError(false)}
                       onError={() => setLogoError(true)}
@@ -346,10 +349,10 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                     />
                   </div>
                   {logoError ? (
-                    <span style={{ color: "#dc2626", fontSize: "var(--fs-xs)" }}>Couldn&apos;t load that image — check the URL</span>
+                    <span style={{ color: "#dc2626", fontSize: "var(--fs-xs)" }}>{t("settings.logo.error")}</span>
                   ) : (
                     <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", lineHeight: 1.5 }}>
-                      Shown in the guest menu header and the dashboard header.
+                      {t("settings.logo.hint")}
                     </span>
                   )}
                 </div>
@@ -357,7 +360,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
             </div>
           </Card>
 
-          <Card title="Brand colour" desc="Used across the guest menu, buttons and highlights.">
+          <Card title={t("settings.brand.title")} desc={t("settings.brand.desc")}>
             <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div
                 aria-hidden
@@ -383,7 +386,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                     key={c}
                     type="button"
                     onClick={() => { setAccent(c); setAccentError(""); persist({ accent: c }); }}
-                    aria-label={`Use ${c}`}
+                    aria-label={t("settings.brand.usePreset", { color: c })}
                     title={c}
                     style={{
                       width: 26, height: 26, borderRadius: "50%", cursor: "pointer",
@@ -410,9 +413,9 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                 opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? "Saving…" : "Save now"}
+              {saving ? t("common.saving") : t("settings.btn.saveNow")}
             </button>
-            <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>Changes also save when you click away.</span>
+            <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)" }}>{t("settings.autosave.hint")}</span>
           </div>
         </form>
       )}
@@ -420,7 +423,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
       {/* ── GUEST MENU ── */}
       {tab === "menu" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <Card title="Service style" desc="Controls which features your guests see.">
+          <Card title={t("settings.service.title")} desc={t("settings.service.desc")}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
               {VENUE_TYPES.map(v => {
                 const selected = venueType === v.id;
@@ -447,7 +450,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
             </div>
           </Card>
 
-          <Card title="Quick actions" desc="Buttons guests can tap at the table.">
+          <Card title={t("settings.quick.title")} desc={t("settings.quick.desc")}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {ALL_ACTIONS.map(({ id, label, Icon, desc }) => {
                 const on = quickActions.includes(id);
@@ -475,9 +478,9 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
             </div>
           </Card>
 
-          <Card title="Menu display">
+          <Card title={t("settings.menuDisplay.title")}>
             <div>
-              <label style={labelStyle}>Currency</label>
+              <label style={labelStyle}>{t("settings.field.currency")}</label>
               <select
                 value={currency}
                 onChange={e => {
@@ -491,10 +494,10 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   <option key={code} value={code}>{sym} — {code}</option>
                 ))}
               </select>
-              <p style={metaStyle}>Prices are formatted for this currency&apos;s locale — 89,50 kr or $89.50.</p>
+              <p style={metaStyle}>{t("settings.currency.hint")}</p>
             </div>
 
-            <Row title="Sound alerts" desc="Play a ping when a new order arrives. Stored per browser.">
+            <Row title={t("settings.sound.title")} desc={t("settings.sound.desc")}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button
                   type="button"
@@ -505,14 +508,14 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                     color: "var(--text-muted)", fontSize: "var(--fs-xs)", fontWeight: 600,
                   }}
                 >
-                  Test
+                  {t("settings.sound.test")}
                 </button>
-                <Switch on={soundEnabled} onToggle={toggleSound} label={soundEnabled ? "Disable sound" : "Enable sound"} />
+                <Switch on={soundEnabled} onToggle={toggleSound} label={soundEnabled ? t("settings.sound.disable") : t("settings.sound.enable")} />
               </div>
             </Row>
           </Card>
 
-          <Card title="Shortcuts">
+          <Card title={t("settings.shortcuts.title")}>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <a
                 href="/kitchen"
@@ -525,10 +528,10 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   color: "var(--text)", fontSize: "var(--fs-sm)", fontWeight: 600,
                 }}
               >
-                <IconDish width={15} height={15} /> Open kitchen screen
+                <IconDish width={15} height={15} /> {t("settings.shortcuts.kitchen")}
               </a>
               <span style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", alignSelf: "center" }}>
-                Tables and QR codes live in the Tables tab.
+                {t("settings.shortcuts.tablesHint")}
               </span>
             </div>
           </Card>
@@ -539,17 +542,17 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
       {tab === "payments" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Card
-            title="Payments at the table"
-            desc="Guests pay by card from their phone before the order is sent."
+            title={t("settings.payments.title")}
+            desc={t("settings.payments.desc")}
           >
             <Row
-              title="Accept card payments"
+              title={t("settings.payments.accept")}
               desc={
                 paymentsAvailable
                   ? acceptsPayments
-                    ? "On — orders only reach the kitchen once the payment has gone through."
-                    : "Off — guests order as usual and pay you however you already take payment."
-                  : "Unavailable — no payment provider is configured on this deployment yet."
+                    ? t("settings.payments.on")
+                    : t("settings.payments.off")
+                  : t("settings.payments.unavailable")
               }
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -557,42 +560,42 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   fontSize: "var(--fs-xs)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
                   color: paymentsAvailable && acceptsPayments ? "var(--success)" : "var(--text-muted)",
                 }}>
-                  {paymentsAvailable && acceptsPayments ? "On" : "Off"}
+                  {paymentsAvailable && acceptsPayments ? t("settings.payments.statusOn") : t("settings.payments.statusOff")}
                 </span>
                 <Switch
                   on={paymentsAvailable && acceptsPayments}
                   onToggle={() => { if (paymentsAvailable) togglePayments(); }}
-                  label={acceptsPayments ? "Disable payments" : "Enable payments"}
+                  label={acceptsPayments ? t("settings.payments.disable") : t("settings.payments.enable")}
                 />
               </div>
             </Row>
           </Card>
 
-          <Card title="How it works" desc="The pre-pay gate keeps unpaid food off the pass.">
+          <Card title={t("settings.how.title")} desc={t("settings.how.desc")}>
             <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                "Guest fills their cart and taps Pay & order.",
-                "The server prices the order from your menu — never from the phone.",
-                "The guest pays on the card page (test mode uses 4242 4242 4242 4242).",
-                "Only after the payment confirms does the ticket appear on Live Orders and the kitchen screen.",
-              ].map((t, i) => (
-                <li key={i} style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>{t}</li>
+              {([
+                "settings.how.step1",
+                "settings.how.step2",
+                "settings.how.step3",
+                "settings.how.step4",
+              ] as const).map((key, i) => (
+                <li key={i} style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", lineHeight: 1.5 }}>{t(key)}</li>
               ))}
             </ol>
             <p style={{ ...metaStyle, marginTop: 0 }}>
-              Abandoned checkouts are removed automatically — they never reach the kitchen and never count in your stats.
+              {t("settings.how.footnote")}
             </p>
           </Card>
 
-          <Card title="Fees" desc="You keep the order value; MenuQR charges a small fee per paid order.">
+          <Card title={t("settings.fees.title")} desc={t("settings.fees.desc")}>
             <p style={{ ...metaStyle, marginTop: 0 }}>
-              No monthly subscription. Card processing fees are set by the payment provider on top of the per-order fee.
+              {t("settings.fees.body")}
             </p>
           </Card>
 
           {!paymentsAvailable && (
             <p style={{ ...metaStyle, marginTop: 0, display: "flex", alignItems: "center", gap: 6 }}>
-              <IconBolt width={14} height={14} /> Payments will appear here as soon as the provider keys are added.
+              <IconBolt width={14} height={14} /> {t("settings.fees.providerHint")}
             </p>
           )}
         </div>
@@ -600,7 +603,7 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
 
       {/* ── DANGER ── */}
       {tab === "danger" && (
-        <Card title="Delete restaurant" desc={`Permanently removes ${restaurant.name} and all of its data.`}>
+        <Card title={t("settings.danger.title")} desc={t("settings.danger.desc", { name: restaurant.name })}>
           {!deleteConfirm ? (
             <div>
               <button
@@ -614,24 +617,23 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   color: "#dc2626", fontSize: "var(--fs-sm)", fontWeight: 700,
                 }}
               >
-                <IconAlert width={15} height={15} /> Delete this restaurant
+                <IconAlert width={15} height={15} /> {t("settings.danger.delete")}
               </button>
               <p style={metaStyle}>
-                Removes tables, menu, orders and history. This cannot be undone.
+                {t("settings.danger.warning")}
               </p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#dc2626" }}>
                 <IconAlert width={16} height={16} />
-                <span style={{ fontWeight: 700, fontSize: "var(--fs-md)" }}>This cannot be undone</span>
+                <span style={{ fontWeight: 700, fontSize: "var(--fs-md)" }}>{t("settings.danger.cannotUndo")}</span>
               </div>
               <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", margin: 0, lineHeight: 1.5 }}>
-                Deleting <strong style={{ color: "var(--text)" }}>{restaurant.name}</strong> also removes every
-                table, menu item and past order.
+                {t("settings.danger.confirmBefore")}<strong style={{ color: "var(--text)" }}>{restaurant.name}</strong>{t("settings.danger.confirmAfter")}
               </p>
               <label style={{ fontSize: "var(--fs-sm)", fontWeight: 600, color: "#dc2626" }}>
-                Type <strong>{restaurant.name}</strong> to confirm:
+                {t("settings.danger.typeBefore")}<strong>{restaurant.name}</strong>{t("settings.danger.typeAfter")}
               </label>
               <input
                 value={deleteInput}
@@ -647,14 +649,14 @@ export default function SettingsPanel({ restaurant, paymentsAvailable = false }:
                   disabled={deleting}
                   style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "none", background: "#dc2626", color: "white", fontWeight: 700, fontSize: "var(--fs-sm)", cursor: "pointer", opacity: deleting ? 0.7 : 1 }}
                 >
-                  {deleting ? "Deleting..." : "Yes, delete everything"}
+                  {deleting ? t("settings.danger.deleting") : t("settings.danger.confirmButton")}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setDeleteConfirm(false); setDeleteInput(""); setDeleteError(""); }}
                   style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-muted)", fontSize: "var(--fs-sm)", cursor: "pointer" }}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
               </div>
             </div>
