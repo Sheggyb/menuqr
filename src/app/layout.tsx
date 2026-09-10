@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s · MenuQR",
   },
   description:
-    "Give every table a QR code. Guests scan, browse your menu with EU allergen labelling, and order with a tap — orders arrive live on your dashboard and kitchen screen. Free to start.",
+    "Give every table a QR code. Guests scan, browse your menu with EU allergen labelling, order and pay from the phone — orders arrive live on your dashboard and kitchen screen.",
   openGraph: {
     siteName: "MenuQR",
     type: "website",

@@ -52,8 +52,8 @@ const faqs = [
   { q: "Can guests customise a dish?", a: "Yes. Set up choice groups (pick your meat) and ingredient lists (tap to remove the onion, or ask for extra). Each guest can also add a free-text note to an individual dish, and it prints on that dish's own line of the ticket." },
   { q: "How do orders arrive?", a: "Orders appear live on your dashboard and on the kitchen screen as guests place them. Pick one up, mark it done, and it clears — one tap, or a single keypress on the kitchen screen." },
   { q: "Can I edit my menu anytime?", a: "Yes. Change items, prices, descriptions or availability whenever you like — guests always see the latest version instantly. Sold out? Toggle the dish, or just one of its options, and it disappears from the menu." },
-  { q: "Is it really free?", a: "Yes. The Free plan includes your restaurant, your tables, unlimited menu items, QR codes, allergen tagging and the live orders dashboard. No credit card required." },
-  { q: "Can I take payments through MenuQR?", a: "Not yet. Guests order through MenuQR and pay you the way they already do. Card and Swish payments are planned." },
+  { q: "What does it cost?", a: "There is no monthly fee and no contract. You pay a small fee per order your guests pay for — if a table doesn't order, you pay nothing. Menus, QR codes, allergen tagging and the live orders dashboard are included." },
+  { q: "Can I take payments through MenuQR?", a: "Yes. Guests can pay by card at checkout directly from their phone — the order only reaches your kitchen once the payment has gone through, so no unpaid food leaves the pass. Swish is next on the list." },
 ];
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -149,7 +149,7 @@ export default function LandingPage() {
 
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link href="/login" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", color: "var(--text)", textDecoration: "none", fontWeight: 600, fontSize: "var(--fs-sm)" }}>Log in</Link>
-          <Link href="/signup" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-sm)" }}>Get started free</Link>
+          <Link href="/signup" style={{ padding: "9px 18px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-sm)" }}>Get started</Link>
         </div>
       </nav>
 
@@ -176,12 +176,12 @@ export default function LandingPage() {
             </p>
 
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <Link href="/signup" className="btn-hero">Start free</Link>
+              <Link href="/signup" className="btn-hero">Get started</Link>
               <Link href="#how" className="btn-ghost">See how it works</Link>
             </div>
 
             <div style={{ marginTop: 20, display: "flex", gap: 18, flexWrap: "wrap", fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>
-              {["Free forever", "No credit card", "No app for guests"].map(t => (
+              {["No app for guests", "Order & pay from the phone", "Set up in one evening"].map(t => (
                 <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                   <IconCheck width={14} height={14} style={{ color: "var(--success)" }} /> {t}
                 </span>
@@ -355,17 +355,17 @@ export default function LandingPage() {
           <div style={{ textAlign: "center", marginBottom: 44 }}>
             <Eyebrow>Pricing</Eyebrow>
             <h2 className="lp-h2" style={{ margin: "0 0 10px", color: "var(--text)" }}>Simple pricing</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>Start free. Upgrade later if you need more.</p>
+            <p style={{ color: "var(--text-muted)", fontSize: "var(--fs-md)", margin: 0 }}>No monthly fee. You pay a small fee per order your guests pay for.</p>
           </div>
 
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center", alignItems: "flex-start" }}>
-            <div style={{ flex: "1 1 280px", position: "relative", background: "var(--surface)", border: "2px solid var(--accent)", borderRadius: "var(--radius-xl)", padding: "30px 26px", boxShadow: "0 8px 34px color-mix(in srgb, var(--accent) 15%, transparent)" }}>
+            <div style={{ flex: "1 1 300px", position: "relative", background: "var(--surface)", border: "2px solid var(--accent)", borderRadius: "var(--radius-xl)", padding: "30px 26px", boxShadow: "0 8px 34px color-mix(in srgb, var(--accent) 15%, transparent)" }}>
               <div style={{ position: "absolute", top: -12, left: 26, background: "var(--accent)", color: "white", fontSize: "var(--fs-xs)", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 12px", borderRadius: "var(--radius-pill)" }}>
                 Available now
               </div>
-              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Free</div>
-              <div style={{ fontSize: 38, fontWeight: 900, color: "var(--accent)", lineHeight: 1.1 }}>0 kr</div>
-              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>forever, no card</div>
+              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Pay as you go</div>
+              <div style={{ fontSize: 38, fontWeight: 900, color: "var(--accent)", lineHeight: 1.1 }}>No monthly fee</div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>you pay only when your guests pay</div>
               <ul style={{ listStyle: "none", padding: 0, margin: "0 0 26px", display: "flex", flexDirection: "column", gap: 11 }}>
                 {[
                   "Your restaurant, your branding",
@@ -373,6 +373,7 @@ export default function LandingPage() {
                   "Unlimited menu items",
                   "EU allergen tagging & filtering",
                   "Live orders + kitchen screen",
+                  "Card & Swish payments at the table",
                   "Revenue, stats & order history",
                   "Light/dark and ten currencies",
                 ].map((f) => (
@@ -381,16 +382,16 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link href="/signup" style={{ display: "block", textAlign: "center", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-md)" }}>Get started free</Link>
+              <Link href="/signup" style={{ display: "block", textAlign: "center", padding: "13px", borderRadius: "var(--radius-md)", background: "var(--accent)", color: "white", textDecoration: "none", fontWeight: 700, fontSize: "var(--fs-md)" }}>Get started</Link>
             </div>
 
-            <div style={{ flex: "1 1 280px", background: "var(--surface)", border: "1px dashed var(--border)", borderRadius: "var(--radius-xl)", padding: "30px 26px" }}>
-              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Pro</div>
-              <div style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "var(--text-muted)", lineHeight: 1.1 }}>Coming soon</div>
-              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>everything in Free, plus</div>
+            <div style={{ flex: "1 1 280px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-xl)", padding: "30px 26px" }}>
+              <div style={{ fontWeight: 800, fontSize: "var(--fs-lg)", color: "var(--text)", marginBottom: 6 }}>Grows with you</div>
+              <div style={{ fontSize: "var(--fs-xl)", fontWeight: 900, color: "var(--text)", lineHeight: 1.1 }}>On the roadmap</div>
+              <div style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginBottom: 22 }}>asked for by restaurants, built next</div>
               <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 11 }}>
                 {[
-                  "Card & Swish payments",
+                  "Swish and card in one checkout",
                   "Multiple locations",
                   "Staff accounts & roles",
                   "Multi-language menus",
@@ -429,7 +430,7 @@ export default function LandingPage() {
       <section style={{ background: "var(--accent)", padding: "84px 32px", textAlign: "center" }}>
         <h2 className="lp-h2" style={{ color: "white", marginTop: 0, marginBottom: 14 }}>Set up your menu tonight</h2>
         <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "var(--fs-lg)", margin: "0 auto 34px", maxWidth: 460, lineHeight: 1.6 }}>
-          Take orders tomorrow. Free to start, no credit card, no contract.
+          Take orders tomorrow. No monthly fee, no contract — you pay only when your guests pay.
         </p>
         <Link href="/signup" style={{ display: "inline-block", padding: "17px 44px", borderRadius: "var(--radius-lg)", background: "white", color: "var(--accent)", textDecoration: "none", fontWeight: 800, fontSize: 18, boxShadow: "0 8px 30px rgba(0,0,0,0.18)" }}>
           Create your menu now
